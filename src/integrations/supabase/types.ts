@@ -9,6 +9,33 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      api_keys: {
+        Row: {
+          created_at: string | null
+          id: string
+          is_active: boolean | null
+          key: string
+          name: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          key: string
+          name?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          key?: string
+          name?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       churn_predictions: {
         Row: {
           churn_probability: number | null
@@ -39,6 +66,36 @@ export type Database = {
           model_version?: string | null
           prediction_date?: string | null
           user_id?: string | null
+        }
+        Relationships: []
+      }
+      csv_uploads: {
+        Row: {
+          created_at: string | null
+          filename: string
+          id: string
+          rows_failed: number | null
+          rows_processed: number | null
+          status: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          filename: string
+          id?: string
+          rows_failed?: number | null
+          rows_processed?: number | null
+          status?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          filename?: string
+          id?: string
+          rows_failed?: number | null
+          rows_processed?: number | null
+          status?: string | null
+          user_id?: string
         }
         Relationships: []
       }
@@ -236,15 +293,94 @@ export type Database = {
         }
         Relationships: []
       }
+      user_data: {
+        Row: {
+          churn_score: number | null
+          created_at: string | null
+          id: string
+          last_login: string | null
+          owner_id: string
+          plan: Database["public"]["Enums"]["plan_type"] | null
+          risk_level: Database["public"]["Enums"]["risk_level"] | null
+          updated_at: string | null
+          usage: number | null
+          user_id: string
+        }
+        Insert: {
+          churn_score?: number | null
+          created_at?: string | null
+          id?: string
+          last_login?: string | null
+          owner_id: string
+          plan?: Database["public"]["Enums"]["plan_type"] | null
+          risk_level?: Database["public"]["Enums"]["risk_level"] | null
+          updated_at?: string | null
+          usage?: number | null
+          user_id: string
+        }
+        Update: {
+          churn_score?: number | null
+          created_at?: string | null
+          id?: string
+          last_login?: string | null
+          owner_id?: string
+          plan?: Database["public"]["Enums"]["plan_type"] | null
+          risk_level?: Database["public"]["Enums"]["risk_level"] | null
+          updated_at?: string | null
+          usage?: number | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      weekly_reports: {
+        Row: {
+          created_at: string | null
+          email_sent: boolean | null
+          high_risk_count: number | null
+          id: string
+          low_risk_count: number | null
+          medium_risk_count: number | null
+          report_date: string
+          sent_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          email_sent?: boolean | null
+          high_risk_count?: number | null
+          id?: string
+          low_risk_count?: number | null
+          medium_risk_count?: number | null
+          report_date: string
+          sent_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          email_sent?: boolean | null
+          high_risk_count?: number | null
+          id?: string
+          low_risk_count?: number | null
+          medium_risk_count?: number | null
+          report_date?: string
+          sent_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      generate_api_key: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
     }
     Enums: {
-      [_ in never]: never
+      plan_type: "Free" | "Pro" | "Enterprise"
+      risk_level: "low" | "medium" | "high"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -359,6 +495,9 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      plan_type: ["Free", "Pro", "Enterprise"],
+      risk_level: ["low", "medium", "high"],
+    },
   },
 } as const

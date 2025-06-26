@@ -63,9 +63,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       password,
       options: {
         // Remove emailRedirectTo to disable email verification
-        data: {
-          email_verified: true
-        }
       }
     });
     return { error };

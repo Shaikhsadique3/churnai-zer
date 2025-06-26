@@ -22,6 +22,9 @@ interface CSVRow {
   last_login?: string;
 }
 
+type PlanType = 'Free' | 'Pro' | 'Enterprise';
+type RiskLevel = 'low' | 'medium' | 'high';
+
 const CSVUploadModal = ({ open, onOpenChange, onUploadComplete }: CSVUploadModalProps) => {
   const [file, setFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
@@ -50,18 +53,23 @@ const CSVUploadModal = ({ open, onOpenChange, onUploadComplete }: CSVUploadModal
     }).filter(row => row.user_id);
   };
 
+  const validatePlan = (plan: string): PlanType => {
+    const validPlans: PlanType[] = ['Free', 'Pro', 'Enterprise'];
+    return validPlans.includes(plan as PlanType) ? (plan as PlanType) : 'Free';
+  };
+
   const processRow = async (row: CSVRow) => {
     try {
       // Simulate AI API call for churn prediction
       const mockChurnScore = Math.random();
-      const riskLevel = mockChurnScore > 0.7 ? 'high' : mockChurnScore > 0.4 ? 'medium' : 'low';
+      const riskLevel: RiskLevel = mockChurnScore > 0.7 ? 'high' : mockChurnScore > 0.4 ? 'medium' : 'low';
       
       const { error } = await supabase
         .from('user_data')
         .upsert({
-          owner_id: user?.id,
+          owner_id: user?.id!,
           user_id: row.user_id,
-          plan: row.plan,
+          plan: validatePlan(row.plan),
           usage: row.usage,
           last_login: row.last_login ? new Date(row.last_login).toISOString() : null,
           churn_score: mockChurnScore,

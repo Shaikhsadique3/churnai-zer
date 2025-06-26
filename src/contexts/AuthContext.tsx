@@ -57,13 +57,15 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   const signUp = async (email: string, password: string) => {
-    const redirectUrl = `${window.location.origin}/dashboard`;
-    
+    // Disable email verification by not setting emailRedirectTo
     const { error } = await supabase.auth.signUp({
       email,
       password,
       options: {
-        emailRedirectTo: redirectUrl
+        // Remove emailRedirectTo to disable email verification
+        data: {
+          email_verified: true
+        }
       }
     });
     return { error };

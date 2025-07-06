@@ -5,16 +5,21 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Shield, AlertCircle, Eye, EyeOff, RefreshCw } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Shield, AlertCircle, Eye, EyeOff, RefreshCw, Copy, Check } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
 const Auth = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [rememberMe, setRememberMe] = useState(false);
+  const [passwordCopied, setPasswordCopied] = useState(false);
+  const [errors, setErrors] = useState<{email?: string; password?: string}>({});
   const { signIn, signUp, user } = useAuth();
   const navigate = useNavigate();
 
@@ -24,15 +29,39 @@ const Auth = () => {
     }
   }, [user, navigate]);
 
-  const generatePassword = () => {
-    const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()_+-=[]{}|;:,.<>?";
+  const validateEmail = (email: string) => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+  };
+
+  const validatePassword = (password: string) => {
+    return password.length >= 8;
+  };
+
+  const validateForm = () => {
+    const newErrors: {email?: string; password?: string} = {};
+    
+    if (!validateEmail(email)) {
+      newErrors.email = 'Please enter a valid email address';
+    }
+    
+    if (!validatePassword(password)) {
+      newErrors.password = 'Password must be at least 8 characters long';
+    }
+    
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const generatePassword = async () => {
+    const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*";
     let password = "";
     
     // Ensure at least one of each type
-    password += "ABCDEFGHIJKLMNOPQRSTUVWXYZ"[Math.floor(Math.random() * 26)]; // uppercase
-    password += "abcdefghijklmnopqrstuvwxyz"[Math.floor(Math.random() * 26)]; // lowercase
-    password += "0123456789"[Math.floor(Math.random() * 10)]; // number
-    password += "!@#$%^&*"[Math.floor(Math.random() * 8)]; // special char
+    password += "ABCDEFGHIJKLMNOPQRSTUVWXYZ"[Math.floor(Math.random() * 26)];
+    password += "abcdefghijklmnopqrstuvwxyz"[Math.floor(Math.random() * 26)];
+    password += "0123456789"[Math.floor(Math.random() * 10)];
+    password += "!@#$%^&*"[Math.floor(Math.random() * 8)];
     
     // Fill the rest randomly
     for (let i = 4; i < 12; i++) {
@@ -42,23 +71,70 @@ const Auth = () => {
     // Shuffle the password
     const shuffled = password.split('').sort(() => Math.random() - 0.5).join('');
     setPassword(shuffled);
+    
+    // Copy to clipboard
+    try {
+      await navigator.clipboard.writeText(shuffled);
+      setPasswordCopied(true);
+      setTimeout(() => setPasswordCopied(false), 2000);
+      toast({
+        title: "Password copied!",
+        description: "Strong password copied to clipboard.",
+      });
+    } catch (err) {
+      console.error('Failed to copy password:', err);
+    }
+  };
+
+  const handleGoogleSignIn = async () => {
+    try {
+      setLoading(true);
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: `${window.location.origin}/dashboard`
+        }
+      });
+      
+      if (error) {
+        toast({
+          title: "Google sign in failed",
+          description: error.message,
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "Google sign in failed",
+        description: "An unexpected error occurred.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!validateForm()) {
+      return;
+    }
+    
     setLoading(true);
     
-    console.log('Attempting sign in for:', email);
     const { error } = await signIn(email, password);
     
     if (error) {
-      console.error('Sign in error:', error);
       toast({
-        title: "Sign in failed",
-        description: error.message,
+        title: "❌ Invalid credentials",
+        description: "Please check your email and password and try again.",
         variant: "destructive",
       });
     } else {
+      if (rememberMe) {
+        localStorage.setItem('rememberMe', 'true');
+      }
       toast({
         title: "Welcome back!",
         description: "You have successfully signed in.",
@@ -71,13 +147,16 @@ const Auth = () => {
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!validateForm()) {
+      return;
+    }
+    
     setLoading(true);
     
-    console.log('Attempting sign up for:', email);
     const { error } = await signUp(email, password);
     
     if (error) {
-      console.error('Sign up error:', error);
       toast({
         title: "Sign up failed",
         description: error.message,
@@ -85,7 +164,7 @@ const Auth = () => {
       });
     } else {
       toast({
-        title: "Account created!",
+        title: "🎉 Account created successfully!",
         description: "You can now sign in to your account.",
       });
       // Switch to sign in tab
@@ -97,55 +176,93 @@ const Auth = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-background to-muted flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         {/* Header */}
         <div className="text-center mb-8">
-          <Link to="/" className="inline-flex items-center space-x-2 mb-4">
-            <Shield className="h-8 w-8 text-indigo-600" />
-            <span className="text-2xl font-bold text-gray-900">ChurnGuard Lite</span>
+          <Link to="/" className="inline-flex items-center space-x-2 mb-4 transition-all duration-300 hover:scale-105">
+            <Shield className="h-8 w-8 text-primary" />
+            <span className="text-2xl font-bold text-foreground">ChurnGuard Lite</span>
           </Link>
-          <p className="text-gray-600">Predict and prevent customer churn with AI</p>
+          <p className="text-muted-foreground text-sm">Predict and prevent customer churn with AI</p>
         </div>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Welcome</CardTitle>
+        <Card className="shadow-xl transition-all duration-300 hover:shadow-2xl">
+          <CardHeader className="text-center pb-4">
+            <CardTitle className="text-2xl font-semibold">Welcome</CardTitle>
             <CardDescription>
               Sign in to your account or create a new one to get started.
             </CardDescription>
           </CardHeader>
-          <CardContent>
+          <CardContent className="space-y-6">
+            {/* Google Sign In Button */}
+            <Button
+              onClick={handleGoogleSignIn}
+              variant="outline"
+              className="w-full h-11 font-medium transition-all duration-300 hover:scale-[1.02]"
+              disabled={loading}
+            >
+              <svg className="w-5 h-5 mr-2" viewBox="0 0 24 24">
+                <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+                <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+              </svg>
+              {loading ? "Connecting..." : "Continue with Google"}
+            </Button>
+
+            <div className="relative">
+              <div className="absolute inset-0 flex items-center">
+                <span className="w-full border-t border-border" />
+              </div>
+              <div className="relative flex justify-center text-xs uppercase">
+                <span className="bg-card px-2 text-muted-foreground">Or continue with email</span>
+              </div>
+            </div>
+
             <Tabs defaultValue="signin" className="w-full">
-              <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="signin">Sign In</TabsTrigger>
-                <TabsTrigger value="signup">Sign Up</TabsTrigger>
+              <TabsList className="grid w-full grid-cols-2 mb-6">
+                <TabsTrigger value="signin" className="transition-all duration-300">Sign In</TabsTrigger>
+                <TabsTrigger value="signup" className="transition-all duration-300">Sign Up</TabsTrigger>
               </TabsList>
               
-              <TabsContent value="signin">
+              <TabsContent value="signin" className="space-y-4">
                 <form onSubmit={handleSignIn} className="space-y-4">
                   <div className="space-y-2">
-                    <Label htmlFor="signin-email">Email</Label>
+                    <Label htmlFor="signin-email" className="text-sm font-medium">Email</Label>
                     <Input
                       id="signin-email"
                       type="email"
                       placeholder="Enter your email"
                       value={email}
-                      onChange={(e) => setEmail(e.target.value)}
+                      onChange={(e) => {
+                        setEmail(e.target.value);
+                        if (errors.email) setErrors(prev => ({ ...prev, email: undefined }));
+                      }}
+                      className={`h-11 transition-all duration-300 ${errors.email ? 'border-destructive focus-visible:ring-destructive' : ''}`}
                       required
                     />
+                    {errors.email && (
+                      <p className="text-xs text-destructive mt-1 animate-in slide-in-from-left-1 duration-300">
+                        {errors.email}
+                      </p>
+                    )}
                   </div>
+                  
                   <div className="space-y-2">
-                    <Label htmlFor="signin-password">Password</Label>
+                    <Label htmlFor="signin-password" className="text-sm font-medium">Password</Label>
                     <div className="relative">
                       <Input
                         id="signin-password"
                         type={showPassword ? "text" : "password"}
                         placeholder="Enter your password"
                         value={password}
-                        onChange={(e) => setPassword(e.target.value)}
+                        onChange={(e) => {
+                          setPassword(e.target.value);
+                          if (errors.password) setErrors(prev => ({ ...prev, password: undefined }));
+                        }}
+                        className={`h-11 pr-10 transition-all duration-300 ${errors.password ? 'border-destructive focus-visible:ring-destructive' : ''}`}
                         required
-                        className="pr-10"
                       />
                       <Button
                         type="button"
@@ -155,54 +272,94 @@ const Auth = () => {
                         onClick={() => setShowPassword(!showPassword)}
                       >
                         {showPassword ? (
-                          <EyeOff className="h-4 w-4 text-gray-400" />
+                          <EyeOff className="h-4 w-4 text-muted-foreground" />
                         ) : (
-                          <Eye className="h-4 w-4 text-gray-400" />
+                          <Eye className="h-4 w-4 text-muted-foreground" />
                         )}
                       </Button>
                     </div>
+                    {errors.password && (
+                      <p className="text-xs text-destructive mt-1 animate-in slide-in-from-left-1 duration-300">
+                        {errors.password}
+                      </p>
+                    )}
                   </div>
-                  <Button type="submit" className="w-full" disabled={loading}>
+
+                  <div className="flex items-center space-x-2">
+                    <Checkbox
+                      id="remember"
+                      checked={rememberMe}
+                      onCheckedChange={(checked) => setRememberMe(checked as boolean)}
+                    />
+                    <Label htmlFor="remember" className="text-sm cursor-pointer">
+                      Remember me
+                    </Label>
+                  </div>
+                  
+                  <Button 
+                    type="submit" 
+                    className="w-full h-11 font-medium transition-all duration-300 hover:scale-[1.02] bg-primary text-primary-foreground hover:bg-primary/90" 
+                    disabled={loading}
+                  >
                     {loading ? "Signing in..." : "Sign In"}
                   </Button>
                 </form>
               </TabsContent>
               
-              <TabsContent value="signup">
-                <form onSubmit={handleSignUp} className="space-y-4">
-                  <div className="bg-blue-50 p-3 rounded-lg border border-blue-200 mb-4">
-                    <div className="flex items-start space-x-2">
-                      <AlertCircle className="h-4 w-4 text-blue-600 mt-0.5" />
-                      <div className="text-sm text-blue-800">
-                        <p className="font-medium">Quick signup enabled</p>
-                        <p>No email verification required - start using immediately!</p>
-                      </div>
+              <TabsContent value="signup" className="space-y-4">
+                <div className="bg-accent/50 p-4 rounded-lg border border-accent mb-4">
+                  <div className="flex items-start space-x-2">
+                    <AlertCircle className="h-4 w-4 text-primary mt-0.5" />
+                    <div className="text-sm text-accent-foreground">
+                      <p className="font-medium">Quick signup enabled</p>
+                      <p className="text-muted-foreground">No email verification required - start using immediately!</p>
                     </div>
                   </div>
-                  
+                </div>
+                
+                <form onSubmit={handleSignUp} className="space-y-4">
                   <div className="space-y-2">
-                    <Label htmlFor="signup-email">Email</Label>
+                    <Label htmlFor="signup-email" className="text-sm font-medium">Email</Label>
                     <Input
                       id="signup-email"
                       type="email"
                       placeholder="Enter your email"
                       value={email}
-                      onChange={(e) => setEmail(e.target.value)}
+                      onChange={(e) => {
+                        setEmail(e.target.value);
+                        if (errors.email) setErrors(prev => ({ ...prev, email: undefined }));
+                      }}
+                      className={`h-11 transition-all duration-300 ${errors.email ? 'border-destructive focus-visible:ring-destructive' : ''}`}
                       required
                     />
+                    {errors.email && (
+                      <p className="text-xs text-destructive mt-1 animate-in slide-in-from-left-1 duration-300">
+                        {errors.email}
+                      </p>
+                    )}
                   </div>
+                  
                   <div className="space-y-2">
                     <div className="flex items-center justify-between">
-                      <Label htmlFor="signup-password">Password</Label>
+                      <Label htmlFor="signup-password" className="text-sm font-medium">Password</Label>
                       <Button
                         type="button"
                         variant="ghost"
                         size="sm"
                         onClick={generatePassword}
-                        className="h-auto p-1 text-xs text-indigo-600 hover:text-indigo-800"
+                        className="h-auto p-1 text-xs text-primary hover:text-primary/80 transition-all duration-300"
                       >
-                        <RefreshCw className="h-3 w-3 mr-1" />
-                        Generate
+                        {passwordCopied ? (
+                          <>
+                            <Check className="h-3 w-3 mr-1" />
+                            Copied!
+                          </>
+                        ) : (
+                          <>
+                            <RefreshCw className="h-3 w-3 mr-1" />
+                            Generate
+                          </>
+                        )}
                       </Button>
                     </div>
                     <div className="relative">
@@ -211,10 +368,13 @@ const Auth = () => {
                         type={showPassword ? "text" : "password"}
                         placeholder="Create a password"
                         value={password}
-                        onChange={(e) => setPassword(e.target.value)}
+                        onChange={(e) => {
+                          setPassword(e.target.value);
+                          if (errors.password) setErrors(prev => ({ ...prev, password: undefined }));
+                        }}
+                        className={`h-11 pr-10 transition-all duration-300 ${errors.password ? 'border-destructive focus-visible:ring-destructive' : ''}`}
                         required
-                        minLength={6}
-                        className="pr-10"
+                        minLength={8}
                       />
                       <Button
                         type="button"
@@ -224,19 +384,41 @@ const Auth = () => {
                         onClick={() => setShowPassword(!showPassword)}
                       >
                         {showPassword ? (
-                          <EyeOff className="h-4 w-4 text-gray-400" />
+                          <EyeOff className="h-4 w-4 text-muted-foreground" />
                         ) : (
-                          <Eye className="h-4 w-4 text-gray-400" />
+                          <Eye className="h-4 w-4 text-muted-foreground" />
                         )}
                       </Button>
                     </div>
-                    {password && (
-                      <div className="text-xs text-gray-500 mt-1">
-                        Password strength: {password.length >= 8 && /[A-Z]/.test(password) && /[a-z]/.test(password) && /[0-9]/.test(password) && /[^A-Za-z0-9]/.test(password) ? 'Strong' : password.length >= 6 ? 'Medium' : 'Weak'}
+                    {errors.password && (
+                      <p className="text-xs text-destructive mt-1 animate-in slide-in-from-left-1 duration-300">
+                        {errors.password}
+                      </p>
+                    )}
+                    {password && !errors.password && (
+                      <div className="text-xs text-muted-foreground mt-1">
+                        Password strength: <span className={`font-medium ${
+                          password.length >= 8 && /[A-Z]/.test(password) && /[a-z]/.test(password) && /[0-9]/.test(password) && /[^A-Za-z0-9]/.test(password) 
+                            ? 'text-green-600' 
+                            : password.length >= 6 
+                              ? 'text-yellow-600' 
+                              : 'text-red-600'
+                        }`}>
+                          {password.length >= 8 && /[A-Z]/.test(password) && /[a-z]/.test(password) && /[0-9]/.test(password) && /[^A-Za-z0-9]/.test(password) 
+                            ? 'Strong' 
+                            : password.length >= 6 
+                              ? 'Medium' 
+                              : 'Weak'}
+                        </span>
                       </div>
                     )}
                   </div>
-                  <Button type="submit" className="w-full" disabled={loading}>
+                  
+                  <Button 
+                    type="submit" 
+                    className="w-full h-11 font-medium transition-all duration-300 hover:scale-[1.02] bg-primary text-primary-foreground hover:bg-primary/90" 
+                    disabled={loading}
+                  >
                     {loading ? "Creating account..." : "Create Account"}
                   </Button>
                 </form>
@@ -246,7 +428,10 @@ const Auth = () => {
         </Card>
 
         <div className="text-center mt-6">
-          <Link to="/" className="text-sm text-gray-600 hover:text-gray-900">
+          <Link 
+            to="/" 
+            className="text-sm text-muted-foreground hover:text-foreground transition-colors duration-300"
+          >
             ← Back to home
           </Link>
         </div>

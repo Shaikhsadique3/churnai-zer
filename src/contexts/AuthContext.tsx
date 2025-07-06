@@ -57,15 +57,23 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   const signUp = async (email: string, password: string) => {
-    // Disable email verification by not setting emailRedirectTo
-    const { error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        // Remove emailRedirectTo to disable email verification
-      }
-    });
-    return { error };
+    try {
+      console.log('Starting signup process for:', email);
+      
+      const { error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          // Disable email verification
+        }
+      });
+      
+      console.log('Signup response:', { error });
+      return { error };
+    } catch (err) {
+      console.error('Network error during signup:', err);
+      return { error: { message: 'Network error: Please check your internet connection and try again.' } };
+    }
   };
 
   const signOut = async () => {

@@ -164,6 +164,7 @@ const Auth = () => {
       });
       
       if (error) {
+        console.error('Password reset error:', error);
         toast({
           title: "Reset failed",
           description: error.message,
@@ -177,10 +178,11 @@ const Auth = () => {
         setShowForgotPassword(false);
         setResetEmail('');
       }
-    } catch (error) {
+    } catch (error: any) {
+      console.error('Network error during password reset:', error);
       toast({
         title: "Reset failed",
-        description: "An unexpected error occurred.",
+        description: error.message || "Please check your internet connection and try again.",
         variant: "destructive",
       });
     } finally {

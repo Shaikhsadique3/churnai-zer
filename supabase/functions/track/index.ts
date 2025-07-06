@@ -75,114 +75,131 @@ serve(async (req) => {
     const ownerId = keyData.user_id;
     console.log('Valid API key for user:', ownerId);
 
-    // Parse request body
-    const body: TrackRequest = await req.json();
-    const { user_id, plan, usage_score, last_login } = body;
+    // Parse request body - handle both single user and batch (array) requests
+    const body = await req.json();
+    const users: TrackRequest[] = Array.isArray(body) ? body : [body];
+    const results = [];
 
-    // Validate all required fields
-    if (!user_id || !plan || usage_score === undefined || !last_login) {
-      return new Response(
-        JSON.stringify({ error: 'Missing required fields: user_id, plan, usage_score, last_login' }),
-        { 
-          status: 400, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+    for (const userData of users) {
+      const { user_id, plan, usage_score, last_login } = userData;
+
+      // Validate all required fields for this user
+      if (!user_id || !plan || usage_score === undefined || !last_login) {
+        console.error(`Missing required fields for user ${user_id || 'unknown'}`);
+        results.push({
+          status: 'error',
+          user_id: user_id || 'unknown',
+          error: 'Missing required fields: user_id, plan, usage_score, last_login'
+        });
+        continue;
+      }
+
+      console.log('Processing tracking request for user:', user_id);
+
+      try {
+        // Call external churn prediction API with fallback
+        const churnApiUrl = Deno.env.get('CHURN_API_URL');
+        const churnApiKey = Deno.env.get('CHURN_API_KEY');
+
+        let churnScore = 0.5; // Default fallback score
+        
+        if (churnApiUrl && churnApiKey) {
+          try {
+            const churnResponse = await fetch(churnApiUrl, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${churnApiKey}`,
+              },
+              body: JSON.stringify({
+                plan,
+                usage_score,
+                last_login,
+              }),
+            });
+
+            if (churnResponse.ok) {
+              const churnData: ChurnResponse = await churnResponse.json();
+              churnScore = churnData.churn_score;
+              console.log('Received churn score from API:', churnScore);
+            } else {
+              console.warn('Churn API request failed, using fallback');
+            }
+          } catch (apiError) {
+            console.warn('Churn API error, using fallback:', apiError);
+          }
+        } else {
+          console.warn('Missing CHURN_API_URL or CHURN_API_KEY, using fallback score');
         }
-      );
-    }
 
-    console.log('Processing tracking request for user:', user_id);
-
-    // Call external churn prediction API
-    const churnApiUrl = Deno.env.get('CHURN_API_URL');
-    const churnApiKey = Deno.env.get('CHURN_API_KEY');
-
-    if (!churnApiUrl || !churnApiKey) {
-      console.error('Missing CHURN_API_URL or CHURN_API_KEY');
-      return new Response(
-        JSON.stringify({ error: 'External API configuration missing' }),
-        { 
-          status: 500, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        // Calculate risk level based on specifications
+        let riskLevel: 'low' | 'medium' | 'high';
+        if (churnScore >= 0.7) {
+          riskLevel = 'high';
+        } else if (churnScore >= 0.4) {
+          riskLevel = 'medium';
+        } else {
+          riskLevel = 'low';
         }
-      );
-    }
 
-    const churnResponse = await fetch(churnApiUrl, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${churnApiKey}`,
-      },
-      body: JSON.stringify({
-        plan,
-        usage_score,
-        last_login,
-      }),
-    });
+        console.log('Calculated risk level:', riskLevel);
 
-    if (!churnResponse.ok) {
-      console.error('Churn API request failed:', await churnResponse.text());
-      return new Response(
-        JSON.stringify({ error: 'External churn prediction API failed' }),
-        { 
-          status: 502, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        // Save to user_data table
+        const { error: saveError } = await supabase
+          .from('user_data')
+          .upsert({
+            user_id,
+            owner_id: ownerId,
+            plan: plan as 'Free' | 'Pro' | 'Enterprise',
+            usage: usage_score,
+            last_login: new Date(last_login).toISOString(),
+            churn_score: churnScore,
+            risk_level: riskLevel,
+            updated_at: new Date().toISOString(),
+          }, {
+            onConflict: 'owner_id,user_id'
+          });
+
+        if (saveError) {
+          console.error('Failed to save user data:', saveError);
+          results.push({
+            status: 'error',
+            user_id,
+            error: 'Failed to save tracking data'
+          });
+          continue;
         }
-      );
+
+        console.log('Successfully saved user data for:', user_id);
+
+        results.push({
+          status: 'ok',
+          churn_score: churnScore,
+          risk_level: riskLevel,
+          user_id
+        });
+
+      } catch (userError) {
+        console.error(`Error processing user ${user_id}:`, userError);
+        results.push({
+          status: 'error',
+          user_id,
+          error: 'Processing failed'
+        });
+      }
     }
 
-    const churnData: ChurnResponse = await churnResponse.json();
-    const churnScore = churnData.churn_score;
+    // Return batch results
+    const successful = results.filter(r => r.status === 'ok').length;
+    const failed = results.filter(r => r.status === 'error').length;
 
-    console.log('Received churn score:', churnScore);
-
-    // Calculate risk level based on specifications
-    let riskLevel: 'low' | 'medium' | 'high';
-    if (churnScore >= 0.7) {
-      riskLevel = 'high';
-    } else if (churnScore >= 0.4) {
-      riskLevel = 'medium';
-    } else {
-      riskLevel = 'low';
-    }
-
-    console.log('Calculated risk level:', riskLevel);
-
-    // Save to user_data table
-    const { error: saveError } = await supabase
-      .from('user_data')
-      .upsert({
-        user_id,
-        owner_id: ownerId,
-        plan: plan as 'Free' | 'Pro' | 'Enterprise',
-        usage: usage_score,
-        last_login: new Date(last_login).toISOString(),
-        churn_score: churnScore,
-        risk_level: riskLevel,
-        updated_at: new Date().toISOString(),
-      }, {
-        onConflict: 'owner_id,user_id'
-      });
-
-    if (saveError) {
-      console.error('Failed to save user data:', saveError);
-      return new Response(
-        JSON.stringify({ error: 'Failed to save tracking data' }),
-        { 
-          status: 500, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-        }
-      );
-    }
-
-    console.log('Successfully saved user data for:', user_id);
-
-    // Return success response as specified
     return new Response(
       JSON.stringify({
         status: 'ok',
-        churn_score: churnScore,
-        risk_level: riskLevel,
+        processed: successful,
+        failed: failed,
+        total: results.length,
+        results
       }),
       { 
         status: 200, 

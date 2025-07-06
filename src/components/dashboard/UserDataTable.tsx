@@ -20,19 +20,26 @@ interface UserDataTableProps {
 }
 
 const UserDataTable = ({ data, isLoading }: UserDataTableProps) => {
-  const getRiskBadge = (riskLevel: string) => {
+      const getRiskBadge = (riskLevel: string, churnScore?: number) => {
     const config = {
-      high: { variant: 'destructive' as const, emoji: '🔴', label: 'High Risk' },
-      medium: { variant: 'secondary' as const, emoji: '🟡', label: 'Medium Risk' },
-      low: { variant: 'default' as const, emoji: '🟢', label: 'Low Risk' },
+      high: { variant: 'destructive' as const, emoji: '🔴', label: 'High Risk', bgColor: 'bg-red-50' },
+      medium: { variant: 'secondary' as const, emoji: '🟡', label: 'Medium Risk', bgColor: 'bg-yellow-50' },
+      low: { variant: 'default' as const, emoji: '🟢', label: 'Low Risk', bgColor: 'bg-green-50' },
     };
     
     const risk = config[riskLevel as keyof typeof config] || config.low;
     
     return (
-      <Badge variant={risk.variant}>
-        {risk.emoji} {risk.label}
-      </Badge>
+      <div className={`inline-flex items-center space-x-1 px-2 py-1 rounded-lg ${risk.bgColor}`}>
+        <Badge variant={risk.variant}>
+          {risk.emoji} {risk.label}
+        </Badge>
+        {churnScore !== undefined && (
+          <span className="text-xs text-gray-600 ml-1">
+            ({(churnScore * 100).toFixed(1)}%)
+          </span>
+        )}
+      </div>
     );
   };
 
@@ -77,10 +84,10 @@ const UserDataTable = ({ data, isLoading }: UserDataTableProps) => {
                 {user.last_login ? formatDistanceToNow(new Date(user.last_login), { addSuffix: true }) : 'Never'}
               </TableCell>
               <TableCell>
-                <span className="font-medium">{(user.churn_score * 100).toFixed(1)}%</span>
+                <span className="font-mono text-sm bg-gray-100 px-2 py-1 rounded">{user.churn_score !== null ? (user.churn_score * 100).toFixed(1) + '%' : 'N/A'}</span>
               </TableCell>
               <TableCell>
-                {getRiskBadge(user.risk_level)}
+                {getRiskBadge(user.risk_level, user.churn_score)}
               </TableCell>
             </TableRow>
           ))}

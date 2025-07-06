@@ -43,15 +43,19 @@ const CSVUploadModal = ({ open, onOpenChange, onUploadComplete }: CSVUploadModal
         },
       });
 
+      console.log('Function response:', response);
+
       if (response.error) {
+        console.error('Function error:', response.error);
         throw new Error(response.error.message || 'Upload failed');
       }
 
       const result = response.data;
+      console.log('Processing result:', result);
       
       toast({
         title: "CSV Processed Successfully!",
-        description: `Processed ${result.processed} rows, ${result.failed} failed. Churn predictions calculated using AI.`,
+        description: `Processed ${result.processed} rows successfully. ${result.failed > 0 ? `${result.failed} rows failed.` : 'All rows processed with AI churn predictions.'}`,
       });
       
       onUploadComplete();
@@ -60,9 +64,13 @@ const CSVUploadModal = ({ open, onOpenChange, onUploadComplete }: CSVUploadModal
       
     } catch (error) {
       console.error('CSV upload error:', error);
+      const errorMessage = error.message || "There was an error processing your file.";
+      
       toast({
         title: "Upload failed",
-        description: error.message || "There was an error processing your file.",
+        description: errorMessage.includes('External API') ? 
+          "Using backup churn prediction. Upload may still work." : 
+          errorMessage,
         variant: "destructive",
       });
     } finally {
@@ -91,6 +99,27 @@ const CSVUploadModal = ({ open, onOpenChange, onUploadComplete }: CSVUploadModal
           <DialogDescription>
             Upload customer data CSV. Required columns: user_id, plan, usage_score, last_login. 
             Each row will be processed with AI churn prediction.
+            <br />
+            <Button 
+              variant="link" 
+              size="sm" 
+              className="p-0 h-auto text-xs text-blue-600"
+              onClick={() => {
+                const csvContent = `user_id,plan,usage_score,last_login
+user_001,Free,45,2024-01-15
+user_002,Pro,120,2024-01-20
+user_003,Enterprise,200,2024-01-10`;
+                const blob = new Blob([csvContent], { type: 'text/csv' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'sample_customer_data.csv';
+                a.click();
+                URL.revokeObjectURL(url);
+              }}
+            >
+              Download sample CSV format
+            </Button>
           </DialogDescription>
         </DialogHeader>
         

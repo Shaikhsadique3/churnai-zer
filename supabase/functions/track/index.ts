@@ -1,6 +1,6 @@
 
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.50.2';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -10,9 +10,13 @@ const corsHeaders = {
 
 interface TrackRequest {
   user_id: string;
-  plan?: string;
-  usage?: number;
-  last_login?: string;
+  plan: string;
+  usage_score: number;
+  last_login: string;
+}
+
+interface ChurnResponse {
+  churn_score: number;
 }
 
 serve(async (req) => {
@@ -32,11 +36,11 @@ serve(async (req) => {
   }
 
   try {
-    // Get API key from headers
-    const apiKey = req.headers.get('x-api-key');
+    // Get API key from header (case-sensitive)
+    const apiKey = req.headers.get('X-API-Key');
     if (!apiKey) {
       return new Response(
-        JSON.stringify({ error: 'API key required' }),
+        JSON.stringify({ error: 'Missing X-API-Key header' }),
         { 
           status: 401, 
           headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
@@ -52,15 +56,15 @@ serve(async (req) => {
     // Verify API key and get owner
     const { data: keyData, error: keyError } = await supabase
       .from('api_keys')
-      .select('user_id')
+      .select('user_id, is_active')
       .eq('key', apiKey)
       .eq('is_active', true)
       .single();
 
     if (keyError || !keyData) {
-      console.log('Invalid API key:', apiKey);
+      console.log('API key validation failed:', keyError);
       return new Response(
-        JSON.stringify({ error: 'Invalid API key' }),
+        JSON.stringify({ error: 'Invalid or inactive API key' }),
         { 
           status: 401, 
           headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
@@ -68,12 +72,17 @@ serve(async (req) => {
       );
     }
 
+    const ownerId = keyData.user_id;
+    console.log('Valid API key for user:', ownerId);
+
     // Parse request body
     const body: TrackRequest = await req.json();
-    
-    if (!body.user_id) {
+    const { user_id, plan, usage_score, last_login } = body;
+
+    // Validate all required fields
+    if (!user_id || !plan || usage_score === undefined || !last_login) {
       return new Response(
-        JSON.stringify({ error: 'user_id is required' }),
+        JSON.stringify({ error: 'Missing required fields: user_id, plan, usage_score, last_login' }),
         { 
           status: 400, 
           headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
@@ -81,38 +90,16 @@ serve(async (req) => {
       );
     }
 
-    console.log('Processing track request for user:', body.user_id);
+    console.log('Processing tracking request for user:', user_id);
 
-    // Mock AI churn prediction (in production, this would call an ML API)
-    const mockChurnScore = Math.random();
-    const riskLevel = mockChurnScore > 0.7 ? 'high' : mockChurnScore > 0.4 ? 'medium' : 'low';
+    // Call external churn prediction API
+    const churnApiUrl = Deno.env.get('CHURN_API_URL');
+    const churnApiKey = Deno.env.get('CHURN_API_KEY');
 
-    console.log('Generated churn score:', mockChurnScore, 'Risk level:', riskLevel);
-
-    // Prepare data for database
-    const userData = {
-      owner_id: keyData.user_id,
-      user_id: body.user_id,
-      plan: body.plan || 'Free',
-      usage: body.usage || 0,
-      last_login: body.last_login ? new Date(body.last_login).toISOString() : null,
-      churn_score: mockChurnScore,
-      risk_level: riskLevel,
-    };
-
-    // Upsert user data
-    const { data, error } = await supabase
-      .from('user_data')
-      .upsert(userData, {
-        onConflict: 'owner_id,user_id'
-      })
-      .select()
-      .single();
-
-    if (error) {
-      console.error('Database error:', error);
+    if (!churnApiUrl || !churnApiKey) {
+      console.error('Missing CHURN_API_URL or CHURN_API_KEY');
       return new Response(
-        JSON.stringify({ error: 'Failed to save user data' }),
+        JSON.stringify({ error: 'External API configuration missing' }),
         { 
           status: 500, 
           headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
@@ -120,16 +107,82 @@ serve(async (req) => {
       );
     }
 
-    console.log('Successfully saved user data:', data.id);
+    const churnResponse = await fetch(churnApiUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${churnApiKey}`,
+      },
+      body: JSON.stringify({
+        plan,
+        usage_score,
+        last_login,
+      }),
+    });
 
+    if (!churnResponse.ok) {
+      console.error('Churn API request failed:', await churnResponse.text());
+      return new Response(
+        JSON.stringify({ error: 'External churn prediction API failed' }),
+        { 
+          status: 502, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      );
+    }
+
+    const churnData: ChurnResponse = await churnResponse.json();
+    const churnScore = churnData.churn_score;
+
+    console.log('Received churn score:', churnScore);
+
+    // Calculate risk level based on specifications
+    let riskLevel: 'low' | 'medium' | 'high';
+    if (churnScore >= 0.7) {
+      riskLevel = 'high';
+    } else if (churnScore >= 0.4) {
+      riskLevel = 'medium';
+    } else {
+      riskLevel = 'low';
+    }
+
+    console.log('Calculated risk level:', riskLevel);
+
+    // Save to user_data table
+    const { error: saveError } = await supabase
+      .from('user_data')
+      .upsert({
+        user_id,
+        owner_id: ownerId,
+        plan: plan as 'Free' | 'Pro' | 'Enterprise',
+        usage: usage_score,
+        last_login: new Date(last_login).toISOString(),
+        churn_score: churnScore,
+        risk_level: riskLevel,
+        updated_at: new Date().toISOString(),
+      }, {
+        onConflict: 'owner_id,user_id'
+      });
+
+    if (saveError) {
+      console.error('Failed to save user data:', saveError);
+      return new Response(
+        JSON.stringify({ error: 'Failed to save tracking data' }),
+        { 
+          status: 500, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      );
+    }
+
+    console.log('Successfully saved user data for:', user_id);
+
+    // Return success response as specified
     return new Response(
       JSON.stringify({
-        success: true,
-        data: {
-          user_id: data.user_id,
-          churn_score: data.churn_score,
-          risk_level: data.risk_level,
-        }
+        status: 'ok',
+        churn_score: churnScore,
+        risk_level: riskLevel,
       }),
       { 
         status: 200, 

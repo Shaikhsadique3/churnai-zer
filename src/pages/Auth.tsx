@@ -12,6 +12,8 @@ import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { APP_CONFIG } from "@/lib/config";
+import { validateEmail } from "@/lib/utils";
 
 const Auth = () => {
   const [email, setEmail] = useState('');
@@ -31,11 +33,6 @@ const Auth = () => {
       navigate('/dashboard');
     }
   }, [user, navigate]);
-
-  const validateEmail = (email: string) => {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return emailRegex.test(email);
-  };
 
   const validatePassword = (password: string) => {
     return password.length >= 8;
@@ -95,7 +92,7 @@ const Auth = () => {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `${window.location.origin}/dashboard`
+          redirectTo: `${APP_CONFIG.getCurrentUrl()}/dashboard`
         }
       });
       
@@ -160,7 +157,7 @@ const Auth = () => {
     
     try {
       const { error } = await supabase.auth.resetPasswordForEmail(resetEmail, {
-        redirectTo: `https://id-preview--19bbb304-3471-4d58-96e0-3f17ce42bb31.lovable.app/reset-password`,
+        redirectTo: `${APP_CONFIG.getCurrentUrl()}/reset-password`,
       });
       
       if (error) {

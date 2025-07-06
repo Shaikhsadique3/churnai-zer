@@ -261,6 +261,48 @@ user_005,Pro,180,2024-01-22T11:45:00Z`;
             />
           </div>
           
+          {!apiKeys?.[0]?.key && (
+            <div className="bg-amber-50 border border-amber-200 rounded-lg p-3">
+              <p className="text-sm text-amber-800 mb-2">
+                ⚠️ No API key found for your account. An API key is required for churn predictions.
+              </p>
+              <Button 
+                size="sm" 
+                variant="outline"
+                onClick={async () => {
+                  try {
+                    const { data, error } = await supabase
+                      .from('api_keys')
+                      .insert([{
+                        user_id: user?.id,
+                        key: `cg_${Math.random().toString(36).substring(2, 15)}${Math.random().toString(36).substring(2, 15)}`,
+                        name: 'Default API Key'
+                      }])
+                      .select();
+                    
+                    if (error) throw error;
+                    
+                    toast({
+                      title: "API key generated",
+                      description: "Your API key has been created successfully.",
+                    });
+                    
+                    // Refresh the api keys query
+                    window.location.reload();
+                  } catch (error) {
+                    toast({
+                      title: "Failed to generate API key",
+                      description: error.message || "Please try again.",
+                      variant: "destructive"
+                    });
+                  }
+                }}
+              >
+                Generate API Key
+              </Button>
+            </div>
+          )}
+          
           {file && !uploading && (
             <div className="flex items-center space-x-2 text-sm text-gray-600 bg-gray-50 p-3 rounded">
               <FileText className="h-4 w-4" />

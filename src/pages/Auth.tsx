@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Shield, AlertCircle, Eye, EyeOff, RefreshCw, Copy, Check } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
@@ -19,7 +20,9 @@ const Auth = () => {
   const [loading, setLoading] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
   const [passwordCopied, setPasswordCopied] = useState(false);
-  const [errors, setErrors] = useState<{email?: string; password?: string}>({});
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
+  const [resetEmail, setResetEmail] = useState('');
+  const [errors, setErrors] = useState<{email?: string; password?: string; resetEmail?: string}>({});
   const { signIn, signUp, user } = useAuth();
   const navigate = useNavigate();
 
@@ -145,6 +148,84 @@ const Auth = () => {
     setLoading(false);
   };
 
+  const handleForgotPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!validateEmail(resetEmail)) {
+      setErrors(prev => ({ ...prev, resetEmail: 'Please enter a valid email address' }));
+      return;
+    }
+    
+    setLoading(true);
+    
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(resetEmail, {
+        redirectTo: `${window.location.origin}/reset-password`,
+      });
+      
+      if (error) {
+        toast({
+          title: "Reset failed",
+          description: error.message,
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "🔗 Reset link sent to your email",
+          description: "Check your inbox and follow the instructions to reset your password.",
+        });
+        setShowForgotPassword(false);
+        setResetEmail('');
+      }
+    } catch (error) {
+      toast({
+        title: "Reset failed",
+        description: "An unexpected error occurred.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const checkIfNewUser = async (userId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('id', userId)
+        .single();
+      
+      // If no profile exists or this is their first time, they're new
+      return !data || error;
+    } catch {
+      return true; // Assume new user if there's an error
+    }
+  };
+
+  const handleSuccessfulAuth = async (user: any, isSignUp = false) => {
+    const isNewUser = isSignUp || await checkIfNewUser(user.id);
+    
+    if (rememberMe) {
+      localStorage.setItem('rememberMe', 'true');
+    }
+    
+    // Show appropriate welcome message
+    if (isNewUser) {
+      toast({
+        title: `Welcome, ${user.user_metadata?.full_name || user.email}!`,
+        description: "Let's get you set up with your account.",
+      });
+      navigate('/onboarding'); // Navigate to onboarding for new users
+    } else {
+      toast({
+        title: "Welcome back!",
+        description: "You have successfully signed in.",
+      });
+      navigate('/dashboard');
+    }
+  };
+
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -165,9 +246,11 @@ const Auth = () => {
     } else {
       toast({
         title: "🎉 Account created successfully!",
-        description: "You can now sign in to your account.",
+        description: "Welcome to ChurnGuard Lite!",
       });
-      // Switch to sign in tab
+      
+      // For new signups, we can assume they are new users
+      // The user will be available in the auth context after successful signup
       const signInTab = document.querySelector('[value="signin"]') as HTMLElement;
       signInTab?.click();
     }
@@ -285,15 +368,26 @@ const Auth = () => {
                     )}
                   </div>
 
-                  <div className="flex items-center space-x-2">
-                    <Checkbox
-                      id="remember"
-                      checked={rememberMe}
-                      onCheckedChange={(checked) => setRememberMe(checked as boolean)}
-                    />
-                    <Label htmlFor="remember" className="text-sm cursor-pointer">
-                      Remember me
-                    </Label>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id="remember"
+                        checked={rememberMe}
+                        onCheckedChange={(checked) => setRememberMe(checked as boolean)}
+                      />
+                      <Label htmlFor="remember" className="text-sm cursor-pointer">
+                        Remember me
+                      </Label>
+                    </div>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setShowForgotPassword(true)}
+                      className="h-auto p-0 text-xs text-primary hover:text-primary/80 transition-colors duration-300"
+                    >
+                      Forgot password?
+                    </Button>
                   </div>
                   
                   <Button 
@@ -436,6 +530,58 @@ const Auth = () => {
           </Link>
         </div>
       </div>
+
+      {/* Forgot Password Dialog */}
+      <Dialog open={showForgotPassword} onOpenChange={setShowForgotPassword}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Reset Password</DialogTitle>
+            <DialogDescription>
+              Enter your email address and we'll send you a link to reset your password.
+            </DialogDescription>
+          </DialogHeader>
+          <form onSubmit={handleForgotPassword} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="reset-email" className="text-sm font-medium">Email</Label>
+              <Input
+                id="reset-email"
+                type="email"
+                placeholder="Enter your email"
+                value={resetEmail}
+                onChange={(e) => {
+                  setResetEmail(e.target.value);
+                  if (errors.resetEmail) setErrors(prev => ({ ...prev, resetEmail: undefined }));
+                }}
+                className={`h-11 transition-all duration-300 ${errors.resetEmail ? 'border-destructive focus-visible:ring-destructive' : ''}`}
+                required
+              />
+              {errors.resetEmail && (
+                <p className="text-xs text-destructive mt-1 animate-in slide-in-from-left-1 duration-300">
+                  {errors.resetEmail}
+                </p>
+              )}
+            </div>
+            <div className="flex gap-3">
+              <Button 
+                type="button" 
+                variant="outline" 
+                onClick={() => setShowForgotPassword(false)}
+                className="flex-1"
+                disabled={loading}
+              >
+                Cancel
+              </Button>
+              <Button 
+                type="submit" 
+                className="flex-1 transition-all duration-300 hover:scale-[1.02]" 
+                disabled={loading}
+              >
+                {loading ? "Sending..." : "Send Reset Link"}
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

@@ -60,17 +60,47 @@ const CSVUploadModal = ({ open, onOpenChange, onUploadComplete }: CSVUploadModal
     setProcessedCount(0);
     
     try {
-      // Parse CSV client-side
+      // Parse CSV client-side with header validation
       Papa.parse(file, {
         header: true,
         skipEmptyLines: true,
         complete: async function (results) {
           const rows = results.data as any[];
+          
+          // Validate file is not empty
+          if (rows.length === 0) {
+            toast({
+              title: "Empty file",
+              description: "The CSV file appears to be empty. Please check your file.",
+              variant: "destructive"
+            });
+            setUploading(false);
+            return;
+          }
+
+          // Validate required headers are present
+          const requiredHeaders = ['user_id', 'plan', 'usage_score', 'last_login'];
+          const fileHeaders = results.meta.fields || [];
+          const missingHeaders = requiredHeaders.filter(header => !fileHeaders.includes(header));
+          
+          if (missingHeaders.length > 0) {
+            toast({
+              title: "Invalid CSV headers",
+              description: `Missing required columns: ${missingHeaders.join(', ')}. Please ensure your CSV has: user_id, plan, usage_score, last_login`,
+              variant: "destructive"
+            });
+            setUploading(false);
+            return;
+          }
+
           const total = rows.length;
           setTotalCount(total);
           
           const batchSize = 10;
           let processed = 0;
+          let successful = 0;
+          let failed = 0;
+          const failedRows: string[] = [];
           
           // Process in batches of 10
           for (let i = 0; i < total; i += batchSize) {
@@ -87,28 +117,61 @@ const CSVUploadModal = ({ open, onOpenChange, onUploadComplete }: CSVUploadModal
               });
 
               if (!response.ok) {
-                throw new Error(`Batch ${Math.floor(i/batchSize) + 1} failed`);
+                const errorText = await response.text();
+                console.error(`Batch ${Math.floor(i/batchSize) + 1} failed:`, errorText);
+                failed += batch.length;
+                batch.forEach(row => failedRows.push(row.user_id || 'unknown'));
+              } else {
+                const result = await response.json();
+                successful += result.processed || 0;
+                failed += result.failed || 0;
+                
+                // Track failed users from the batch response
+                if (result.results) {
+                  result.results.forEach((r: any) => {
+                    if (r.status === 'error') {
+                      failedRows.push(r.user_id);
+                    }
+                  });
+                }
               }
 
-              const result = await response.json();
-              processed += result.processed || batch.length;
+              processed += batch.length;
               setProcessedCount(processed);
               setProgress(Math.min(100, Math.round((processed / total) * 100)));
               
             } catch (batchError) {
               console.error(`Batch ${Math.floor(i/batchSize) + 1} error:`, batchError);
-              // Continue with next batch even if one fails
+              failed += batch.length;
+              batch.forEach(row => failedRows.push(row.user_id || 'unknown'));
               processed += batch.length;
               setProcessedCount(processed);
               setProgress(Math.min(100, Math.round((processed / total) * 100)));
             }
           }
           
-          toast({
-            title: "🎉 CSV uploaded successfully!",
-            description: `${processed} users tracked with churn predictions.`,
-          });
+          // Show completion message
+          if (failed === 0) {
+            toast({
+              title: "🎉 Successfully uploaded all users!",
+              description: `${successful} users processed with churn predictions.`,
+            });
+          } else if (successful > 0) {
+            toast({
+              title: "⚠️ Partially successful upload",
+              description: `${successful} users succeeded, ${failed} failed. Check console for failed user IDs.`,
+              variant: "destructive"
+            });
+            console.log('Failed user IDs:', failedRows);
+          } else {
+            toast({
+              title: "❌ Upload failed",
+              description: `All ${failed} users failed to process. Please check your data and try again.`,
+              variant: "destructive"
+            });
+          }
           
+          // Refresh the dashboard data and close modal
           onUploadComplete();
           onOpenChange(false);
           resetForm();
@@ -117,9 +180,10 @@ const CSVUploadModal = ({ open, onOpenChange, onUploadComplete }: CSVUploadModal
           console.error('CSV parsing error:', error);
           toast({
             title: "CSV parsing failed",
-            description: "Please check your CSV format and try again.",
+            description: "Please check your CSV format and try again. Ensure it's a valid CSV file.",
             variant: "destructive",
           });
+          setUploading(false);
         }
       });
       
@@ -130,7 +194,6 @@ const CSVUploadModal = ({ open, onOpenChange, onUploadComplete }: CSVUploadModal
         description: error.message || "There was an error processing your file.",
         variant: "destructive",
       });
-    } finally {
       setUploading(false);
     }
   };
@@ -157,18 +220,20 @@ const CSVUploadModal = ({ open, onOpenChange, onUploadComplete }: CSVUploadModal
             Upload CSV File
           </DialogTitle>
           <DialogDescription>
-            Upload customer data CSV with columns: user_id, plan, usage, last_login. 
-            Data will be processed in batches with real-time churn predictions.
+            Upload customer data CSV with required columns: <strong>user_id, plan, usage_score, last_login</strong>. 
+            Data will be processed in batches of 10 with real-time churn predictions from external AI model.
             <br />
             <Button 
               variant="link" 
               size="sm" 
               className="p-0 h-auto text-xs text-blue-600"
               onClick={() => {
-                const csvContent = `user_id,plan,usage,last_login
+                const csvContent = `user_id,plan,usage_score,last_login
 user_001,Free,45,2024-01-15T10:00:00Z
 user_002,Pro,120,2024-01-20T15:30:00Z
-user_003,Enterprise,200,2024-01-10T09:15:00Z`;
+user_003,Enterprise,200,2024-01-10T09:15:00Z
+user_004,Free,25,2024-01-05T14:22:00Z
+user_005,Pro,180,2024-01-22T11:45:00Z`;
                 const blob = new Blob([csvContent], { type: 'text/csv' });
                 const url = URL.createObjectURL(blob);
                 const a = document.createElement('a');
@@ -207,13 +272,16 @@ user_003,Enterprise,200,2024-01-10T09:15:00Z`;
             <div className="space-y-3">
               <div className="space-y-2">
                 <div className="flex justify-between text-sm">
-                  <span>Processing batches...</span>
-                  <span>{progress}%</span>
+                  <span>Processing batches with AI churn predictions...</span>
+                  <span className="font-mono">{progress}%</span>
                 </div>
-                <Progress value={progress} className="w-full" />
+                <Progress value={progress} className="w-full h-3" />
               </div>
-              <div className="text-sm text-gray-600 text-center">
+              <div className="text-sm text-muted-foreground text-center">
                 {processedCount} of {totalCount} users processed
+              </div>
+              <div className="text-xs text-muted-foreground text-center">
+                Sending data in batches of 10 to external churn prediction API
               </div>
             </div>
           )}

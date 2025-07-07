@@ -60,31 +60,33 @@ const UserDataTable = ({ data, isLoading }: UserDataTableProps) => {
   }
 
   return (
-    <div className="rounded-md border">
+    <div className="rounded-md border border-border">
       <Table>
         <TableHeader>
-          <TableRow>
-            <TableHead>User ID</TableHead>
-            <TableHead>Plan</TableHead>
-            <TableHead>Usage</TableHead>
-            <TableHead>Last Login</TableHead>
-            <TableHead>Churn Score</TableHead>
-            <TableHead>Risk Level</TableHead>
+          <TableRow className="bg-muted/50">
+            <TableHead className="font-semibold text-foreground">User ID</TableHead>
+            <TableHead className="font-semibold text-foreground">Plan</TableHead>
+            <TableHead className="font-semibold text-foreground">Usage</TableHead>
+            <TableHead className="font-semibold text-foreground">Last Login</TableHead>
+            <TableHead className="font-semibold text-foreground">Churn Score</TableHead>
+            <TableHead className="font-semibold text-foreground">Risk Level</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
-          {data.map((user) => (
-            <TableRow key={user.id}>
-              <TableCell className="font-mono text-sm">{user.user_id}</TableCell>
+          {data.map((user, index) => (
+            <TableRow key={user.id} className={index % 2 === 0 ? "bg-background" : "bg-muted/20"}>
+              <TableCell className="font-mono text-sm text-foreground">{user.user_id}</TableCell>
               <TableCell>
-                <Badge variant="outline">{user.plan}</Badge>
+                <Badge variant="outline" className="border-muted-foreground/30">{user.plan}</Badge>
               </TableCell>
-              <TableCell>{user.usage}</TableCell>
-              <TableCell>
+              <TableCell className="text-foreground">{user.usage}</TableCell>
+              <TableCell className="text-muted-foreground">
                 {user.last_login ? formatDistanceToNow(new Date(user.last_login), { addSuffix: true }) : 'Never'}
               </TableCell>
               <TableCell>
-                <span className="font-mono text-sm bg-gray-100 px-2 py-1 rounded">{user.churn_score !== null ? (user.churn_score * 100).toFixed(1) + '%' : 'N/A'}</span>
+                <span className="font-mono text-sm bg-muted px-2 py-1 rounded text-foreground">
+                  {user.churn_score !== null ? (user.churn_score * 100).toFixed(1) + '%' : 'N/A'}
+                </span>
               </TableCell>
               <TableCell>
                 {getRiskBadge(user.risk_level, user.churn_score)}

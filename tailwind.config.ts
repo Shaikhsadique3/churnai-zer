@@ -66,8 +66,8 @@ export default {
 					orange: 'hsl(var(--tiger-orange))',
 					brown: 'hsl(var(--tiger-brown))',
 					gold: 'hsl(var(--tiger-gold))',
-					beige: 'hsl(var(--tiger-beige))',
-					charcoal: 'hsl(var(--tiger-charcoal))'
+					neutral: 'hsl(var(--neutral-bg))',
+					charcoal: 'hsl(var(--charcoal))'
 				}
 			},
 			borderRadius: {

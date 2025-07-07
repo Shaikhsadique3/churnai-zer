@@ -11,6 +11,10 @@ import DashboardHeader from "@/components/dashboard/DashboardHeader";
 import StatsCards from "@/components/dashboard/StatsCards";
 import UserDataTable from "@/components/dashboard/UserDataTable";
 import CSVUploadModal from "@/components/dashboard/CSVUploadModal";
+import { ChurnTrendChart } from "@/components/dashboard/ChurnTrendChart";
+import { WeeklyReportCard } from "@/components/dashboard/WeeklyReportCard";
+import { ChurnScoreTable } from "@/components/dashboard/ChurnScoreTable";
+import { ChurnReasonTable } from "@/components/dashboard/ChurnReasonTable";
 
 const Dashboard = () => {
   const { user, signOut } = useAuth();
@@ -45,7 +49,7 @@ const Dashboard = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-background">
       <DashboardHeader 
         userEmail={user?.email || ''}
         onLogout={handleLogout}
@@ -54,6 +58,17 @@ const Dashboard = () => {
       <main className="container mx-auto px-4 py-8">
         {/* Stats Cards */}
         <StatsCards stats={stats} />
+
+        {/* Enhanced Dashboard Components */}
+        <div className="grid lg:grid-cols-2 gap-6 mb-8">
+          <ChurnTrendChart />
+          <WeeklyReportCard />
+        </div>
+
+        <div className="grid lg:grid-cols-2 gap-6 mb-8">
+          <ChurnScoreTable />
+          <ChurnReasonTable />
+        </div>
 
         {/* Action Buttons */}
         <div className="grid md:grid-cols-2 gap-6 mb-8">

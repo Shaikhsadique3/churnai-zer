@@ -61,6 +61,13 @@ export default {
 					'accent-foreground': 'hsl(var(--sidebar-accent-foreground))',
 					border: 'hsl(var(--sidebar-border))',
 					ring: 'hsl(var(--sidebar-ring))'
+				},
+				tiger: {
+					orange: 'hsl(var(--tiger-orange))',
+					brown: 'hsl(var(--tiger-brown))',
+					gold: 'hsl(var(--tiger-gold))',
+					beige: 'hsl(var(--tiger-beige))',
+					charcoal: 'hsl(var(--tiger-charcoal))'
 				}
 			},
 			borderRadius: {

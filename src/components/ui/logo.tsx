@@ -17,7 +17,7 @@ const Logo = ({ className, size = "md" }: LogoProps) => {
   return (
     <img 
       src={logoImage}
-      alt="ChurnGuard Lite"
+      alt="Churnaizer - AI-Powered Churn Prediction"
       className={cn("object-contain", sizeClasses[size], className)}
     />
   );

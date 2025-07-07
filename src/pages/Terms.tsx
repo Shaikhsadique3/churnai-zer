@@ -12,7 +12,7 @@ const Terms = () => {
         <div className="container mx-auto px-4 py-6 flex items-center justify-between">
           <Link to="/" className="flex items-center space-x-2">
             <Logo size="md" />
-            <h1 className="text-2xl font-bold text-foreground">ChurnGuard Lite</h1>
+            <h1 className="text-2xl font-bold text-foreground">Churnaizer</h1>
           </Link>
           <Link to="/">
             <Button variant="outline">
@@ -35,14 +35,14 @@ const Terms = () => {
               <section>
                 <h2 className="text-2xl font-semibold mb-4">1. Acceptance of Terms</h2>
                 <p>
-                  By accessing and using ChurnGuard Lite ("Service"), you accept and agree to be bound by the terms and provision of this agreement.
+                  By accessing and using Churnaizer ("Service"), you accept and agree to be bound by the terms and provision of this agreement.
                 </p>
               </section>
 
               <section>
                 <h2 className="text-2xl font-semibold mb-4">2. Description of Service</h2>
                 <p>
-                  ChurnGuard Lite provides AI-powered customer churn prediction and analysis tools for SaaS businesses. Our service includes:
+                  Churnaizer provides AI-powered customer churn prediction and analysis tools for SaaS businesses. Our service includes:
                 </p>
                 <ul className="list-disc pl-6 mt-2 space-y-1">
                   <li>Customer data tracking and analysis</li>
@@ -83,7 +83,7 @@ const Terms = () => {
               <section>
                 <h2 className="text-2xl font-semibold mb-4">6. Limitation of Liability</h2>
                 <p>
-                  ChurnGuard Lite provides predictions and analysis based on available data. These are estimates and should not be 
+                  Churnaizer provides predictions and analysis based on available data. These are estimates and should not be 
                   considered as guaranteed outcomes. We are not liable for business decisions made based on our predictions.
                 </p>
               </section>
@@ -107,7 +107,7 @@ const Terms = () => {
               <section>
                 <h2 className="text-2xl font-semibold mb-4">9. Contact Information</h2>
                 <p>
-                  If you have any questions about these Terms of Service, please contact us at legal@churnguard.com
+                  If you have any questions about these Terms of Service, please contact us at legal@churnaizer.com
                 </p>
               </section>
             </div>
@@ -121,7 +121,7 @@ const Terms = () => {
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-2">
               <Logo size="sm" />
-              <span className="text-sm text-muted-foreground">© 2024 ChurnGuard Lite. All rights reserved.</span>
+              <span className="text-sm text-muted-foreground">© 2024 Churnaizer. All rights reserved.</span>
             </div>
             <div className="flex space-x-4 text-sm">
               <Link to="/privacy" className="text-muted-foreground hover:text-foreground">Privacy Policy</Link>

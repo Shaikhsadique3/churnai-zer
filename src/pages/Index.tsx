@@ -4,6 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { ArrowRight, BarChart3, Shield, Zap, Users } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
+import { Logo } from "@/components/ui/logo";
 
 const Index = () => {
   const { user } = useAuth();
@@ -13,8 +14,8 @@ const Index = () => {
       {/* Header */}
       <header className="container mx-auto px-4 py-6 flex items-center justify-between">
         <div className="flex items-center space-x-2">
-          <Shield className="h-8 w-8 text-indigo-600" />
-          <h1 className="text-2xl font-bold text-gray-900">ChurnGuard Lite</h1>
+          <Logo size="md" />
+          <h1 className="text-2xl font-bold text-foreground">ChurnGuard Lite</h1>
         </div>
         <div className="flex items-center space-x-4">
           {user ? (
@@ -124,6 +125,22 @@ const Index = () => {
           </Link>
         </div>
       </section>
+
+      {/* Footer */}
+      <footer className="border-t bg-muted/30">
+        <div className="container mx-auto px-4 py-8">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-2">
+              <Logo size="sm" />
+              <span className="text-sm text-muted-foreground">© 2024 ChurnGuard Lite. All rights reserved.</span>
+            </div>
+            <div className="flex space-x-4 text-sm">
+              <Link to="/privacy" className="text-muted-foreground hover:text-foreground">Privacy Policy</Link>
+              <Link to="/terms" className="text-muted-foreground hover:text-foreground">Terms of Service</Link>
+            </div>
+          </div>
+        </div>
+      </footer>
     </div>
   );
 };

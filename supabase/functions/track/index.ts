@@ -144,13 +144,17 @@ serve(async (req) => {
 
         console.log('Calculated risk level:', riskLevel);
 
+        // Validate plan type
+        const validPlans = ['Free', 'Pro', 'Enterprise'];
+        const validatedPlan = validPlans.includes(plan) ? plan as 'Free' | 'Pro' | 'Enterprise' : 'Free';
+
         // Save to user_data table
         const { error: saveError } = await supabase
           .from('user_data')
           .upsert({
             user_id,
             owner_id: ownerId,
-            plan: plan as 'Free' | 'Pro' | 'Enterprise',
+            plan: validatedPlan,
             usage: usage_score,
             last_login: new Date(last_login).toISOString(),
             churn_score: churnScore,

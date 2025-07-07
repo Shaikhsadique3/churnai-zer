@@ -55,30 +55,30 @@ const Dashboard = () => {
         onLogout={handleLogout}
       />
 
-      <main className="container mx-auto px-4 py-8">
+      <main className="container mx-auto px-2 sm:px-4 py-4 sm:py-8">
         {/* Stats Cards */}
         <StatsCards stats={stats} />
 
         {/* Enhanced Dashboard Components */}
-        <div className="grid lg:grid-cols-2 gap-6 mb-8">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 mb-6 sm:mb-8">
           <ChurnTrendChart />
           <WeeklyReportCard />
         </div>
 
-        <div className="grid lg:grid-cols-2 gap-6 mb-8">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 mb-6 sm:mb-8">
           <ChurnScoreTable />
           <ChurnReasonTable />
         </div>
 
         {/* Action Buttons */}
-        <div className="grid md:grid-cols-2 gap-6 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 mb-6 sm:mb-8">
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center">
-                <Upload className="h-5 w-5 mr-2" />
+              <CardTitle className="flex items-center text-base sm:text-lg">
+                <Upload className="h-4 w-4 sm:h-5 sm:w-5 mr-2" />
                 Upload Customer Data
               </CardTitle>
-              <CardDescription>
+              <CardDescription className="text-sm">
                 Import your customer data via CSV file for bulk analysis
               </CardDescription>
             </CardHeader>
@@ -91,11 +91,11 @@ const Dashboard = () => {
 
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center">
-                <Code className="h-5 w-5 mr-2" />
+              <CardTitle className="flex items-center text-base sm:text-lg">
+                <Code className="h-4 w-4 sm:h-5 sm:w-5 mr-2" />
                 API Integration
               </CardTitle>
-              <CardDescription>
+              <CardDescription className="text-sm">
                 Integrate ChurnGuard with your application using our API
               </CardDescription>
             </CardHeader>
@@ -112,12 +112,12 @@ const Dashboard = () => {
         {/* User Data Table */}
         <Card>
           <CardHeader>
-            <CardTitle>Customer Analytics</CardTitle>
-            <CardDescription>
+            <CardTitle className="text-base sm:text-lg">Customer Analytics</CardTitle>
+            <CardDescription className="text-sm">
               Monitor your customers and their churn risk levels
             </CardDescription>
           </CardHeader>
-          <CardContent>
+          <CardContent className="p-2 sm:p-6">
             <UserDataTable data={userData || []} isLoading={isLoading} />
           </CardContent>
         </Card>

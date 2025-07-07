@@ -21,7 +21,7 @@ interface UserDataTableProps {
 }
 
 const UserDataTable = ({ data, isLoading }: UserDataTableProps) => {
-      const getRiskBadge = (riskLevel: string, churnScore?: number) => {
+  const getRiskBadge = (riskLevel: string, churnScore?: number) => {
     const config = {
       high: { variant: 'destructive' as const, emoji: '🔴', label: 'High Risk', bgColor: 'bg-red-50' },
       medium: { variant: 'secondary' as const, emoji: '🟡', label: 'Medium Risk', bgColor: 'bg-yellow-50' },
@@ -31,12 +31,13 @@ const UserDataTable = ({ data, isLoading }: UserDataTableProps) => {
     const risk = config[riskLevel as keyof typeof config] || config.low;
     
     return (
-      <div className={`inline-flex items-center space-x-1 px-2 py-1 rounded-lg ${risk.bgColor}`}>
-        <Badge variant={risk.variant}>
-          {risk.emoji} {risk.label}
+      <div className={`inline-flex flex-col sm:flex-row sm:items-center space-y-1 sm:space-y-0 sm:space-x-1 px-1 sm:px-2 py-1 rounded-lg ${risk.bgColor}`}>
+        <Badge variant={risk.variant} className="text-xs">
+          <span className="hidden sm:inline">{risk.emoji} {risk.label}</span>
+          <span className="sm:hidden">{risk.emoji}</span>
         </Badge>
         {churnScore !== undefined && (
-          <span className="text-xs text-gray-600 ml-1">
+          <span className="text-xs text-gray-600">
             ({(churnScore * 100).toFixed(1)}%)
           </span>
         )}
@@ -61,39 +62,41 @@ const UserDataTable = ({ data, isLoading }: UserDataTableProps) => {
   }
 
   return (
-    <div className="rounded-md border border-border">
+    <div className="rounded-md border border-border overflow-x-auto">
       <Table>
         <TableHeader>
           <TableRow className="bg-muted/50">
-            <TableHead className="font-semibold text-foreground">User ID</TableHead>
-            <TableHead className="font-semibold text-foreground">Plan</TableHead>
-            <TableHead className="font-semibold text-foreground">Revenue</TableHead>
-            <TableHead className="font-semibold text-foreground">Last Login</TableHead>
-            <TableHead className="font-semibold text-foreground">Churn Score</TableHead>
-            <TableHead className="font-semibold text-foreground">Churn Reason</TableHead>
-            <TableHead className="font-semibold text-foreground">Risk Level</TableHead>
+            <TableHead className="font-semibold text-foreground text-xs sm:text-sm min-w-[80px]">User ID</TableHead>
+            <TableHead className="font-semibold text-foreground text-xs sm:text-sm min-w-[60px]">Plan</TableHead>
+            <TableHead className="font-semibold text-foreground text-xs sm:text-sm min-w-[70px]">Revenue</TableHead>
+            <TableHead className="font-semibold text-foreground text-xs sm:text-sm min-w-[90px] hidden sm:table-cell">Last Login</TableHead>
+            <TableHead className="font-semibold text-foreground text-xs sm:text-sm min-w-[100px]">Churn Score</TableHead>
+            <TableHead className="font-semibold text-foreground text-xs sm:text-sm min-w-[120px] hidden md:table-cell">Churn Reason</TableHead>
+            <TableHead className="font-semibold text-foreground text-xs sm:text-sm min-w-[80px]">Risk Level</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           {data.map((user, index) => (
             <TableRow key={user.id} className={index % 2 === 0 ? "bg-background" : "bg-muted/20"}>
-              <TableCell className="font-mono text-sm text-foreground">{user.user_id}</TableCell>
-              <TableCell>
-                <Badge variant="outline" className="border-muted-foreground/30">{user.plan}</Badge>
+              <TableCell className="font-mono text-xs sm:text-sm text-foreground truncate max-w-[80px]" title={user.user_id}>
+                {user.user_id}
               </TableCell>
-              <TableCell className="text-foreground">${user.usage?.toFixed(2) || '0.00'}</TableCell>
-              <TableCell className="text-muted-foreground">
+              <TableCell>
+                <Badge variant="outline" className="border-muted-foreground/30 text-xs sm:text-sm">{user.plan}</Badge>
+              </TableCell>
+              <TableCell className="text-foreground text-xs sm:text-sm">${user.usage?.toFixed(2) || '0.00'}</TableCell>
+              <TableCell className="text-muted-foreground text-xs sm:text-sm hidden sm:table-cell">
                 {user.last_login ? formatDistanceToNow(new Date(user.last_login), { addSuffix: true }) : 'Never'}
               </TableCell>
               <TableCell>
-                <span className={`font-mono text-sm px-2 py-1 rounded ${
+                <span className={`font-mono text-xs sm:text-sm px-1 sm:px-2 py-1 rounded ${
                   user.churn_score > 0.75 ? 'bg-destructive/20 text-destructive' : 'bg-muted text-foreground'
                 }`}>
                   {user.churn_score !== null ? (user.churn_score * 100).toFixed(1) + '%' : 'N/A'}
                 </span>
               </TableCell>
-              <TableCell className="max-w-xs">
-                <span className="text-sm text-muted-foreground truncate block" title={user.churn_reason || ''}>
+              <TableCell className="max-w-[120px] hidden md:table-cell">
+                <span className="text-xs sm:text-sm text-muted-foreground truncate block" title={user.churn_reason || ''}>
                   {user.churn_reason || 'No reason available'}
                 </span>
               </TableCell>

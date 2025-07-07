@@ -15,14 +15,14 @@ export const ChurnTrendChart = () => {
   return (
     <Card className="border-2 hover:border-primary/20 transition-colors">
       <CardHeader>
-        <CardTitle className="text-foreground flex items-center gap-2">
+        <CardTitle className="text-foreground flex items-center gap-2 text-base sm:text-lg">
           <div className="w-3 h-3 bg-accent rounded-full"></div>
           Churn Score Over Time
         </CardTitle>
-        <p className="text-sm text-muted-foreground">Weekly trend analysis</p>
+        <p className="text-xs sm:text-sm text-muted-foreground">Weekly trend analysis</p>
       </CardHeader>
       <CardContent>
-        <div className="h-[300px] w-full">
+        <div className="h-[200px] sm:h-[300px] w-full">
           <ResponsiveContainer width="100%" height="100%">
             <LineChart data={mockChartData}>
               <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />

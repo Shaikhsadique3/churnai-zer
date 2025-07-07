@@ -21,46 +21,46 @@ export const ChurnReasonTable = () => {
   return (
     <Card className="border-2 hover:border-primary/20 transition-colors">
       <CardHeader className="bg-card">
-        <CardTitle className="text-foreground flex items-center gap-2">
+        <CardTitle className="text-foreground flex items-center gap-2 text-base sm:text-lg">
           <div className="w-3 h-3 bg-accent rounded-full"></div>
           AI Churn Analysis
         </CardTitle>
       </CardHeader>
-      <CardContent className="p-0">
+      <CardContent className="p-0 overflow-x-auto">
         <Table>
           <TableHeader>
             <TableRow className="border-border hover:bg-muted/50">
-              <TableHead className="text-muted-foreground font-medium">User ID</TableHead>
-              <TableHead className="text-muted-foreground font-medium">Primary Churn Driver</TableHead>
-              <TableHead className="text-muted-foreground font-medium">Confidence</TableHead>
-              <TableHead className="text-muted-foreground font-medium">Action</TableHead>
+              <TableHead className="text-muted-foreground font-medium text-xs sm:text-sm min-w-[80px]">User ID</TableHead>
+              <TableHead className="text-muted-foreground font-medium text-xs sm:text-sm min-w-[150px] hidden md:table-cell">Primary Churn Driver</TableHead>
+              <TableHead className="text-muted-foreground font-medium text-xs sm:text-sm min-w-[90px]">Confidence</TableHead>
+              <TableHead className="text-muted-foreground font-medium text-xs sm:text-sm min-w-[80px]">Action</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {mockReasons.map((row) => (
               <TableRow key={row.userId} className="border-border hover:bg-muted/30 transition-colors">
-                <TableCell className="font-medium text-foreground">{row.userId}</TableCell>
-                <TableCell>
-                  <div className="text-foreground">
+                <TableCell className="font-medium text-foreground text-xs sm:text-sm truncate" title={row.userId}>{row.userId}</TableCell>
+                <TableCell className="hidden md:table-cell">
+                  <div className="text-foreground text-xs sm:text-sm truncate max-w-[150px]" title={row.primaryReason}>
                     {row.primaryReason}
                   </div>
                 </TableCell>
                 <TableCell>
-                  <div className="flex items-center gap-2">
-                    <div className="w-full bg-muted rounded-full h-2 max-w-[60px]">
+                  <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
+                    <div className="w-full bg-muted rounded-full h-1.5 sm:h-2 max-w-[50px] sm:max-w-[60px]">
                       <div 
-                        className="h-2 rounded-full bg-gradient-to-r from-accent to-primary"
+                        className="h-1.5 sm:h-2 rounded-full bg-gradient-to-r from-accent to-primary"
                         style={{ width: `${row.confidence * 100}%` }}
                       ></div>
                     </div>
-                    <span className="text-foreground font-medium text-sm">
+                    <span className="text-foreground font-medium text-xs sm:text-sm">
                       {(row.confidence * 100).toFixed(0)}%
                     </span>
                   </div>
                 </TableCell>
                 <TableCell>
-                  <Badge variant={row.actionable ? "default" : "secondary"} className="font-medium">
-                    {row.actionable ? "ACTIONABLE" : "MONITOR"}
+                  <Badge variant={row.actionable ? "default" : "secondary"} className="font-medium text-xs">
+                    {row.actionable ? "ACTION" : "MONITOR"}
                   </Badge>
                 </TableCell>
               </TableRow>

@@ -258,21 +258,21 @@ const Auth = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background to-muted flex items-center justify-center p-4">
-      <div className="w-full max-w-md">
+    <div className="min-h-screen bg-gradient-to-br from-background to-muted flex items-center justify-center p-2 sm:p-4">
+      <div className="w-full max-w-md mx-auto">
         {/* Header */}
-        <div className="text-center mb-8">
+        <div className="text-center mb-6 sm:mb-8">
           <Link to="/" className="inline-flex items-center space-x-2 mb-4 transition-all duration-300 hover:scale-105">
-            <Shield className="h-8 w-8 text-primary" />
-            <span className="text-2xl font-bold text-foreground">ChurnGuard Lite</span>
+            <Shield className="h-6 w-6 sm:h-8 sm:w-8 text-primary" />
+            <span className="text-xl sm:text-2xl font-bold text-foreground">ChurnGuard Lite</span>
           </Link>
-          <p className="text-muted-foreground text-sm">Predict and prevent customer churn with AI</p>
+          <p className="text-muted-foreground text-xs sm:text-sm">Predict and prevent customer churn with AI</p>
         </div>
 
         <Card className="shadow-xl transition-all duration-300 hover:shadow-2xl">
           <CardHeader className="text-center pb-4">
-            <CardTitle className="text-2xl font-semibold">Welcome</CardTitle>
-            <CardDescription>
+            <CardTitle className="text-xl sm:text-2xl font-semibold">Welcome</CardTitle>
+            <CardDescription className="text-sm">
               Sign in to your account or create a new one to get started.
             </CardDescription>
           </CardHeader>
@@ -303,9 +303,9 @@ const Auth = () => {
             </div>
 
             <Tabs defaultValue="signin" className="w-full">
-              <TabsList className="grid w-full grid-cols-2 mb-6">
-                <TabsTrigger value="signin" className="transition-all duration-300">Sign In</TabsTrigger>
-                <TabsTrigger value="signup" className="transition-all duration-300">Sign Up</TabsTrigger>
+              <TabsList className="grid w-full grid-cols-2 mb-4 sm:mb-6">
+                <TabsTrigger value="signin" className="transition-all duration-300 text-sm">Sign In</TabsTrigger>
+                <TabsTrigger value="signup" className="transition-all duration-300 text-sm">Sign Up</TabsTrigger>
               </TabsList>
               
               <TabsContent value="signin" className="space-y-4">

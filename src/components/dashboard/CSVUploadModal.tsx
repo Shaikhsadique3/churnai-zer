@@ -315,13 +315,13 @@ const CSVUploadModal = ({ open, onOpenChange, onUploadComplete }: CSVUploadModal
       onOpenChange(open);
       if (!open) resetForm();
     }}>
-      <DialogContent className="sm:max-w-lg">
+      <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto mx-2 sm:mx-0">
         <DialogHeader>
-          <DialogTitle className="flex items-center">
-            <Upload className="h-5 w-5 mr-2" />
+          <DialogTitle className="flex items-center text-base sm:text-lg">
+            <Upload className="h-4 w-4 sm:h-5 sm:w-5 mr-2" />
             SaaS-Grade CSV Upload
           </DialogTitle>
-          <DialogDescription>
+          <DialogDescription className="text-xs sm:text-sm">
             Upload customer data CSV for real-time AI churn analysis v5. <strong>Required:</strong> user_id, days_since_signup, monthly_revenue, subscription_plan, number_of_logins_last30days, active_features_used, support_tickets_opened, last_payment_status, email_opens_last30days, last_login_days_ago, billing_issue_count
           </DialogDescription>
         </DialogHeader>
@@ -329,12 +329,12 @@ const CSVUploadModal = ({ open, onOpenChange, onUploadComplete }: CSVUploadModal
         <div className="space-y-4">
           {/* File Input Section */}
           <div className="space-y-2">
-            <Label htmlFor="csv-file" className="flex items-center justify-between">
-              <span>📁 Select CSV File</span>
+            <Label htmlFor="csv-file" className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+              <span className="text-sm sm:text-base">📁 Select CSV File</span>
               <Button 
                 variant="link" 
                 size="sm" 
-                className="p-0 h-auto text-xs text-primary"
+                className="p-0 h-auto text-xs text-primary self-start sm:self-auto"
                 onClick={() => {
                   const csvContent = `user_id,days_since_signup,monthly_revenue,subscription_plan,number_of_logins_last30days,active_features_used,support_tickets_opened,last_payment_status,email_opens_last30days,last_login_days_ago,billing_issue_count
 user_001,90,29.99,Free Trial,15,3,1,Success,8,2,0
@@ -361,7 +361,7 @@ user_005,120,99.99,Pro,20,6,1,Success,12,3,0`;
               accept=".csv"
               onChange={(e) => handleFileSelect(e.target.files?.[0] || null)}
               disabled={uploading}
-              className="transition-all duration-200"
+              className="transition-all duration-200 text-sm"
             />
           </div>
 
@@ -376,10 +376,12 @@ user_005,120,99.99,Pro,20,6,1,Success,12,3,0`;
           {/* File Selected Display */}
           {file && !fileError && !uploading && (
             <div className="bg-accent/50 border border-accent rounded-lg p-3 animate-fade-in">
-              <div className="flex items-center space-x-2 text-sm">
-                <FileText className="h-4 w-4 text-primary" />
-                <span className="font-medium">{file.name}</span>
-                <Badge variant="secondary">{(file.size / 1024).toFixed(1)} KB</Badge>
+              <div className="flex flex-col sm:flex-row sm:items-center gap-2 text-sm">
+                <div className="flex items-center space-x-2">
+                  <FileText className="h-4 w-4 text-primary" />
+                  <span className="font-medium truncate">{file.name}</span>
+                </div>
+                <Badge variant="secondary" className="self-start sm:self-auto">{(file.size / 1024).toFixed(1)} KB</Badge>
               </div>
               
               {parsedData.length > 0 && (
@@ -391,12 +393,13 @@ user_005,120,99.99,Pro,20,6,1,Success,12,3,0`;
                     </span>
                   </div>
                   
-                  <div className="flex flex-wrap gap-1">
+                  <div className="flex flex-wrap gap-1 max-h-20 overflow-y-auto">
                     {validatedHeaders.map(header => (
                       <Badge 
                         key={header} 
                         variant={requiredHeaders.includes(header) ? "default" : "secondary"}
-                        className="text-xs"
+                        className="text-xs truncate max-w-[120px] sm:max-w-none"
+                        title={header}
                       >
                         {header}
                       </Badge>
@@ -419,20 +422,20 @@ user_005,120,99.99,Pro,20,6,1,Success,12,3,0`;
                   <span className="text-sm font-mono font-bold">{progress}%</span>
                 </div>
                 
-                <Progress value={progress} className="w-full h-3 mb-3" />
+                <Progress value={progress} className="w-full h-2 sm:h-3 mb-3" />
                 
-                <div className="grid grid-cols-2 gap-4 text-sm text-muted-foreground">
+                <div className="grid grid-cols-2 gap-2 sm:gap-4 text-xs sm:text-sm text-muted-foreground">
                   <div className="text-center">
-                    <div className="font-mono text-lg font-bold text-foreground">
+                    <div className="font-mono text-base sm:text-lg font-bold text-foreground">
                       {processedCount}
                     </div>
-                    <div>of {totalCount} users processed</div>
+                    <div className="text-xs sm:text-sm">of {totalCount} users processed</div>
                   </div>
                   <div className="text-center">
-                    <div className="font-mono text-lg font-bold text-foreground">
+                    <div className="font-mono text-base sm:text-lg font-bold text-foreground">
                       {currentBatch}
                     </div>
-                    <div>of {totalBatches} batches</div>
+                    <div className="text-xs sm:text-sm">of {totalBatches} batches</div>
                   </div>
                 </div>
                 
@@ -444,12 +447,12 @@ user_005,120,99.99,Pro,20,6,1,Success,12,3,0`;
           )}
 
           {/* Action Buttons */}
-          <div className="flex justify-end space-x-2 pt-2">
+          <div className="flex flex-col sm:flex-row justify-end gap-2 sm:space-x-2 pt-2">
             {uploading ? (
               <Button 
                 variant="destructive" 
                 onClick={handleCancel}
-                className="flex items-center"
+                className="flex items-center justify-center w-full sm:w-auto"
               >
                 <X className="h-4 w-4 mr-2" />
                 Cancel Processing
@@ -459,16 +462,19 @@ user_005,120,99.99,Pro,20,6,1,Success,12,3,0`;
                 <Button 
                   variant="outline" 
                   onClick={() => onOpenChange(false)}
+                  className="w-full sm:w-auto order-2 sm:order-1"
                 >
                   Close
                 </Button>
                 <Button 
                   onClick={handleUpload} 
                   disabled={!file || !parsedData.length || !!fileError}
-                  className="flex items-center"
+                  className="flex items-center justify-center w-full sm:w-auto order-1 sm:order-2"
                 >
                   <Upload className="h-4 w-4 mr-2" />
-                  {parsedData.length > 0 ? `Process ${parsedData.length} Users` : "Upload & Process"}
+                  <span className="truncate">
+                    {parsedData.length > 0 ? `Process ${parsedData.length} Users` : "Upload & Process"}
+                  </span>
                 </Button>
               </>
             )}

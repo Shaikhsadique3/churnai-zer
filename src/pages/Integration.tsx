@@ -89,20 +89,20 @@ const Integration = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-background">
       <DashboardHeader 
         userEmail={user?.email || ''}
         onLogout={handleLogout}
       />
 
-      <main className="container mx-auto px-4 py-8">
-        <div className="mb-6">
-          <Link to="/dashboard" className="inline-flex items-center text-sm text-gray-600 hover:text-gray-900 mb-4">
+      <main className="container mx-auto px-2 sm:px-4 py-4 sm:py-8">
+        <div className="mb-4 sm:mb-6">
+          <Link to="/dashboard" className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground mb-4 transition-colors">
             <ArrowLeft className="h-4 w-4 mr-1" />
             Back to Dashboard
           </Link>
-          <h1 className="text-3xl font-bold text-gray-900">API Integration</h1>
-          <p className="text-gray-600 mt-2">
+          <h1 className="text-2xl sm:text-3xl font-bold text-foreground">API Integration</h1>
+          <p className="text-muted-foreground mt-2 text-sm sm:text-base">
             Integrate ChurnGuard with your application using our REST API
           </p>
         </div>

@@ -1,4 +1,5 @@
 import { cn } from "@/lib/utils";
+import logoImage from "@/assets/logo.png";
 
 interface LogoProps {
   className?: string;
@@ -14,31 +15,11 @@ const Logo = ({ className, size = "md" }: LogoProps) => {
   };
 
   return (
-    <div className={cn("relative flex items-center justify-center", sizeClasses[size], className)}>
-      <svg
-        viewBox="0 0 100 100"
-        className="w-full h-full"
-        fill="none"
-        xmlns="http://www.w3.org/2000/svg"
-      >
-        {/* Blue circular ring */}
-        <circle
-          cx="50"
-          cy="50"
-          r="45"
-          stroke="hsl(var(--primary))"
-          strokeWidth="10"
-          fill="none"
-        />
-        {/* Green center dot */}
-        <circle
-          cx="50"
-          cy="50"
-          r="8"
-          fill="hsl(142 76% 36%)"
-        />
-      </svg>
-    </div>
+    <img 
+      src={logoImage}
+      alt="ChurnGuard Lite"
+      className={cn("object-contain", sizeClasses[size], className)}
+    />
   );
 };
 

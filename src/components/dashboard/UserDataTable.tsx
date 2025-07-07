@@ -10,6 +10,7 @@ interface UserData {
   usage: number;
   last_login: string | null;
   churn_score: number;
+  churn_reason: string | null;
   risk_level: 'low' | 'medium' | 'high';
   created_at: string;
 }
@@ -54,7 +55,7 @@ const UserDataTable = ({ data, isLoading }: UserDataTableProps) => {
   if (data.length === 0) {
     return (
       <div className="text-center py-8">
-        <p className="text-gray-500">No customer data yet. Upload a CSV file or use the API to get started.</p>
+        <p className="text-gray-500">No customer data yet. Upload a CSV file with AI model v5 features or use the API to get started.</p>
       </div>
     );
   }
@@ -66,9 +67,10 @@ const UserDataTable = ({ data, isLoading }: UserDataTableProps) => {
           <TableRow className="bg-muted/50">
             <TableHead className="font-semibold text-foreground">User ID</TableHead>
             <TableHead className="font-semibold text-foreground">Plan</TableHead>
-            <TableHead className="font-semibold text-foreground">Usage</TableHead>
+            <TableHead className="font-semibold text-foreground">Revenue</TableHead>
             <TableHead className="font-semibold text-foreground">Last Login</TableHead>
             <TableHead className="font-semibold text-foreground">Churn Score</TableHead>
+            <TableHead className="font-semibold text-foreground">Churn Reason</TableHead>
             <TableHead className="font-semibold text-foreground">Risk Level</TableHead>
           </TableRow>
         </TableHeader>
@@ -79,13 +81,20 @@ const UserDataTable = ({ data, isLoading }: UserDataTableProps) => {
               <TableCell>
                 <Badge variant="outline" className="border-muted-foreground/30">{user.plan}</Badge>
               </TableCell>
-              <TableCell className="text-foreground">{user.usage}</TableCell>
+              <TableCell className="text-foreground">${user.usage?.toFixed(2) || '0.00'}</TableCell>
               <TableCell className="text-muted-foreground">
                 {user.last_login ? formatDistanceToNow(new Date(user.last_login), { addSuffix: true }) : 'Never'}
               </TableCell>
               <TableCell>
-                <span className="font-mono text-sm bg-muted px-2 py-1 rounded text-foreground">
+                <span className={`font-mono text-sm px-2 py-1 rounded ${
+                  user.churn_score > 0.75 ? 'bg-destructive/20 text-destructive' : 'bg-muted text-foreground'
+                }`}>
                   {user.churn_score !== null ? (user.churn_score * 100).toFixed(1) + '%' : 'N/A'}
+                </span>
+              </TableCell>
+              <TableCell className="max-w-xs">
+                <span className="text-sm text-muted-foreground truncate block" title={user.churn_reason || ''}>
+                  {user.churn_reason || 'No reason available'}
                 </span>
               </TableCell>
               <TableCell>

@@ -52,7 +52,11 @@ const CSVUploadModal = ({ open, onOpenChange, onUploadComplete }: CSVUploadModal
     enabled: !!user?.id,
   });
 
-  const requiredHeaders = ['user_id', 'plan', 'usage_score', 'last_login'];
+  const requiredHeaders = [
+    'user_id', 'days_since_signup', 'monthly_revenue', 'subscription_plan',
+    'number_of_logins_last30days', 'active_features_used', 'support_tickets_opened',
+    'last_payment_status', 'email_opens_last30days', 'last_login_days_ago', 'billing_issue_count'
+  ];
 
   // Handle file selection and parsing
   const handleFileSelect = (selectedFile: File | null) => {
@@ -90,9 +94,16 @@ const CSVUploadModal = ({ open, onOpenChange, onUploadComplete }: CSVUploadModal
         // Filter out rows with missing critical data
         const validRows = rows.filter(row => 
           row.user_id && 
-          row.plan && 
-          row.usage_score !== undefined && 
-          row.last_login
+          row.days_since_signup !== undefined && 
+          row.monthly_revenue !== undefined &&
+          row.subscription_plan &&
+          row.number_of_logins_last30days !== undefined &&
+          row.active_features_used !== undefined &&
+          row.support_tickets_opened !== undefined &&
+          row.last_payment_status &&
+          row.email_opens_last30days !== undefined &&
+          row.last_login_days_ago !== undefined &&
+          row.billing_issue_count !== undefined
         );
 
         if (validRows.length !== rows.length) {
@@ -311,7 +322,7 @@ const CSVUploadModal = ({ open, onOpenChange, onUploadComplete }: CSVUploadModal
             SaaS-Grade CSV Upload
           </DialogTitle>
           <DialogDescription>
-            Upload customer data CSV for real-time AI churn analysis. Required columns: <strong>user_id, plan, usage_score, last_login</strong>
+            Upload customer data CSV for real-time AI churn analysis v5. <strong>Required:</strong> user_id, days_since_signup, monthly_revenue, subscription_plan, number_of_logins_last30days, active_features_used, support_tickets_opened, last_payment_status, email_opens_last30days, last_login_days_ago, billing_issue_count
           </DialogDescription>
         </DialogHeader>
         
@@ -325,17 +336,17 @@ const CSVUploadModal = ({ open, onOpenChange, onUploadComplete }: CSVUploadModal
                 size="sm" 
                 className="p-0 h-auto text-xs text-primary"
                 onClick={() => {
-                  const csvContent = `user_id,plan,usage_score,last_login
-user_001,Free,45,2024-01-15T10:00:00Z
-user_002,Pro,120,2024-01-20T15:30:00Z
-user_003,Enterprise,200,2024-01-10T09:15:00Z
-user_004,Free,25,2024-01-05T14:22:00Z
-user_005,Pro,180,2024-01-22T11:45:00Z`;
+                  const csvContent = `user_id,days_since_signup,monthly_revenue,subscription_plan,number_of_logins_last30days,active_features_used,support_tickets_opened,last_payment_status,email_opens_last30days,last_login_days_ago,billing_issue_count
+user_001,90,29.99,Free Trial,15,3,1,Success,8,2,0
+user_002,180,99.99,Pro,25,8,0,Success,15,1,0
+user_003,365,299.99,Pro,30,12,2,Success,20,0,1
+user_004,45,0,Free Trial,5,2,3,Failed,2,7,2
+user_005,120,99.99,Pro,20,6,1,Success,12,3,0`;
                   const blob = new Blob([csvContent], { type: 'text/csv' });
                   const url = URL.createObjectURL(blob);
                   const a = document.createElement('a');
                   a.href = url;
-                  a.download = 'sample_customer_data.csv';
+                  a.download = 'sample_churn_data_v5.csv';
                   a.click();
                   URL.revokeObjectURL(url);
                 }}

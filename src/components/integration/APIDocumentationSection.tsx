@@ -12,7 +12,7 @@ export const APIDocumentationSection = ({
   primaryApiKey,
   onCopyCode
 }: APIDocumentationSectionProps) => {
-  const jsCode = `// JavaScript/TypeScript Example
+  const jsCode = `// JavaScript/TypeScript Example - AI Model v5
 fetch("${window.location.origin}/api/track", {
   method: "POST",
   headers: {
@@ -21,27 +21,41 @@ fetch("${window.location.origin}/api/track", {
   },
   body: JSON.stringify({
     user_id: "user_123",
-    plan: "Pro",
-    usage: 99,
-    last_login: "2025-06-25T10:00:00Z"
+    days_since_signup: 90,
+    monthly_revenue: 99.99,
+    subscription_plan: "Pro",
+    number_of_logins_last30days: 25,
+    active_features_used: 8,
+    support_tickets_opened: 1,
+    last_payment_status: "Success",
+    email_opens_last30days: 15,
+    last_login_days_ago: 1,
+    billing_issue_count: 0
   })
 })
 .then(response => response.json())
-.then(data => console.log('Success:', data))
+.then(data => console.log('Churn Score:', data.churn_score, 'Reason:', data.churn_reason))
 .catch(error => console.error('Error:', error));`;
 
-  const curlCode = `# cURL Example
+  const curlCode = `# cURL Example - AI Model v5
 curl -X POST "${window.location.origin}/api/track" \\
   -H "Content-Type: application/json" \\
   -H "X-API-Key: ${primaryApiKey}" \\
   -d '{
     "user_id": "user_123",
-    "plan": "Pro", 
-    "usage": 99,
-    "last_login": "2025-06-25T10:00:00Z"
+    "days_since_signup": 90,
+    "monthly_revenue": 99.99,
+    "subscription_plan": "Pro",
+    "number_of_logins_last30days": 25,
+    "active_features_used": 8,
+    "support_tickets_opened": 1,
+    "last_payment_status": "Success",
+    "email_opens_last30days": 15,
+    "last_login_days_ago": 1,
+    "billing_issue_count": 0
   }'`;
 
-  const pythonCode = `# Python Example
+  const pythonCode = `# Python Example - AI Model v5
 import requests
 import json
 
@@ -52,13 +66,21 @@ headers = {
 }
 data = {
     "user_id": "user_123",
-    "plan": "Pro",
-    "usage": 99,
-    "last_login": "2025-06-25T10:00:00Z"
+    "days_since_signup": 90,
+    "monthly_revenue": 99.99,
+    "subscription_plan": "Pro",
+    "number_of_logins_last30days": 25,
+    "active_features_used": 8,
+    "support_tickets_opened": 1,
+    "last_payment_status": "Success",
+    "email_opens_last30days": 15,
+    "last_login_days_ago": 1,
+    "billing_issue_count": 0
 }
 
 response = requests.post(url, headers=headers, json=data)
-print(response.json())`;
+result = response.json()
+print(f"Churn Score: {result['churn_score']}, Reason: {result['churn_reason']}")`;
 
   return (
     <Card>
@@ -68,7 +90,7 @@ print(response.json())`;
           Advanced Integration Examples
         </CardTitle>
         <CardDescription>
-          Use these code examples for more advanced integrations
+          AI Model v5 integration examples with 10 key features for enhanced churn prediction accuracy
         </CardDescription>
       </CardHeader>
       <CardContent>

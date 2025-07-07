@@ -13,14 +13,21 @@ export const IntegrationScriptSection = ({
   onCopyCode,
   onRegenerateKey
 }: IntegrationScriptSectionProps) => {
-  const trackingScript = `<!-- Churnaizer Churn Tracker -->
+  const trackingScript = `<!-- Churnaizer Churn Tracker v5 -->
 <script>
   (function() {
     const userInfo = {
       user_id: "USER123",
-      plan: "Pro", 
-      usage_score: 95,
-      last_login: "2024-07-06"
+      days_since_signup: 90,
+      monthly_revenue: 49.99,
+      subscription_plan: "Pro",
+      number_of_logins_last30days: 15,
+      active_features_used: 8,
+      support_tickets_opened: 2,
+      last_payment_status: "Success",
+      email_opens_last30days: 12,
+      last_login_days_ago: 2,
+      billing_issue_count: 0
     };
 
     fetch("${window.location.origin}/api/track", {
@@ -32,7 +39,7 @@ export const IntegrationScriptSection = ({
       body: JSON.stringify(userInfo)
     })
     .then(res => res.json())
-    .then(data => console.log("🔁 Churn score:", data.churn_score))
+    .then(data => console.log("🔁 Churn score:", data.churn_score, "Reason:", data.churn_reason))
     .catch(err => console.error("Churnaizer tracking failed:", err));
   })();
 </script>`;
@@ -44,7 +51,8 @@ export const IntegrationScriptSection = ({
           🔧 Integration Script
         </CardTitle>
         <CardDescription>
-          To track churn signals from your own app or site, copy and paste this script into your website before the closing &lt;/body&gt; tag.
+          Track churn with AI model v5 using 10 key features. Paste this script before closing &lt;/body&gt; tag. 
+          <strong>Required:</strong> days_since_signup, monthly_revenue, subscription_plan, number_of_logins_last30days, active_features_used, support_tickets_opened, last_payment_status, email_opens_last30days, last_login_days_ago, billing_issue_count
         </CardDescription>
       </CardHeader>
       <CardContent>

@@ -300,6 +300,7 @@ export type Database = {
       }
       user_data: {
         Row: {
+          churn_reason: string | null
           churn_score: number | null
           created_at: string | null
           id: string
@@ -312,6 +313,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          churn_reason?: string | null
           churn_score?: number | null
           created_at?: string | null
           id?: string
@@ -324,6 +326,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          churn_reason?: string | null
           churn_score?: number | null
           created_at?: string | null
           id?: string

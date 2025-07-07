@@ -10,13 +10,21 @@ const corsHeaders = {
 
 interface TrackRequest {
   user_id: string;
-  plan: string;
-  usage_score: number;
-  last_login: string;
+  days_since_signup: number;
+  monthly_revenue: number;
+  subscription_plan: string;
+  number_of_logins_last30days: number;
+  active_features_used: number;
+  support_tickets_opened: number;
+  last_payment_status: string;
+  email_opens_last30days: number;
+  last_login_days_ago: number;
+  billing_issue_count: number;
 }
 
 interface ChurnResponse {
   churn_score: number;
+  churn_reason?: string;
 }
 
 serve(async (req) => {
@@ -81,15 +89,35 @@ serve(async (req) => {
     const results = [];
 
     for (const userData of users) {
-      const { user_id, plan, usage_score, last_login } = userData;
+      const { 
+        user_id, 
+        days_since_signup, 
+        monthly_revenue, 
+        subscription_plan, 
+        number_of_logins_last30days,
+        active_features_used,
+        support_tickets_opened,
+        last_payment_status,
+        email_opens_last30days,
+        last_login_days_ago,
+        billing_issue_count
+      } = userData;
 
       // Validate all required fields for this user
-      if (!user_id || !plan || usage_score === undefined || !last_login) {
-        console.error(`Missing required fields for user ${user_id || 'unknown'}`);
+      const requiredFields = [
+        'user_id', 'days_since_signup', 'monthly_revenue', 'subscription_plan',
+        'number_of_logins_last30days', 'active_features_used', 'support_tickets_opened',
+        'last_payment_status', 'email_opens_last30days', 'last_login_days_ago', 'billing_issue_count'
+      ];
+      
+      const missingFields = requiredFields.filter(field => userData[field] === undefined || userData[field] === null);
+      
+      if (missingFields.length > 0) {
+        console.error(`Missing required fields for user ${user_id || 'unknown'}:`, missingFields);
         results.push({
           status: 'error',
           user_id: user_id || 'unknown',
-          error: 'Missing required fields: user_id, plan, usage_score, last_login'
+          error: `Missing required fields: ${missingFields.join(', ')}`
         });
         continue;
       }
@@ -102,26 +130,44 @@ serve(async (req) => {
         const churnApiKey = Deno.env.get('CHURN_API_KEY');
 
         let churnScore = 0.5; // Default fallback score
+        let churnReason = 'Fallback prediction - external API unavailable';
         
         if (churnApiUrl && churnApiKey) {
           try {
+            // One-hot encode categorical fields
+            const subscription_plan_Pro = subscription_plan === 'Pro' ? 1 : 0;
+            const subscription_plan_FreeTrial = subscription_plan === 'Free Trial' ? 1 : 0;
+            const last_payment_status_Success = last_payment_status === 'Success' ? 1 : 0;
+            
+            // Prepare data for AI model v5 with one-hot encoding
+            const modelData = {
+              days_since_signup,
+              monthly_revenue,
+              subscription_plan_Pro,
+              subscription_plan_FreeTrial,
+              number_of_logins_last30days,
+              active_features_used,
+              support_tickets_opened,
+              last_payment_status_Success,
+              email_opens_last30days,
+              last_login_days_ago,
+              billing_issue_count
+            };
+            
             const churnResponse = await fetch(churnApiUrl, {
               method: 'POST',
               headers: {
                 'Content-Type': 'application/json',
                 'Authorization': `Bearer ${churnApiKey}`,
               },
-              body: JSON.stringify({
-                plan,
-                usage_score,
-                last_login,
-              }),
+              body: JSON.stringify(modelData),
             });
 
             if (churnResponse.ok) {
               const churnData: ChurnResponse = await churnResponse.json();
               churnScore = churnData.churn_score;
-              console.log('Received churn score from API:', churnScore);
+              churnReason = churnData.churn_reason || 'AI model prediction based on user behavior patterns';
+              console.log('Received churn prediction from AI v5:', { churnScore, churnReason });
             } else {
               console.warn('Churn API request failed, using fallback');
             }
@@ -144,10 +190,18 @@ serve(async (req) => {
 
         console.log('Calculated risk level:', riskLevel);
 
-        // Validate plan type
-        const validPlans = ['Free', 'Pro', 'Enterprise'];
-        const validatedPlan = validPlans.includes(plan) ? plan as 'Free' | 'Pro' | 'Enterprise' : 'Free';
+        // Map subscription_plan to database plan enum
+        const planMapping: { [key: string]: 'Free' | 'Pro' | 'Enterprise' } = {
+          'Free Trial': 'Free',
+          'Pro': 'Pro',
+          'Enterprise': 'Enterprise'
+        };
+        const validatedPlan = planMapping[subscription_plan] || 'Free';
 
+        // Calculate last_login from days_ago
+        const lastLoginDate = new Date();
+        lastLoginDate.setDate(lastLoginDate.getDate() - last_login_days_ago);
+        
         // Save to user_data table
         const { error: saveError } = await supabase
           .from('user_data')
@@ -155,9 +209,10 @@ serve(async (req) => {
             user_id,
             owner_id: ownerId,
             plan: validatedPlan,
-            usage: usage_score,
-            last_login: new Date(last_login).toISOString(),
+            usage: monthly_revenue, // Store monthly revenue in usage field
+            last_login: lastLoginDate.toISOString(),
             churn_score: churnScore,
+            churn_reason: churnReason,
             risk_level: riskLevel,
             updated_at: new Date().toISOString(),
           }, {
@@ -179,6 +234,7 @@ serve(async (req) => {
         results.push({
           status: 'ok',
           churn_score: churnScore,
+          churn_reason: churnReason,
           risk_level: riskLevel,
           user_id
         });

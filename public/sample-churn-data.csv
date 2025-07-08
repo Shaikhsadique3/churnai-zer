@@ -1,0 +1,11 @@
+user_id,days_since_signup,monthly_revenue,subscription_plan,number_of_logins_last30days,active_features_used,support_tickets_opened,last_payment_status,email_opens_last30days,last_login_days_ago,billing_issue_count
+USR-001,45,89.99,Pro,22,6,0,Success,12,2,0
+USR-002,3,0,Free Trial,3,1,0,Success,2,1,0
+USR-003,88,49.99,Pro,10,4,2,Success,7,10,1
+USR-004,120,99.99,Pro,35,8,1,Failed,14,3,2
+USR-005,5,0,Free Trial,1,1,1,Success,0,4,0
+USR-006,65,29.99,Pro,18,5,0,Success,8,1,0
+USR-007,180,149.99,Enterprise,45,12,3,Success,20,1,1
+USR-008,12,19.99,Pro,5,2,2,Failed,3,7,3
+USR-009,2,0,Free Trial,2,1,0,Success,1,0,0
+USR-010,90,79.99,Pro,25,7,1,Success,15,2,0

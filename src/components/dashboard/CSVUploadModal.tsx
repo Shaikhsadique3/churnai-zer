@@ -153,6 +153,15 @@ const CSVUploadModal = ({ open, onOpenChange, onUploadComplete }: CSVUploadModal
             Required columns: user_id, days_since_signup, monthly_revenue, subscription_plan, 
             number_of_logins_last30days, active_features_used, support_tickets_opened, 
             last_payment_status, email_opens_last30days, last_login_days_ago, billing_issue_count.
+            <div className="mt-2">
+              <a 
+                href="/sample-churn-data.csv" 
+                download 
+                className="text-primary hover:underline text-sm"
+              >
+                📋 Download sample CSV template
+              </a>
+            </div>
           </DialogDescription>
         </DialogHeader>
 

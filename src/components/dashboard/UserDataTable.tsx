@@ -26,36 +26,56 @@ interface UserDataTableProps {
 
 const UserDataTable = ({ data, isLoading }: UserDataTableProps) => {
   const getStatusBadge = (user: UserData) => {
-    const { user_stage, understanding_score, days_until_mature, risk_level, churn_score } = user;
+    const { user_stage, understanding_score, days_until_mature, churn_score } = user;
     
-    // Status configurations with enhanced lifecycle awareness
-    const statusConfig = {
-      new_user: { variant: 'outline' as const, emoji: '🐣', label: 'New User', bgColor: 'bg-blue-50', textColor: 'text-blue-700' },
-      growing_user: { variant: 'secondary' as const, emoji: '🌱', label: 'Growing', bgColor: 'bg-purple-50', textColor: 'text-purple-700' },
-      mature_user: { variant: 'default' as const, emoji: '🌳', label: 'Mature', bgColor: 'bg-gray-50', textColor: 'text-gray-700' },
+    // Enhanced status logic based on days_since_signup and churn_score
+    let statusDisplay = '';
+    let variant: 'default' | 'secondary' | 'destructive' | 'outline' = 'outline';
+    let bgColor = 'bg-muted/20';
+    
+    if (user_stage === 'new_user' || (understanding_score && understanding_score < 50)) {
+      statusDisplay = '🆕 New User (Insufficient Data)';
+      variant = 'outline';
+      bgColor = 'bg-blue-50 dark:bg-blue-900/20';
+    } else if (churn_score && churn_score > 0.8) {
+      statusDisplay = '❌ High Risk';
+      variant = 'destructive';
+      bgColor = 'bg-red-50 dark:bg-red-900/20';
+    } else if (churn_score && churn_score > 0.5) {
+      statusDisplay = '⚠️ Medium Risk';
+      variant = 'secondary';
+      bgColor = 'bg-yellow-50 dark:bg-yellow-900/20';
+    } else {
+      statusDisplay = '✅ Low Risk';
+      variant = 'default';
+      bgColor = 'bg-green-50 dark:bg-green-900/20';
+    }
+    
+    const getTooltipText = () => {
+      if (!understanding_score) return 'No confidence data';
+      if (understanding_score >= 80) return 'Excellent 🔥';
+      if (understanding_score >= 50) return 'Moderate';
+      return 'Weak confidence – more data needed';
     };
     
-    const fallbackConfig = { variant: 'outline' as const, emoji: '❓', label: 'Unknown', bgColor: 'bg-gray-50', textColor: 'text-gray-600' };
-    const config = statusConfig[user_stage as keyof typeof statusConfig] || fallbackConfig;
-    
     return (
-      <div className={`inline-flex flex-col space-y-1 px-2 py-1 rounded-lg ${config.bgColor}`}>
+      <div className={`inline-flex flex-col space-y-1 px-2 py-1 rounded-lg ${bgColor}`}>
         <div className="flex items-center space-x-1">
-          <Badge variant={config.variant} className="text-xs">
-            <span className="hidden sm:inline">{config.emoji} {config.label}</span>
-            <span className="sm:hidden">{config.emoji}</span>
+          <Badge variant={variant} className="text-xs">
+            <span className="hidden sm:inline">{statusDisplay}</span>
+            <span className="sm:hidden">{statusDisplay.split(' ')[0]}</span>
           </Badge>
           {churn_score !== undefined && (
-            <span className={`text-xs ${config.textColor} font-medium`}>
+            <span className="text-xs font-medium text-foreground">
               {(churn_score * 100).toFixed(1)}%
             </span>
           )}
         </div>
         {understanding_score !== undefined && (
-          <div className="flex items-center space-x-1">
-            <div className="w-full bg-muted rounded-full h-1 max-w-[60px]">
+          <div className="flex items-center space-x-1" title={getTooltipText()}>
+            <div className="w-full bg-muted rounded-full h-1.5 max-w-[60px]">
               <div 
-                className="h-1 rounded-full bg-primary"
+                className="h-1.5 rounded-full bg-primary"
                 style={{ width: `${understanding_score}%` }}
               ></div>
             </div>
@@ -125,7 +145,9 @@ const UserDataTable = ({ data, isLoading }: UserDataTableProps) => {
               </TableCell>
               <TableCell className="max-w-[120px] hidden md:table-cell">
                 <span className="text-xs sm:text-sm text-muted-foreground truncate block" title={user.churn_reason || ''}>
-                  {user.churn_reason || 'No reason available'}
+                  {user.churn_reason === "" || user.churn_reason === null 
+                    ? "🕵️ No strong signals yet" 
+                    : user.churn_reason}
                 </span>
               </TableCell>
               <TableCell>

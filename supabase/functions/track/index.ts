@@ -242,7 +242,7 @@ serve(async (req) => {
         const lastLoginDate = new Date();
         lastLoginDate.setDate(lastLoginDate.getDate() - last_login_days_ago);
         
-        // Save to user_data table with enhanced fields
+        // Save full model output to user_data table
         const { error: saveError } = await supabase
           .from('user_data')
           .upsert({
@@ -252,7 +252,7 @@ serve(async (req) => {
             usage: monthly_revenue, // Store monthly revenue in usage field
             last_login: lastLoginDate.toISOString(),
             churn_score: churnScore,
-            churn_reason: churnReason,
+            churn_reason: churnReason || "🕵️ No strong signals yet",
             risk_level: riskLevel,
             user_stage: statusTag,
             understanding_score: Math.round(understandingScore),

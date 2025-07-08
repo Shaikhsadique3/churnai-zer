@@ -254,7 +254,7 @@ serve(async (req) => {
         const lastLoginDate = new Date();
         lastLoginDate.setDate(lastLoginDate.getDate() - row.last_login_days_ago);
         
-        // Save to database
+        // Save full model output to database
         const { error: saveError } = await supabase
           .from('user_data')
           .upsert({
@@ -264,7 +264,7 @@ serve(async (req) => {
             usage: row.monthly_revenue,
             last_login: lastLoginDate.toISOString(),
             churn_score: prediction.churn_score,
-            churn_reason: prediction.churn_reason,
+            churn_reason: prediction.churn_reason || "🕵️ No strong signals yet",
             risk_level: prediction.risk_level,
             user_stage: prediction.user_stage,
             understanding_score: prediction.understanding_score,

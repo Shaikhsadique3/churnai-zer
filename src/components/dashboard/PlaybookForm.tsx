@@ -56,6 +56,7 @@ const OPERATOR_OPTIONS = [
 
 const ACTION_OPTIONS = [
   { value: "send_email", label: "Send Email" },
+  { value: "webhook", label: "Send Webhook" },
   { value: "add_tag", label: "Add Tag" },
   { value: "add_to_crm", label: "Add to CRM" },
   { value: "wait", label: "Wait (days)" }

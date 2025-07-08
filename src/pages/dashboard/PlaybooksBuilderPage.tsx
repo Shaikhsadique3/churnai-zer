@@ -5,8 +5,11 @@ import { Link } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { PlaybookForm } from "@/components/dashboard/PlaybookForm";
+import { JsonPlaybookBuilder } from "@/components/dashboard/JsonPlaybookBuilder";
 import { AutomationBanner } from "@/components/dashboard/AutomationBanner";
 import { EnhancedPlaybooksList } from "@/components/dashboard/EnhancedPlaybooksList";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { JsonPlaybook, convertLegacyToJson, UserData } from "@/utils/playbookEvaluator";
 
 interface Condition {
   id: string;
@@ -47,11 +50,40 @@ export const PlaybooksBuilderPage = () => {
   const [actions, setActions] = useState<Action[]>([
     { id: "1", type: "", value: "" }
   ]);
+  const [testUsers, setTestUsers] = useState<UserData[]>([]);
 
-  // Load saved playbooks on component mount
+  // Load saved playbooks and test users on component mount
   useEffect(() => {
     loadPlaybooks();
+    loadTestUsers();
   }, []);
+
+  const loadTestUsers = async () => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return;
+
+      const { data, error } = await supabase
+        .from('user_data')
+        .select('user_id, churn_score, risk_level, plan, usage, user_stage, days_until_mature')
+        .eq('owner_id', session.user.id)
+        .limit(10);
+
+      if (!error && data) {
+        setTestUsers(data.map(user => ({
+          user_id: user.user_id,
+          churn_score: user.churn_score || 0,
+          risk_level: user.risk_level || 'low',
+          plan: user.plan || 'Free',
+          usage: user.usage || 0,
+          user_stage: user.user_stage || 'unknown',
+          days_until_mature: user.days_until_mature || 0
+        })));
+      }
+    } catch (error) {
+      console.error('Error loading test users:', error);
+    }
+  };
 
   const loadPlaybooks = async () => {
     try {
@@ -233,6 +265,63 @@ export const PlaybooksBuilderPage = () => {
     }
   };
 
+  const handleJsonSave = async (jsonPlaybook: JsonPlaybook) => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session) {
+        toast({
+          title: "Authentication required",
+          description: "Please sign in to save your playbook",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Convert JsonPlaybook to legacy format for storage
+      const legacyPlaybook = {
+        name: jsonPlaybook.title,
+        description: jsonPlaybook.description,
+        conditions: [jsonPlaybook.trigger],
+        actions: jsonPlaybook.actions.map(action => ({
+          type: action.type,
+          value: action.template_id || action.url || action.value || JSON.stringify(action.payload || {})
+        }))
+      };
+
+      const { data, error } = await supabase.functions.invoke('api-playbooks', { 
+        body: legacyPlaybook,
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+        },
+      });
+
+      if (error) {
+        console.error('Error saving JSON playbook:', error);
+        toast({
+          title: "Error",
+          description: "Failed to save playbook. Please try again.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      toast({
+        title: "Success!",
+        description: "JSON Playbook saved successfully",
+      });
+
+      loadPlaybooks();
+    } catch (error) {
+      console.error('Error saving JSON playbook:', error);
+      toast({
+        title: "Error",
+        description: "Failed to save playbook. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
   const handleTestLogic = () => {
     toast({
       title: "Test Logic",
@@ -256,19 +345,35 @@ export const PlaybooksBuilderPage = () => {
         <p className="text-muted-foreground">Create automated rules to save at-risk customers</p>
       </div>
 
-      {/* Playbook Form */}
-      <PlaybookForm
-        playbookName={playbookName}
-        description={description}
-        conditions={conditions}
-        actions={actions}
-        onPlaybookNameChange={setPlaybookName}
-        onDescriptionChange={setDescription}
-        onConditionsChange={setConditions}
-        onActionsChange={setActions}
-        onSave={handleSave}
-        onTestLogic={handleTestLogic}
-      />
+      {/* Playbook Builder Tabs */}
+      <Tabs defaultValue="legacy" className="w-full">
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="legacy">Legacy Builder</TabsTrigger>
+          <TabsTrigger value="json">JSON Builder</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="legacy">
+          <PlaybookForm
+            playbookName={playbookName}
+            description={description}
+            conditions={conditions}
+            actions={actions}
+            onPlaybookNameChange={setPlaybookName}
+            onDescriptionChange={setDescription}
+            onConditionsChange={setConditions}
+            onActionsChange={setActions}
+            onSave={handleSave}
+            onTestLogic={handleTestLogic}
+          />
+        </TabsContent>
+
+        <TabsContent value="json">
+          <JsonPlaybookBuilder
+            onSave={handleJsonSave}
+            testUsers={testUsers}
+          />
+        </TabsContent>
+      </Tabs>
 
       {/* Automation Status Banner */}
       <AutomationBanner />

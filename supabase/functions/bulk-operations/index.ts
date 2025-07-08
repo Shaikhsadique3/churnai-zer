@@ -1,6 +1,5 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.50.2';
-import * as XLSX from 'https://deno.land/x/xlsx/mod.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -79,14 +78,8 @@ serve(async (req) => {
         if (format === 'json') {
           exportData = JSON.stringify(userData, null, 2);
           contentType = 'application/json';
-        } else if (format === 'xlsx') {
-          const workbook = XLSX.utils.book_new();
-          const worksheet = XLSX.utils.json_to_sheet(userData);
-          XLSX.utils.book_append_sheet(workbook, worksheet, 'ChurnData');
-          exportData = XLSX.write(workbook, { type: 'array' });
-          contentType = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
         } else {
-          // CSV format
+          // CSV format (default)
           if (userData.length === 0) {
             exportData = '';
           } else {

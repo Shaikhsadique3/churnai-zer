@@ -6,7 +6,7 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { PlaybookForm } from "@/components/dashboard/PlaybookForm";
 import { AutomationBanner } from "@/components/dashboard/AutomationBanner";
-import { SavedPlaybooksList } from "@/components/dashboard/SavedPlaybooksList";
+import { EnhancedPlaybooksList } from "@/components/dashboard/EnhancedPlaybooksList";
 
 interface Condition {
   id: string;
@@ -231,11 +231,12 @@ export const PlaybooksBuilderPage = () => {
       {/* Automation Status Banner */}
       <AutomationBanner />
 
-      {/* Saved Playbooks */}
-      <SavedPlaybooksList
+      {/* Enhanced Playbooks List */}
+      <EnhancedPlaybooksList
         playbooks={savedPlaybooks}
         isLoading={isLoading}
         onToggleStatus={togglePlaybookStatus}
+        onReload={loadPlaybooks}
       />
     </div>
   );

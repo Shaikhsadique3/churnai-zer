@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -6,7 +6,8 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Trash2, Save, TestTube } from "lucide-react";
+import { Plus, Trash2, Save, TestTube, Eye } from "lucide-react";
+import { EmailPreviewModal } from "./EmailPreviewModal";
 
 interface Condition {
   id: string;
@@ -79,6 +80,9 @@ export const PlaybookForm: React.FC<PlaybookFormProps> = ({
   onSave,
   onTestLogic
 }) => {
+  const [emailPreviewOpen, setEmailPreviewOpen] = useState(false);
+  const [previewEmailTemplate, setPreviewEmailTemplate] = useState("");
+
   const addCondition = () => {
     const newCondition: Condition = {
       id: Date.now().toString(),
@@ -260,18 +264,33 @@ export const PlaybookForm: React.FC<PlaybookFormProps> = ({
                 </Select>
 
                 {action.type === "send_email" ? (
-                  <Select value={action.value} onValueChange={(value) => updateAction(action.id, "value", value)}>
-                    <SelectTrigger className="flex-1">
-                      <SelectValue placeholder="Choose email template" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {EMAIL_TEMPLATES.map(template => (
-                        <SelectItem key={template.value} value={template.value}>
-                          {template.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <div className="flex gap-2 flex-1">
+                    <Select value={action.value} onValueChange={(value) => updateAction(action.id, "value", value)}>
+                      <SelectTrigger className="flex-1">
+                        <SelectValue placeholder="Choose email template" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {EMAIL_TEMPLATES.map(template => (
+                          <SelectItem key={template.value} value={template.value}>
+                            {template.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    {action.value && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          setPreviewEmailTemplate(action.value);
+                          setEmailPreviewOpen(true);
+                        }}
+                      >
+                        <Eye className="h-3 w-3 mr-1" />
+                        Preview
+                      </Button>
+                    )}
+                  </div>
                 ) : (
                   <Input
                     placeholder={
@@ -284,6 +303,7 @@ export const PlaybookForm: React.FC<PlaybookFormProps> = ({
                     className="flex-1"
                   />
                 )}
+
 
                 {actions.length > 1 && (
                   <Button
@@ -312,6 +332,14 @@ export const PlaybookForm: React.FC<PlaybookFormProps> = ({
           Test Logic
         </Button>
       </div>
+
+      {/* Email Preview Modal */}
+      <EmailPreviewModal
+        isOpen={emailPreviewOpen}
+        onClose={() => setEmailPreviewOpen(false)}
+        emailTemplate={previewEmailTemplate}
+        targetUserData={{ user_id: "Sample Customer" }}
+      />
     </>
   );
 };

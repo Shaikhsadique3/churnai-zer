@@ -65,13 +65,33 @@ serve(async (req) => {
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    console.log('Starting playbook processing...');
+    // Parse request body for manual runs
+    let requestBody: any = {};
+    try {
+      if (req.method === 'POST') {
+        requestBody = await req.json();
+      }
+    } catch (e) {
+      // Ignore JSON parse errors for cron calls
+    }
 
-    // Get all active playbooks
-    const { data: playbooks, error: playbooksError } = await supabase
+    const isManualRun = requestBody.manual_run;
+    const specificPlaybookId = requestBody.playbook_id;
+
+    console.log('Starting playbook processing...', { isManualRun, specificPlaybookId });
+
+    // Get playbooks - either specific one or all active ones
+    let playbooksQuery = supabase
       .from('playbooks')
-      .select('*')
-      .eq('is_active', true);
+      .select('*');
+    
+    if (specificPlaybookId) {
+      playbooksQuery = playbooksQuery.eq('id', specificPlaybookId);
+    } else {
+      playbooksQuery = playbooksQuery.eq('is_active', true);
+    }
+
+    const { data: playbooks, error: playbooksError } = await playbooksQuery;
 
     if (playbooksError) {
       console.error('Error fetching playbooks:', playbooksError);

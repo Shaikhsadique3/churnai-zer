@@ -7,13 +7,20 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "./contexts/AuthContext";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
 import Index from "./pages/Index";
-import Dashboard from "./pages/Dashboard";
 import Integration from "./pages/Integration";
 import Auth from "./pages/Auth";
 import ResetPassword from "./pages/ResetPassword";
 import Terms from "./pages/Terms";
 import Privacy from "./pages/Privacy";
 import NotFound from "./pages/NotFound";
+import { DashboardLayout } from "./components/layout/DashboardLayout";
+import { DashboardOverviewPage } from "./pages/dashboard/DashboardOverviewPage";
+import { CSVUploadPage } from "./pages/dashboard/CSVUploadPage";
+import { UploadedUsersPage } from "./pages/dashboard/UploadedUsersPage";
+import { ChurnReportsPage } from "./pages/dashboard/ChurnReportsPage";
+import { AutomationsPage } from "./pages/dashboard/AutomationsPage";
+import { IntegrationsPage } from "./pages/dashboard/IntegrationsPage";
+import { SettingsPage } from "./pages/dashboard/SettingsPage";
 
 const queryClient = new QueryClient();
 
@@ -34,10 +41,20 @@ const App = () => (
               path="/dashboard" 
               element={
                 <ProtectedRoute>
-                  <Dashboard />
+                  <DashboardLayout />
                 </ProtectedRoute>
-              } 
-            />
+              }
+            >
+              <Route index element={<DashboardOverviewPage />} />
+              <Route path="csv-upload" element={<CSVUploadPage />} />
+              <Route path="users" element={<UploadedUsersPage />} />
+              <Route path="reports" element={<ChurnReportsPage />} />
+              <Route path="automations" element={<AutomationsPage />} />
+              <Route path="automations/playbooks" element={<AutomationsPage />} />
+              <Route path="automations/emails" element={<AutomationsPage />} />
+              <Route path="integrations" element={<IntegrationsPage />} />
+              <Route path="settings" element={<SettingsPage />} />
+            </Route>
             <Route 
               path="/integration" 
               element={

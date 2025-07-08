@@ -51,8 +51,24 @@ export const EnhancedPlaybooksList: React.FC<EnhancedPlaybooksListProps> = ({
   const loadLogs = async (playbookId?: string) => {
     try {
       setLoadingLogs(true);
+      
+      // Get current session for auth header
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      
+      if (sessionError || !session) {
+        toast({
+          title: "Authentication required",
+          description: "Please sign in to view logs",
+          variant: "destructive",
+        });
+        return;
+      }
+
       const { data, error } = await supabase.functions.invoke('playbook-logs', {
-        body: playbookId ? { playbook_id: playbookId } : undefined
+        body: playbookId ? { playbook_id: playbookId } : undefined,
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+        },
       });
 
       if (error) {
@@ -78,8 +94,23 @@ export const EnhancedPlaybooksList: React.FC<EnhancedPlaybooksListProps> = ({
     try {
       setRunningPlaybooks(prev => new Set([...prev, playbookId]));
       
+      // Get current session for auth header
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      
+      if (sessionError || !session) {
+        toast({
+          title: "Authentication required",
+          description: "Please sign in to run playbooks",
+          variant: "destructive",
+        });
+        return;
+      }
+      
       const { data, error } = await supabase.functions.invoke('run-playbook', {
-        body: { playbook_id: playbookId }
+        body: { playbook_id: playbookId },
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+        },
       });
 
       if (error) {
@@ -119,6 +150,18 @@ export const EnhancedPlaybooksList: React.FC<EnhancedPlaybooksListProps> = ({
 
   const clonePlaybook = async (playbook: Playbook) => {
     try {
+      // Get current session for auth header
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      
+      if (sessionError || !session) {
+        toast({
+          title: "Authentication required",
+          description: "Please sign in to clone playbooks",
+          variant: "destructive",
+        });
+        return;
+      }
+
       const clonedPlaybook = {
         name: `${playbook.name} (Copy)`,
         description: playbook.description,
@@ -127,7 +170,10 @@ export const EnhancedPlaybooksList: React.FC<EnhancedPlaybooksListProps> = ({
       };
 
       const { data, error } = await supabase.functions.invoke('save-playbook', {
-        body: clonedPlaybook
+        body: clonedPlaybook,
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+        },
       });
 
       if (error) {
@@ -148,6 +194,11 @@ export const EnhancedPlaybooksList: React.FC<EnhancedPlaybooksListProps> = ({
       onReload();
     } catch (error) {
       console.error('Error cloning playbook:', error);
+      toast({
+        title: "Error",
+        description: "Failed to clone playbook", 
+        variant: "destructive",
+      });
     }
   };
 

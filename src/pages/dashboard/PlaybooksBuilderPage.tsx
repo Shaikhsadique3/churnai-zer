@@ -56,10 +56,32 @@ export const PlaybooksBuilderPage = () => {
   const loadPlaybooks = async () => {
     try {
       setIsLoading(true);
-      const { data, error } = await supabase.functions.invoke('api-playbooks');
+      
+      // Get current session for auth header
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      
+      if (sessionError || !session) {
+        toast({
+          title: "Authentication required",
+          description: "Please sign in to access your playbooks",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      const { data, error } = await supabase.functions.invoke('api-playbooks', {
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+        },
+      });
       
       if (error) {
         console.error('Error loading playbooks:', error);
+        toast({
+          title: "Error",
+          description: "Failed to load playbooks. Please try again.",
+          variant: "destructive",
+        });
         return;
       }
 
@@ -68,6 +90,11 @@ export const PlaybooksBuilderPage = () => {
       }
     } catch (error) {
       console.error('Error loading playbooks:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load playbooks. Please try again.",
+        variant: "destructive",
+      });
     } finally {
       setIsLoading(false);
     }
@@ -150,9 +177,24 @@ export const PlaybooksBuilderPage = () => {
     console.log("Saving playbook:", playbook);
 
     try {
+      // Get current session for auth header
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      
+      if (sessionError || !session) {
+        toast({
+          title: "Authentication required",
+          description: "Please sign in to save your playbook",
+          variant: "destructive",
+        });
+        return;
+      }
+
       // Save playbook via Supabase function
       const { data, error } = await supabase.functions.invoke('save-playbook', { 
-        body: playbook 
+        body: playbook,
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+        },
       });
 
       if (error) {

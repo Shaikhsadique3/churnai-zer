@@ -61,6 +61,7 @@ const navigationItems = [
     icon: Workflow,
     subItems: [
       { title: "Playbooks", url: "/dashboard/automations/playbooks" },
+      { title: "Playbook Builder", url: "/dashboard/automations/playbooks-builder" },
       { title: "Email Campaigns", url: "/dashboard/automations/emails" }
     ]
   },

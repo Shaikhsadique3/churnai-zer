@@ -3,6 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Workflow, Mail, Zap, Plus, Settings, Play, Pause } from "lucide-react";
+import { Link } from "react-router-dom";
 
 const mockPlaybooks = [
   {
@@ -64,10 +65,12 @@ export const AutomationsPage = () => {
             <h1 className="text-2xl font-bold text-foreground">🔁 Automations</h1>
             <p className="text-muted-foreground">Set up automated playbooks to reduce churn</p>
           </div>
-          <Button>
-            <Plus className="h-4 w-4 mr-2" />
-            Create Playbook
-          </Button>
+          <Link to="/dashboard/automations/playbooks-builder">
+            <Button>
+              <Plus className="h-4 w-4 mr-2" />
+              Create Playbook
+            </Button>
+          </Link>
         </div>
       </div>
 

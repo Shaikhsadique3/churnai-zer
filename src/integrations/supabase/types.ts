@@ -333,6 +333,38 @@ export type Database = {
           },
         ]
       }
+      playbook_logs: {
+        Row: {
+          action_taken: string
+          log_id: string
+          playbook_id: string | null
+          triggered_at: string
+          user_id: string
+        }
+        Insert: {
+          action_taken: string
+          log_id?: string
+          playbook_id?: string | null
+          triggered_at?: string
+          user_id: string
+        }
+        Update: {
+          action_taken?: string
+          log_id?: string
+          playbook_id?: string | null
+          triggered_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "playbook_logs_playbook_id_fkey"
+            columns: ["playbook_id"]
+            isOneToOne: false
+            referencedRelation: "playbooks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       playbooks: {
         Row: {
           actions: Json

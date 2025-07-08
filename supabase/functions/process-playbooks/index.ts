@@ -113,6 +113,15 @@ serve(async (req) => {
           console.log(`User ${user.user_id} matches playbook ${playbook.name}`);
           totalMatches++;
 
+          // Log the match
+          await supabase
+            .from('playbook_logs')
+            .insert({
+              playbook_id: playbook.id,
+              user_id: playbook.user_id,
+              action_taken: `Matched conditions for user ${user.user_id}`
+            });
+
           // Queue actions for this user
           for (let i = 0; i < playbook.actions.length; i++) {
             const action = playbook.actions[i];

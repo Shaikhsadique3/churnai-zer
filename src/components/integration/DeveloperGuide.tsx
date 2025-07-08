@@ -24,62 +24,78 @@ export const DeveloperGuide = ({ primaryApiKey, onCopyCode }: DeveloperGuideProp
     setCheckedItems(newChecked);
   };
 
-  const basicIntegration = `<!-- Step 1: Include the Churnaizer SDK -->
-<script src="${window.location.origin}/churnaizer-sdk.js"></script>
+  const htmlIntegration = `<!DOCTYPE html>
+<html>
+<head>
+  <title>My SaaS App</title>
+</head>
+<body>
+  <h1>Welcome, User!</h1>
 
-<!-- Step 2: Track user churn prediction -->
-<script>
-  Churnaizer.track({
-    user_id: "user_001",
-    days_since_signup: 60,
-    monthly_revenue: 99.99,
-    subscription_plan: "Pro",
-    number_of_logins_last30days: 20,
-    active_features_used: 4,
-    support_tickets_opened: 0,
-    last_payment_status: "Success",
-    email_opens_last30days: 8,
-    last_login_days_ago: 1,
-    billing_issue_count: 0
-  }, "${primaryApiKey}", function (result) {
-    console.log("✅ Churn Score:", result.churn_score);
-    console.log("📌 Reason:", result.churn_reason);
-    
-    // Optional: Display in your UI
-    document.getElementById("churn-info").innerText = 
-      "Risk: " + (result.churn_score * 100).toFixed(2) + "% | Reason: " + result.churn_reason;
-  });
-</script>`;
+  <!-- SDK script goes here -->
+  <script src="${window.location.origin}/churnaizer-sdk.js"></script>
 
-  const reactIntegration = `// React/Next.js Integration Example
+  <!-- Trigger churn tracking -->
+  <script>
+    Churnaizer.track({
+      user_id: "user_001",
+      days_since_signup: 45,
+      monthly_revenue: 49.99,
+      subscription_plan: "Pro",
+      number_of_logins_last30days: 10,
+      active_features_used: 3,
+      support_tickets_opened: 1,
+      last_payment_status: "Success",
+      email_opens_last30days: 12,
+      last_login_days_ago: 2,
+      billing_issue_count: 0
+    }, "${primaryApiKey}", function (result) {
+      console.log("✅ Churn Score:", result.churn_score);
+      console.log("📌 Reason:", result.churn_reason);
+    });
+  </script>
+</body>
+</html>`;
+
+  const reactIntegration = `// React/Next.js Integration with Helper Function
 import { useEffect } from 'react';
 
-const ChurnTracker = ({ user }) => {
+// Helper function for reusability
+export const sendChurnTracking = (user, apiKey, callback) => {
+  window.Churnaizer?.track(user, apiKey, callback);
+};
+
+const Dashboard = ({ user, apiKey }) => {
   useEffect(() => {
     // Load SDK dynamically
     const script = document.createElement('script');
     script.src = '${window.location.origin}/churnaizer-sdk.js';
+    script.async = true;
+    document.body.appendChild(script);
+
     script.onload = () => {
-      window.Churnaizer.track({
+      const payload = {
         user_id: user.id,
-        days_since_signup: user.daysSinceSignup,
-        monthly_revenue: user.monthlyRevenue,
-        subscription_plan: user.plan,
-        number_of_logins_last30days: user.loginsLast30Days,
-        active_features_used: user.activeFeatures,
-        support_tickets_opened: user.supportTickets,
-        last_payment_status: user.lastPaymentStatus,
-        email_opens_last30days: user.emailOpens,
-        last_login_days_ago: user.lastLoginDaysAgo,
-        billing_issue_count: user.billingIssues
-      }, "${primaryApiKey}", (result) => {
-        setChurnData(result);
+        days_since_signup: 60,
+        monthly_revenue: 99.99,
+        subscription_plan: "Pro",
+        number_of_logins_last30days: 15,
+        active_features_used: 5,
+        support_tickets_opened: 0,
+        last_payment_status: "Success",
+        email_opens_last30days: 9,
+        last_login_days_ago: 1,
+        billing_issue_count: 0
+      };
+
+      // Reuse this anywhere—after login or on specific pages
+      sendChurnTracking(payload, "${primaryApiKey}", (result) => {
+        console.log("📊 Churn Risk:", result);
       });
     };
-    document.head.appendChild(script);
-  }, [user]);
+  }, [user, apiKey]);
 
-  return <div id="churn-info">Loading churn data...</div>;
+  return <div>Welcome, {user.name}</div>;
 };`;
 
   const batchIntegration = `// Batch Processing for Multiple Users
@@ -173,30 +189,30 @@ Churnaizer.trackBatch(users, "${primaryApiKey}", function(results, error) {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <Tabs defaultValue="basic" className="w-full">
+          <Tabs defaultValue="html" className="w-full">
             <TabsList className="grid w-full grid-cols-3">
-              <TabsTrigger value="basic">🌐 Basic HTML/JS</TabsTrigger>
+              <TabsTrigger value="html">🌐 HTML/JS</TabsTrigger>
               <TabsTrigger value="react">⚛️ React/Next.js</TabsTrigger>
               <TabsTrigger value="batch">📊 Batch Processing</TabsTrigger>
             </TabsList>
             
-            <TabsContent value="basic" className="space-y-4">
+            <TabsContent value="html" className="space-y-4">
               <div className="relative">
                 <pre className="bg-gray-900 text-gray-100 p-4 rounded-lg overflow-x-auto text-sm">
-                  <code>{basicIntegration}</code>
+                  <code>{htmlIntegration}</code>
                 </pre>
                 <Button
                   variant="outline"
                   size="sm"
                   className="absolute top-2 right-2"
-                  onClick={() => onCopyCode(basicIntegration)}
+                  onClick={() => onCopyCode(htmlIntegration)}
                 >
                   <Copy className="h-4 w-4" />
                 </Button>
               </div>
               <div className="bg-blue-50 border border-blue-200 rounded p-3">
                 <p className="text-blue-800 text-sm">
-                  <strong>💡 Perfect for:</strong> Simple websites, landing pages, or vanilla JavaScript apps.
+                  <strong>💡 Perfect for:</strong> Plain HTML websites, landing pages, or vanilla JavaScript apps. Place SDK script before &lt;/body&gt; tag.
                 </p>
               </div>
             </TabsContent>
@@ -243,6 +259,68 @@ Churnaizer.trackBatch(users, "${primaryApiKey}", function(results, error) {
               </div>
             </TabsContent>
           </Tabs>
+        </CardContent>
+      </Card>
+
+      {/* Platform-Specific Instructions */}
+      <Card>
+        <CardHeader>
+          <CardTitle>🎯 Where to Insert the SDK</CardTitle>
+          <CardDescription>
+            Clear instructions for different platforms and frameworks
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            <div className="overflow-x-auto">
+              <table className="w-full border-collapse border border-gray-200 rounded-lg">
+                <thead>
+                  <tr className="bg-gray-50">
+                    <th className="border border-gray-200 p-3 text-left font-semibold">Platform</th>
+                    <th className="border border-gray-200 p-3 text-left font-semibold">Insert SDK here</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td className="border border-gray-200 p-3">Plain HTML site</td>
+                    <td className="border border-gray-200 p-3">Before &lt;/body&gt; tag</td>
+                  </tr>
+                  <tr className="bg-gray-50">
+                    <td className="border border-gray-200 p-3">React / Next.js</td>
+                    <td className="border border-gray-200 p-3">In useEffect() in layout/dashboard</td>
+                  </tr>
+                  <tr>
+                    <td className="border border-gray-200 p-3">Vue / Angular</td>
+                    <td className="border border-gray-200 p-3">In mounted() or service layer</td>
+                  </tr>
+                  <tr className="bg-gray-50">
+                    <td className="border border-gray-200 p-3">Bubble / Webflow</td>
+                    <td className="border border-gray-200 p-3">In custom script box or embed block</td>
+                  </tr>
+                  <tr>
+                    <td className="border border-gray-200 p-3">Shopify / Wix</td>
+                    <td className="border border-gray-200 p-3">Paste in Custom HTML / Tracking Scripts</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+              <h4 className="font-semibold text-blue-800 mb-2">💡 Pro Tip: Reusable Helper Function</h4>
+              <p className="text-blue-700 text-sm mb-2">
+                If you want to reuse the track() function across many parts of your app:
+              </p>
+              <div className="bg-white rounded p-3 font-mono text-xs">
+                export const sendChurnTracking = (user, apiKey) =&gt; {`{`}<br/>
+                &nbsp;&nbsp;window.Churnaizer?.track(user, apiKey, (result) =&gt; {`{`}<br/>
+                &nbsp;&nbsp;&nbsp;&nbsp;console.log("✅ Churn Risk:", result);<br/>
+                &nbsp;&nbsp;{`}`});<br/>
+                {`}`};
+              </div>
+              <p className="text-blue-700 text-sm mt-2">
+                Then call it from anywhere after user signs in.
+              </p>
+            </div>
+          </div>
         </CardContent>
       </Card>
 

@@ -10,6 +10,7 @@ import DashboardHeader from "@/components/dashboard/DashboardHeader";
 import { APIKeysSection } from "@/components/integration/APIKeysSection";
 import { IntegrationScriptSection } from "@/components/integration/IntegrationScriptSection";
 import { APIDocumentationSection } from "@/components/integration/APIDocumentationSection";
+import { DeveloperGuide } from "@/components/integration/DeveloperGuide";
 import { RequestParametersTable } from "@/components/integration/RequestParametersTable";
 
 const Integration = () => {
@@ -115,6 +116,11 @@ const Integration = () => {
           onCreateKey={(name) => createKeyMutation.mutate(name)}
           onCopyKey={copyToClipboard}
           isCreating={createKeyMutation.isPending}
+        />
+
+        <DeveloperGuide
+          primaryApiKey={primaryApiKey}
+          onCopyCode={copyToClipboard}
         />
 
         <IntegrationScriptSection

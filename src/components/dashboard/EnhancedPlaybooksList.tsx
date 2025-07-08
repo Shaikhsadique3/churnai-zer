@@ -65,7 +65,6 @@ export const EnhancedPlaybooksList: React.FC<EnhancedPlaybooksListProps> = ({
       }
 
       const { data, error } = await supabase.functions.invoke('playbook-logs', {
-        body: playbookId ? { playbook_id: playbookId } : undefined,
         headers: {
           Authorization: `Bearer ${session.access_token}`,
         },
@@ -169,7 +168,7 @@ export const EnhancedPlaybooksList: React.FC<EnhancedPlaybooksListProps> = ({
         actions: playbook.actions
       };
 
-      const { data, error } = await supabase.functions.invoke('save-playbook', {
+      const { data, error } = await supabase.functions.invoke('api-playbooks', {
         body: clonedPlaybook,
         headers: {
           Authorization: `Bearer ${session.access_token}`,

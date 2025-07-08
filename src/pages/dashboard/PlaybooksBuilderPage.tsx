@@ -190,7 +190,7 @@ export const PlaybooksBuilderPage = () => {
       }
 
       // Save playbook via Supabase function
-      const { data, error } = await supabase.functions.invoke('save-playbook', { 
+      const { data, error } = await supabase.functions.invoke('api-playbooks', { 
         body: playbook,
         headers: {
           Authorization: `Bearer ${session.access_token}`,

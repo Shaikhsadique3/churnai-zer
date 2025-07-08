@@ -8,7 +8,7 @@ const corsHeaders = {
 }
 
 interface CreatePlaybookRequest {
-  title: string;
+  name: string;
   description?: string;
   conditions: Array<{
     field: string;
@@ -139,9 +139,9 @@ serve(async (req) => {
       const playbook: CreatePlaybookRequest = await req.json();
 
       // Validate required fields
-      if (!playbook.title || !playbook.conditions || !playbook.actions) {
+      if (!playbook.name || !playbook.conditions || !playbook.actions) {
         return new Response(
-          JSON.stringify({ error: 'Missing required fields: title, conditions, actions' }),
+          JSON.stringify({ error: 'Missing required fields: name, conditions, actions' }),
           { 
             status: 400, 
             headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
@@ -154,7 +154,7 @@ serve(async (req) => {
         .from('playbooks')
         .insert({
           user_id: user.id,
-          name: playbook.title,
+          name: playbook.name,
           description: playbook.description,
           conditions: playbook.conditions,
           actions: playbook.actions,

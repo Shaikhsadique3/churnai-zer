@@ -77,7 +77,7 @@ serve(async (req) => {
         playbook_id,
         action_taken,
         triggered_at,
-        playbooks!inner(name)
+        playbooks(name)
       `)
       .eq('user_id', user.id)
       .order('triggered_at', { ascending: false })

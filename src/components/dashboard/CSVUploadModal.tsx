@@ -29,13 +29,40 @@ const CSVUploadModal = ({ open, onOpenChange, onUploadComplete }: CSVUploadModal
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
-      setFile(e.target.files[0]);
+      const selectedFile = e.target.files[0];
+      
+      // Validate file extension
+      if (!selectedFile.name.toLowerCase().endsWith('.csv')) {
+        setUploadResult({
+          status: 'error',
+          message: 'Please upload a valid CSV file (.csv extension required)'
+        });
+        return;
+      }
+      
+      // Validate file size (max 10MB)
+      if (selectedFile.size > 10 * 1024 * 1024) {
+        setUploadResult({
+          status: 'error',
+          message: 'File size too large. Please upload a CSV file smaller than 10MB'
+        });
+        return;
+      }
+      
+      setFile(selectedFile);
       setUploadResult(null);
     }
   };
 
   const validateCSVColumns = (headers: string[]): { valid: boolean; missing: string[] } => {
-    const normalizedHeaders = headers.map(h => h.toLowerCase().trim());
+    // Normalize headers: trim whitespace, lowercase, remove BOM
+    const normalizedHeaders = headers.map(h => 
+      h.toLowerCase()
+       .trim()
+       .replace(/^\uFEFF/, '') // Remove BOM
+       .replace(/[""'']/g, '') // Remove quotes
+    );
+    
     const normalizedRequired = requiredColumns.map(c => c.toLowerCase());
     
     const missing = normalizedRequired.filter(required => 
@@ -44,7 +71,7 @@ const CSVUploadModal = ({ open, onOpenChange, onUploadComplete }: CSVUploadModal
     
     return {
       valid: missing.length === 0,
-      missing: missing
+      missing: missing.map(col => requiredColumns.find(req => req.toLowerCase() === col) || col)
     };
   };
 
@@ -55,12 +82,43 @@ const CSVUploadModal = ({ open, onOpenChange, onUploadComplete }: CSVUploadModal
     setUploadResult(null);
 
     try {
-      // Parse CSV file
+      // Parse CSV file with enhanced configuration
       Papa.parse(file, {
         header: true,
         skipEmptyLines: true,
+        encoding: 'UTF-8',
+        transformHeader: (header) => {
+          // Normalize headers during parsing
+          return header.toLowerCase()
+                      .trim()
+                      .replace(/^\uFEFF/, '') // Remove BOM
+                      .replace(/[""'']/g, ''); // Remove quotes
+        },
         complete: async (results) => {
           try {
+            // Check if file has data
+            if (!results.data || results.data.length === 0) {
+              setUploadResult({
+                status: 'error',
+                message: 'The CSV file appears to be empty or contains no valid data rows'
+              });
+              setIsUploading(false);
+              return;
+            }
+
+            // Check for parsing errors
+            if (results.errors && results.errors.length > 0) {
+              const criticalErrors = results.errors.filter(error => error.type === 'Delimiter');
+              if (criticalErrors.length > 0) {
+                setUploadResult({
+                  status: 'error',
+                  message: 'CSV file format is invalid. Please ensure it uses comma delimiters and proper formatting'
+                });
+                setIsUploading(false);
+                return;
+              }
+            }
+
             // Validate CSV structure
             const validation = validateCSVColumns(results.meta.fields || []);
             

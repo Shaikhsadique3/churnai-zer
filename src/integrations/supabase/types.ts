@@ -77,6 +77,7 @@ export type Database = {
       csv_uploads: {
         Row: {
           created_at: string | null
+          export_data: Json | null
           filename: string
           id: string
           rows_failed: number | null
@@ -86,6 +87,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string | null
+          export_data?: Json | null
           filename: string
           id?: string
           rows_failed?: number | null
@@ -95,6 +97,7 @@ export type Database = {
         }
         Update: {
           created_at?: string | null
+          export_data?: Json | null
           filename?: string
           id?: string
           rows_failed?: number | null
@@ -306,6 +309,7 @@ export type Database = {
           created_at: string | null
           days_until_mature: number | null
           id: string
+          is_deleted: boolean | null
           last_login: string | null
           owner_id: string
           plan: Database["public"]["Enums"]["plan_type"] | null
@@ -323,6 +327,7 @@ export type Database = {
           created_at?: string | null
           days_until_mature?: number | null
           id?: string
+          is_deleted?: boolean | null
           last_login?: string | null
           owner_id: string
           plan?: Database["public"]["Enums"]["plan_type"] | null
@@ -340,6 +345,7 @@ export type Database = {
           created_at?: string | null
           days_until_mature?: number | null
           id?: string
+          is_deleted?: boolean | null
           last_login?: string | null
           owner_id?: string
           plan?: Database["public"]["Enums"]["plan_type"] | null

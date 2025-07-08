@@ -15,6 +15,7 @@ import { ChurnTrendChart } from "@/components/dashboard/ChurnTrendChart";
 import { WeeklyReportCard } from "@/components/dashboard/WeeklyReportCard";
 import { ChurnScoreTable } from "@/components/dashboard/ChurnScoreTable";
 import { ChurnReasonTable } from "@/components/dashboard/ChurnReasonTable";
+import CRMIntegrationPanel from "@/components/dashboard/CRMIntegrationPanel";
 
 const Dashboard = () => {
   const { user, signOut } = useAuth();
@@ -68,6 +69,11 @@ const Dashboard = () => {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 mb-6 sm:mb-8">
           <ChurnScoreTable />
           <ChurnReasonTable />
+        </div>
+
+        {/* CRM & Automation Tools Integration */}
+        <div className="mb-6 sm:mb-8">
+          <CRMIntegrationPanel />
         </div>
 
         {/* Action Buttons */}

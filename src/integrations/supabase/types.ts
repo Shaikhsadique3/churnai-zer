@@ -197,6 +197,45 @@ export type Database = {
         }
         Relationships: []
       }
+      integration_settings: {
+        Row: {
+          created_at: string
+          email_api_key: string | null
+          email_provider: string | null
+          id: string
+          sender_email: string | null
+          sender_name: string | null
+          status: string | null
+          updated_at: string
+          user_id: string
+          webhook_url: string | null
+        }
+        Insert: {
+          created_at?: string
+          email_api_key?: string | null
+          email_provider?: string | null
+          id?: string
+          sender_email?: string | null
+          sender_name?: string | null
+          status?: string | null
+          updated_at?: string
+          user_id: string
+          webhook_url?: string | null
+        }
+        Update: {
+          created_at?: string
+          email_api_key?: string | null
+          email_provider?: string | null
+          id?: string
+          sender_email?: string | null
+          sender_name?: string | null
+          status?: string | null
+          updated_at?: string
+          user_id?: string
+          webhook_url?: string | null
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null

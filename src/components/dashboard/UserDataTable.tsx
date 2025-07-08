@@ -12,6 +12,9 @@ interface UserData {
   churn_score: number;
   churn_reason: string | null;
   risk_level: 'low' | 'medium' | 'high';
+  understanding_score?: number;
+  status_tag?: string;
+  days_until_mature?: number;
   created_at: string;
 }
 
@@ -21,24 +24,51 @@ interface UserDataTableProps {
 }
 
 const UserDataTable = ({ data, isLoading }: UserDataTableProps) => {
-  const getRiskBadge = (riskLevel: string, churnScore?: number) => {
-    const config = {
-      high: { variant: 'destructive' as const, emoji: '🔴', label: 'High Risk', bgColor: 'bg-red-50' },
-      medium: { variant: 'secondary' as const, emoji: '🟡', label: 'Medium Risk', bgColor: 'bg-yellow-50' },
-      low: { variant: 'default' as const, emoji: '🟢', label: 'Low Risk', bgColor: 'bg-green-50' },
+  const getStatusBadge = (user: UserData) => {
+    const { status_tag, understanding_score, days_until_mature, risk_level, churn_score } = user;
+    
+    // Status configurations with enhanced lifecycle awareness
+    const statusConfig = {
+      new_user: { variant: 'outline' as const, emoji: '⏳', label: 'New User', bgColor: 'bg-blue-50', textColor: 'text-blue-700' },
+      growing_user: { variant: 'secondary' as const, emoji: '🔍', label: 'Growing', bgColor: 'bg-purple-50', textColor: 'text-purple-700' },
+      mature_safe: { variant: 'default' as const, emoji: '🟢', label: 'Safe', bgColor: 'bg-green-50', textColor: 'text-green-700' },
+      mature_user: { variant: 'default' as const, emoji: '✅', label: 'Mature', bgColor: 'bg-gray-50', textColor: 'text-gray-700' },
+      high_risk_mature: { variant: 'destructive' as const, emoji: '🔴', label: 'High Risk', bgColor: 'bg-red-50', textColor: 'text-red-700' },
+      medium_risk_mature: { variant: 'secondary' as const, emoji: '🟡', label: 'Medium Risk', bgColor: 'bg-yellow-50', textColor: 'text-yellow-700' },
     };
     
-    const risk = config[riskLevel as keyof typeof config] || config.low;
+    const fallbackConfig = { variant: 'outline' as const, emoji: '❓', label: 'Unknown', bgColor: 'bg-gray-50', textColor: 'text-gray-600' };
+    const config = statusConfig[status_tag as keyof typeof statusConfig] || fallbackConfig;
     
     return (
-      <div className={`inline-flex flex-col sm:flex-row sm:items-center space-y-1 sm:space-y-0 sm:space-x-1 px-1 sm:px-2 py-1 rounded-lg ${risk.bgColor}`}>
-        <Badge variant={risk.variant} className="text-xs">
-          <span className="hidden sm:inline">{risk.emoji} {risk.label}</span>
-          <span className="sm:hidden">{risk.emoji}</span>
-        </Badge>
-        {churnScore !== undefined && (
-          <span className="text-xs text-gray-600">
-            ({(churnScore * 100).toFixed(1)}%)
+      <div className={`inline-flex flex-col space-y-1 px-2 py-1 rounded-lg ${config.bgColor}`}>
+        <div className="flex items-center space-x-1">
+          <Badge variant={config.variant} className="text-xs">
+            <span className="hidden sm:inline">{config.emoji} {config.label}</span>
+            <span className="sm:hidden">{config.emoji}</span>
+          </Badge>
+          {churn_score !== undefined && (
+            <span className={`text-xs ${config.textColor} font-medium`}>
+              {(churn_score * 100).toFixed(1)}%
+            </span>
+          )}
+        </div>
+        {understanding_score !== undefined && (
+          <div className="flex items-center space-x-1">
+            <div className="w-full bg-muted rounded-full h-1 max-w-[60px]">
+              <div 
+                className="h-1 rounded-full bg-primary"
+                style={{ width: `${understanding_score}%` }}
+              ></div>
+            </div>
+            <span className="text-xs text-muted-foreground">
+              {understanding_score.toFixed(0)}%
+            </span>
+          </div>
+        )}
+        {days_until_mature !== undefined && days_until_mature > 0 && (
+          <span className="text-xs text-muted-foreground">
+            {days_until_mature}d to mature
           </span>
         )}
       </div>
@@ -72,7 +102,7 @@ const UserDataTable = ({ data, isLoading }: UserDataTableProps) => {
             <TableHead className="font-semibold text-foreground text-xs sm:text-sm min-w-[90px] hidden sm:table-cell">Last Login</TableHead>
             <TableHead className="font-semibold text-foreground text-xs sm:text-sm min-w-[100px]">Churn Score</TableHead>
             <TableHead className="font-semibold text-foreground text-xs sm:text-sm min-w-[120px] hidden md:table-cell">Churn Reason</TableHead>
-            <TableHead className="font-semibold text-foreground text-xs sm:text-sm min-w-[80px]">Risk Level</TableHead>
+            <TableHead className="font-semibold text-foreground text-xs sm:text-sm min-w-[100px]">Status & Risk</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -101,7 +131,7 @@ const UserDataTable = ({ data, isLoading }: UserDataTableProps) => {
                 </span>
               </TableCell>
               <TableCell>
-                {getRiskBadge(user.risk_level, user.churn_score)}
+                {getStatusBadge(user)}
               </TableCell>
             </TableRow>
           ))}

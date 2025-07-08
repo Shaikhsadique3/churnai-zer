@@ -178,8 +178,34 @@ serve(async (req) => {
           console.warn('Missing CHURN_API_URL or CHURN_API_KEY, using fallback score');
         }
 
-        // Calculate risk level based on specifications
+        // Enhanced lifecycle-aware analysis
         let riskLevel: 'low' | 'medium' | 'high';
+        let understandingScore = 0;
+        let statusTag = '';
+        let actionRecommended = '';
+        let daysUntilMature = 0;
+
+        // Analyze user lifecycle stage
+        if (days_since_signup < 7) {
+          // New User
+          understandingScore = Math.min(40, days_since_signup * 5 + 10);
+          statusTag = 'new_user';
+          daysUntilMature = 7 - days_since_signup;
+          churnReason = 'Too early to predict churn accurately – Need at least 7 days of behavior data.';
+          actionRecommended = 'Keep tracking. Reliable insights coming soon.';
+        } else if (days_since_signup < 15) {
+          // Growing User
+          understandingScore = 40 + ((days_since_signup - 7) * 2.5);
+          statusTag = 'growing_user';
+          churnReason = 'Prediction getting stronger. More behavior signals are now available.';
+          actionRecommended = 'Monitor usage daily. Prediction is moderately accurate.';
+        } else {
+          // Mature User
+          understandingScore = Math.min(100, 70 + ((days_since_signup - 15) * 0.5));
+          statusTag = 'mature_user';
+        }
+
+        // Calculate risk level
         if (churnScore >= 0.7) {
           riskLevel = 'high';
         } else if (churnScore >= 0.4) {
@@ -188,7 +214,21 @@ serve(async (req) => {
           riskLevel = 'low';
         }
 
-        console.log('Calculated risk level:', riskLevel);
+        // Enhanced status tags and actions based on risk + maturity
+        if (days_since_signup >= 15) {
+          if (churnScore < 0.3) {
+            statusTag = 'mature_safe';
+            actionRecommended = 'Low risk of churn. Consider upsell or referral opportunities.';
+          } else if (churnScore >= 0.5) {
+            statusTag = 'high_risk_mature';
+            actionRecommended = 'Send win-back email or offer discount. Consider urgent retention action.';
+          } else {
+            statusTag = 'medium_risk_mature';
+            actionRecommended = 'Monitor closely. Consider engagement campaigns.';
+          }
+        }
+
+        console.log('Enhanced analysis:', { riskLevel, understandingScore, statusTag, daysUntilMature });
 
         // Map subscription_plan to database plan enum
         const planMapping: { [key: string]: 'Free' | 'Pro' | 'Enterprise' } = {
@@ -236,6 +276,10 @@ serve(async (req) => {
           churn_score: churnScore,
           churn_reason: churnReason,
           risk_level: riskLevel,
+          understanding_score: understandingScore,
+          status_tag: statusTag,
+          action_recommended: actionRecommended,
+          days_until_mature: daysUntilMature,
           user_id
         });
 

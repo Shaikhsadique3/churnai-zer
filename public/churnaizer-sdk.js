@@ -38,9 +38,40 @@
       churn_reason: data.churn_reason || 'No reason provided',
       risk_level: data.risk_level || 'unknown',
       user_id: data.user_id,
+      understanding_score: data.understanding_score || 0,
+      status_tag: data.status_tag || 'unknown',
+      action_recommended: data.action_recommended || '',
+      days_until_mature: data.days_until_mature || 0,
       sdk_version: SDK_VERSION,
       timestamp: new Date().toISOString()
     };
+  }
+
+  function analyzeUserLifecycle(userData, result) {
+    const { days_since_signup, churn_score } = userData;
+    
+    // Log lifecycle analysis
+    if (days_since_signup < 7) {
+      console.warn('⚠️ Churnaizer: Too early to predict churn accurately – Need at least 7 days of behavior data.');
+      console.log(`⏳ Prediction matures in ${7 - days_since_signup} days`);
+    } else if (days_since_signup < 15) {
+      console.log('🔍 Churnaizer: Prediction getting stronger. More behavior signals are now available.');
+      console.log('📊 This prediction is moderately accurate. Monitor usage daily.');
+    } else {
+      console.log('✅ Churnaizer: Mature user data - high confidence prediction available.');
+    }
+
+    // Log risk analysis
+    if (result.churn_score < 0.3) {
+      console.log('🟢 Low Risk: User shows strong engagement patterns');
+    } else if (result.churn_score >= 0.5) {
+      console.log('🔴 High Risk: Consider immediate retention action');
+      if (result.action_recommended) {
+        console.log(`💡 Recommended: ${result.action_recommended}`);
+      }
+    }
+
+    return result;
   }
 
   // Main SDK object
@@ -125,16 +156,18 @@
             const userResult = data.results.find(r => r.user_id === userData.user_id);
             if (userResult && userResult.status === 'ok') {
               const result = createResult(userResult);
-              if (typeof callback === 'function') callback(result, null);
-              return result;
+              const analyzedResult = analyzeUserLifecycle(userData, result);
+              if (typeof callback === 'function') callback(analyzedResult, null);
+              return analyzedResult;
             } else {
               throw new Error(userResult ? userResult.error : 'User not found in batch response');
             }
           } else {
             // Single response
             const result = createResult(data);
-            if (typeof callback === 'function') callback(result, null);
-            return result;
+            const analyzedResult = analyzeUserLifecycle(userData, result);
+            if (typeof callback === 'function') callback(analyzedResult, null);
+            return analyzedResult;
           }
         })
         .catch(error => {

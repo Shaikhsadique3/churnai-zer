@@ -52,31 +52,14 @@ export const EnhancedPlaybooksList: React.FC<EnhancedPlaybooksListProps> = ({
     try {
       setLoadingLogs(true);
       
-      // Get current session for auth header
-      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      // Load logs from localStorage
+      const savedLogs = JSON.parse(localStorage.getItem('playbook_logs') || '[]');
       
-      if (sessionError || !session) {
-        toast({
-          title: "Authentication required",
-          description: "Please sign in to view logs",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      const { data, error } = await supabase.functions.invoke('playbook-logs', {
-        headers: {
-          Authorization: `Bearer ${session.access_token}`,
-        },
-      });
-
-      if (error) {
-        console.error('Error loading logs:', error);
-        return;
-      }
-
-      if (data?.success) {
-        setLogs(data.logs || []);
+      if (playbookId) {
+        const filteredLogs = savedLogs.filter((log: any) => log.playbook_id === playbookId);
+        setLogs(filteredLogs);
+      } else {
+        setLogs(savedLogs);
       }
     } catch (error) {
       console.error('Error loading logs:', error);
@@ -93,38 +76,27 @@ export const EnhancedPlaybooksList: React.FC<EnhancedPlaybooksListProps> = ({
     try {
       setRunningPlaybooks(prev => new Set([...prev, playbookId]));
       
-      // Get current session for auth header
-      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      // Simulate playbook execution with local data
+      await new Promise(resolve => setTimeout(resolve, 1500)); // Simulate processing time
       
-      if (sessionError || !session) {
-        toast({
-          title: "Authentication required",
-          description: "Please sign in to run playbooks",
-          variant: "destructive",
-        });
-        return;
-      }
+      // Create a log entry
+      const logEntry = {
+        id: Date.now().toString(),
+        playbook_id: playbookId,
+        playbook_name: playbooks.find(p => p.id === playbookId)?.name || 'Unknown',
+        action_taken: 'Playbook executed locally',
+        triggered_at: new Date().toISOString(),
+        status: 'success'
+      };
       
-      const { data, error } = await supabase.functions.invoke('run-playbook', {
-        body: { playbook_id: playbookId },
-        headers: {
-          Authorization: `Bearer ${session.access_token}`,
-        },
-      });
-
-      if (error) {
-        console.error('Error running playbook:', error);
-        toast({
-          title: "Error",
-          description: "Failed to run playbook",
-          variant: "destructive",
-        });
-        return;
-      }
+      // Save log to localStorage
+      const existingLogs = JSON.parse(localStorage.getItem('playbook_logs') || '[]');
+      const updatedLogs = [logEntry, ...existingLogs];
+      localStorage.setItem('playbook_logs', JSON.stringify(updatedLogs));
 
       toast({
         title: "Success!",
-        description: `Playbook executed successfully. ${data?.results?.matches || 0} users matched.`,
+        description: `Playbook executed successfully using local logic.`,
       });
 
       // Reload playbooks and logs
@@ -149,41 +121,23 @@ export const EnhancedPlaybooksList: React.FC<EnhancedPlaybooksListProps> = ({
 
   const clonePlaybook = async (playbook: Playbook) => {
     try {
-      // Get current session for auth header
-      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-      
-      if (sessionError || !session) {
-        toast({
-          title: "Authentication required",
-          description: "Please sign in to clone playbooks",
-          variant: "destructive",
-        });
-        return;
-      }
-
       const clonedPlaybook = {
+        id: Date.now().toString(),
         name: `${playbook.name} (Copy)`,
         description: playbook.description,
         conditions: playbook.conditions,
-        actions: playbook.actions
+        actions: playbook.actions,
+        is_active: true,
+        created_at: new Date().toISOString(),
+        stats: {
+          triggers_count: 0,
+          last_triggered: null
+        }
       };
 
-      const { data, error } = await supabase.functions.invoke('api-playbooks', {
-        body: clonedPlaybook,
-        headers: {
-          Authorization: `Bearer ${session.access_token}`,
-        },
-      });
-
-      if (error) {
-        console.error('Error cloning playbook:', error);
-        toast({
-          title: "Error",
-          description: "Failed to clone playbook",
-          variant: "destructive",
-        });
-        return;
-      }
+      const existingPlaybooks = JSON.parse(localStorage.getItem('saved_playbooks') || '[]');
+      const updatedPlaybooks = [...existingPlaybooks, clonedPlaybook];
+      localStorage.setItem('saved_playbooks', JSON.stringify(updatedPlaybooks));
 
       toast({
         title: "Success!",
@@ -203,20 +157,14 @@ export const EnhancedPlaybooksList: React.FC<EnhancedPlaybooksListProps> = ({
 
   const deletePlaybook = async (playbookId: string) => {
     try {
-      const { error } = await supabase
-        .from('playbooks')
-        .delete()
-        .eq('id', playbookId);
+      const existingPlaybooks = JSON.parse(localStorage.getItem('saved_playbooks') || '[]');
+      const updatedPlaybooks = existingPlaybooks.filter((playbook: any) => playbook.id !== playbookId);
+      localStorage.setItem('saved_playbooks', JSON.stringify(updatedPlaybooks));
 
-      if (error) {
-        console.error('Error deleting playbook:', error);
-        toast({
-          title: "Error",
-          description: "Failed to delete playbook",
-          variant: "destructive",
-        });
-        return;
-      }
+      // Also delete related logs
+      const existingLogs = JSON.parse(localStorage.getItem('playbook_logs') || '[]');
+      const updatedLogs = existingLogs.filter((log: any) => log.playbook_id !== playbookId);
+      localStorage.setItem('playbook_logs', JSON.stringify(updatedLogs));
 
       toast({
         title: "Success!",

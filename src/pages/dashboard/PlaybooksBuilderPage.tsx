@@ -89,42 +89,19 @@ export const PlaybooksBuilderPage = () => {
     try {
       setIsLoading(true);
       
-      // Get current session for auth header
-      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-      
-      if (sessionError || !session) {
-        toast({
-          title: "Authentication required",
-          description: "Please sign in to access your playbooks",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      const { data, error } = await supabase.functions.invoke('api-playbooks', {
-        headers: {
-          Authorization: `Bearer ${session.access_token}`,
-        },
-      });
-      
-      if (error) {
-        console.error('Error loading playbooks:', error);
-        toast({
-          title: "Error",
-          description: "Failed to load playbooks. Please try again.",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      if (data?.success) {
-        setSavedPlaybooks(data.playbooks || []);
+      // Load playbooks from localStorage
+      const savedPlaybooksData = localStorage.getItem('saved_playbooks');
+      if (savedPlaybooksData) {
+        const playbooks = JSON.parse(savedPlaybooksData);
+        setSavedPlaybooks(playbooks);
+      } else {
+        setSavedPlaybooks([]);
       }
     } catch (error) {
       console.error('Error loading playbooks:', error);
       toast({
         title: "Error",
-        description: "Failed to load playbooks. Please try again.",
+        description: "Failed to load playbooks from local storage.",
         variant: "destructive",
       });
     } finally {
@@ -134,20 +111,11 @@ export const PlaybooksBuilderPage = () => {
 
   const togglePlaybookStatus = async (playbookId: string, newStatus: boolean) => {
     try {
-      const { error } = await supabase
-        .from('playbooks')
-        .update({ is_active: newStatus })
-        .eq('id', playbookId);
-
-      if (error) {
-        console.error('Error updating playbook status:', error);
-        toast({
-          title: "Error",
-          description: "Failed to update playbook status",
-          variant: "destructive",
-        });
-        return;
-      }
+      const existingPlaybooks = JSON.parse(localStorage.getItem('saved_playbooks') || '[]');
+      const updatedPlaybooks = existingPlaybooks.map((playbook: any) => 
+        playbook.id === playbookId ? { ...playbook, is_active: newStatus } : playbook
+      );
+      localStorage.setItem('saved_playbooks', JSON.stringify(updatedPlaybooks));
 
       // Reload playbooks to reflect changes
       loadPlaybooks();
@@ -209,37 +177,26 @@ export const PlaybooksBuilderPage = () => {
     console.log("Saving playbook:", playbook);
 
     try {
-      // Get current session for auth header
-      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-      
-      if (sessionError || !session) {
-        toast({
-          title: "Authentication required",
-          description: "Please sign in to save your playbook",
-          variant: "destructive",
-        });
-        return;
-      }
+      // Save playbook to localStorage
+      const newPlaybook = {
+        id: Date.now().toString(),
+        name: playbook.name,
+        description: playbook.description,
+        conditions: playbook.conditions,
+        actions: playbook.actions,
+        is_active: true,
+        created_at: new Date().toISOString(),
+        stats: {
+          triggers_count: 0,
+          last_triggered: null
+        }
+      };
 
-      // Save playbook via Supabase function
-      const { data, error } = await supabase.functions.invoke('api-playbooks', { 
-        body: playbook,
-        headers: {
-          Authorization: `Bearer ${session.access_token}`,
-        },
-      });
+      const existingPlaybooks = JSON.parse(localStorage.getItem('saved_playbooks') || '[]');
+      const updatedPlaybooks = [...existingPlaybooks, newPlaybook];
+      localStorage.setItem('saved_playbooks', JSON.stringify(updatedPlaybooks));
 
-      if (error) {
-        console.error('Error saving playbook:', error);
-        toast({
-          title: "Error",
-          description: "Failed to save playbook. Please try again.",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      console.log('Playbook saved:', data);
+      console.log('Playbook saved locally:', newPlaybook);
       
       toast({
         title: "Success!",
@@ -267,44 +224,27 @@ export const PlaybooksBuilderPage = () => {
 
   const handleJsonSave = async (jsonPlaybook: JsonPlaybook) => {
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      
-      if (!session) {
-        toast({
-          title: "Authentication required",
-          description: "Please sign in to save your playbook",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      // Convert JsonPlaybook to legacy format for storage
-      const legacyPlaybook = {
+      // Convert JsonPlaybook to local storage format
+      const newPlaybook = {
+        id: Date.now().toString(),
         name: jsonPlaybook.title,
         description: jsonPlaybook.description,
         conditions: [jsonPlaybook.trigger],
         actions: jsonPlaybook.actions.map(action => ({
           type: action.type,
           value: action.template_id || action.url || action.value || JSON.stringify(action.payload || {})
-        }))
+        })),
+        is_active: true,
+        created_at: new Date().toISOString(),
+        stats: {
+          triggers_count: 0,
+          last_triggered: null
+        }
       };
 
-      const { data, error } = await supabase.functions.invoke('api-playbooks', { 
-        body: legacyPlaybook,
-        headers: {
-          Authorization: `Bearer ${session.access_token}`,
-        },
-      });
-
-      if (error) {
-        console.error('Error saving JSON playbook:', error);
-        toast({
-          title: "Error",
-          description: "Failed to save playbook. Please try again.",
-          variant: "destructive",
-        });
-        return;
-      }
+      const existingPlaybooks = JSON.parse(localStorage.getItem('saved_playbooks') || '[]');
+      const updatedPlaybooks = [...existingPlaybooks, newPlaybook];
+      localStorage.setItem('saved_playbooks', JSON.stringify(updatedPlaybooks));
 
       toast({
         title: "Success!",

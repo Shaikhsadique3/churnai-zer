@@ -4,21 +4,162 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.50.2';
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
+}
 
-interface CsvRow {
+interface CSVRow {
   user_id: string;
-  plan: string;
-  usage_score: number;
-  last_login: string;
+  days_since_signup: number;
+  monthly_revenue: number;
+  subscription_plan: string;
+  number_of_logins_last30days: number;
+  active_features_used: number;
+  support_tickets_opened: number;
+  last_payment_status: string;
+  email_opens_last30days: number;
+  last_login_days_ago: number;
+  billing_issue_count: number;
 }
 
-interface ChurnResponse {
-  churn_score: number;
+function analyzeUserStage(daysSignup: number) {
+  if (daysSignup < 7) {
+    return {
+      stage: 'new_user',
+      emoji: '🐣',
+      label: 'New User',
+      understandingScore: Math.min(40, daysSignup * 5 + 10),
+      daysUntilMature: 7 - daysSignup,
+      skipAutomation: true,
+      message: 'Too early to predict churn accurately'
+    };
+  } else if (daysSignup < 15) {
+    return {
+      stage: 'growing_user', 
+      emoji: '🌱',
+      label: 'Growing User',
+      understandingScore: 40 + ((daysSignup - 7) * 2.5),
+      daysUntilMature: 0,
+      skipAutomation: false,
+      message: 'Prediction getting stronger'
+    };
+  } else {
+    return {
+      stage: 'mature_user',
+      emoji: '🌳', 
+      label: 'Mature User',
+      understandingScore: Math.min(100, 70 + ((daysSignup - 15) * 0.5)),
+      daysUntilMature: 0,
+      skipAutomation: false,
+      message: 'High confidence prediction available'
+    };
+  }
 }
 
-const handler = async (req: Request): Promise<Response> => {
-  // Handle CORS preflight requests
+function validateCSVRow(row: any): { isValid: boolean; missingFields: string[] } {
+  const requiredFields = [
+    'user_id', 'days_since_signup', 'monthly_revenue', 'subscription_plan',
+    'number_of_logins_last30days', 'active_features_used', 'support_tickets_opened',
+    'last_payment_status', 'email_opens_last30days', 'last_login_days_ago', 'billing_issue_count'
+  ];
+  
+  const missingFields = requiredFields.filter(field => 
+    row[field] === undefined || row[field] === null || row[field] === ''
+  );
+  
+  return {
+    isValid: missingFields.length === 0,
+    missingFields
+  };
+}
+
+async function processChurnPrediction(userData: CSVRow) {
+  // Get external API details
+  const churnApiUrl = Deno.env.get('CHURN_API_URL');
+  const churnApiKey = Deno.env.get('CHURN_API_KEY');
+
+  let churnScore = 0.5;
+  let churnReason = 'Fallback prediction - external API unavailable';
+  
+  // Analyze user stage first
+  const stageAnalysis = analyzeUserStage(userData.days_since_signup);
+  
+  if (churnApiUrl && churnApiKey && !stageAnalysis.skipAutomation) {
+    try {
+      // One-hot encode categorical fields
+      const subscription_plan_Pro = userData.subscription_plan === 'Pro' ? 1 : 0;
+      const subscription_plan_FreeTrial = userData.subscription_plan === 'Free Trial' ? 1 : 0;
+      const last_payment_status_Success = userData.last_payment_status === 'Success' ? 1 : 0;
+      
+      const modelData = {
+        days_since_signup: userData.days_since_signup,
+        monthly_revenue: userData.monthly_revenue,
+        subscription_plan_Pro,
+        subscription_plan_FreeTrial,
+        number_of_logins_last30days: userData.number_of_logins_last30days,
+        active_features_used: userData.active_features_used,
+        support_tickets_opened: userData.support_tickets_opened,
+        last_payment_status_Success,
+        email_opens_last30days: userData.email_opens_last30days,
+        last_login_days_ago: userData.last_login_days_ago,
+        billing_issue_count: userData.billing_issue_count
+      };
+      
+      const response = await fetch(churnApiUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${churnApiKey}`,
+        },
+        body: JSON.stringify(modelData),
+      });
+
+      if (response.ok) {
+        const churnData = await response.json();
+        churnScore = churnData.churn_score;
+        churnReason = churnData.churn_reason || 'AI model prediction based on user behavior patterns';
+      }
+    } catch (error) {
+      console.warn('Churn API error for user', userData.user_id, error);
+    }
+  } else if (stageAnalysis.skipAutomation) {
+    churnReason = stageAnalysis.message;
+  }
+
+  // Calculate risk level
+  let riskLevel: 'low' | 'medium' | 'high';
+  if (churnScore >= 0.7) {
+    riskLevel = 'high';
+  } else if (churnScore >= 0.4) {
+    riskLevel = 'medium';
+  } else {
+    riskLevel = 'low';
+  }
+
+  // Generate action recommendation
+  let actionRecommended = '';
+  if (stageAnalysis.skipAutomation) {
+    actionRecommended = `Wait ${stageAnalysis.daysUntilMature} more days for full prediction`;
+  } else if (churnScore < 0.3) {
+    actionRecommended = 'Low risk. Consider upsell or referral opportunities.';
+  } else if (churnScore >= 0.5) {
+    actionRecommended = 'High risk. Send win-back email or offer discount.';
+  } else {
+    actionRecommended = 'Monitor closely. Consider engagement campaigns.';
+  }
+
+  return {
+    churn_score: churnScore,
+    churn_reason: churnReason,
+    risk_level: riskLevel,
+    user_stage: stageAnalysis.stage,
+    understanding_score: Math.round(stageAnalysis.understandingScore),
+    days_until_mature: stageAnalysis.daysUntilMature,
+    action_recommended: actionRecommended,
+    skip_automation: stageAnalysis.skipAutomation
+  };
+}
+
+serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
@@ -26,256 +167,174 @@ const handler = async (req: Request): Promise<Response> => {
   if (req.method !== 'POST') {
     return new Response(
       JSON.stringify({ error: 'Method not allowed' }),
-      {
-        status: 405,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      }
+      { status: 405, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }
 
   try {
-    // Get user from JWT token
+    const { csvData, filename } = await req.json();
+    
+    if (!csvData || !Array.isArray(csvData) || csvData.length === 0) {
+      return new Response(
+        JSON.stringify({ error: 'Invalid CSV data provided' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    const supabase = createClient(supabaseUrl, supabaseKey);
+
+    // Get user from auth header
     const authHeader = req.headers.get('authorization');
     if (!authHeader) {
       return new Response(
-        JSON.stringify({ error: 'Missing authorization header' }),
-        {
-          status: 401,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        }
+        JSON.stringify({ error: 'Authorization required' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    // Initialize Supabase client
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
-
-    // Verify user token
     const token = authHeader.replace('Bearer ', '');
     const { data: { user }, error: authError } = await supabase.auth.getUser(token);
-
+    
     if (authError || !user) {
       return new Response(
-        JSON.stringify({ error: 'Invalid authentication token' }),
-        {
-          status: 401,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        }
+        JSON.stringify({ error: 'Invalid token' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    console.log('Processing CSV for user:', user.id);
+    console.log('Processing CSV for user:', user.id, 'with', csvData.length, 'rows');
 
-    // Parse form data
-    const formData = await req.formData();
-    const file = formData.get('file') as File;
+    // Record CSV upload
+    const { data: uploadRecord } = await supabase
+      .from('csv_uploads')
+      .insert({
+        user_id: user.id,
+        filename: filename || 'upload.csv',
+        status: 'processing'
+      })
+      .select()
+      .single();
 
-    if (!file) {
-      return new Response(
-        JSON.stringify({ error: 'No file provided' }),
-        {
-          status: 400,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        }
-      );
-    }
-
-    // Read and parse CSV content
-    const csvContent = await file.text();
-    const lines = csvContent.trim().split('\n');
-    
-    if (lines.length < 2) {
-      return new Response(
-        JSON.stringify({ error: 'CSV file must have at least a header and one data row' }),
-        {
-          status: 400,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        }
-      );
-    }
-
-    // Parse header
-    const headers = lines[0].split(',').map(h => h.trim().toLowerCase());
-    const expectedHeaders = ['user_id', 'plan', 'usage_score', 'last_login'];
-    
-    for (const expectedHeader of expectedHeaders) {
-      if (!headers.includes(expectedHeader)) {
-        return new Response(
-          JSON.stringify({ 
-            error: `Missing required column: ${expectedHeader}. Expected headers: ${expectedHeaders.join(', ')}` 
-          }),
-          {
-            status: 400,
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          }
-        );
-      }
-    }
-
-    console.log('CSV headers validated:', headers);
-
-    // Process each data row
     const results = [];
-    const errors = [];
     let processedCount = 0;
     let failedCount = 0;
+    const validationErrors = [];
 
-    // Get external API credentials (optional)
-    const churnApiUrl = Deno.env.get('CHURN_API_URL');
-    const churnApiKey = Deno.env.get('CHURN_API_KEY');
-
-    console.log('External API configured:', !!churnApiUrl && !!churnApiKey);
-
-    for (let i = 1; i < lines.length; i++) {
+    for (const [index, row] of csvData.entries()) {
       try {
-        const values = lines[i].split(',').map(v => v.trim());
-        const rowData: any = {};
-        
-        // Map values to headers
-        headers.forEach((header, index) => {
-          rowData[header] = values[index];
-        });
-
-        const csvRow: CsvRow = {
-          user_id: rowData.user_id,
-          plan: rowData.plan,
-          usage_score: parseFloat(rowData.usage_score),
-          last_login: rowData.last_login,
-        };
-
         // Validate row data
-        if (!csvRow.user_id || !csvRow.plan || isNaN(csvRow.usage_score) || !csvRow.last_login) {
-          errors.push(`Row ${i + 1}: Invalid data - ${JSON.stringify(csvRow)}`);
+        const validation = validateCSVRow(row);
+        
+        if (!validation.isValid) {
+          console.error(`Row ${index + 1}: Missing fields:`, validation.missingFields);
+          validationErrors.push({
+            row: index + 1,
+            user_id: row.user_id || 'unknown',
+            error: `Missing required fields: ${validation.missingFields.join(', ')}`,
+            action: 'Please ensure all required columns are present in your CSV'
+          });
           failedCount++;
           continue;
         }
 
-        console.log(`Processing row ${i + 1}:`, csvRow);
-
-        // Call churn prediction API with fallback
-        let churnScore = 0.5; // Default fallback score
+        // Process churn prediction with stage analysis
+        const prediction = await processChurnPrediction(row);
         
-        try {
-          if (churnApiUrl && churnApiKey) {
-            const churnResponse = await fetch(churnApiUrl, {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${churnApiKey}`,
-              },
-              body: JSON.stringify({
-                plan: csvRow.plan,
-                usage_score: csvRow.usage_score,
-                last_login: csvRow.last_login,
-              }),
-            });
+        // Map subscription plan
+        const planMapping: { [key: string]: 'Free' | 'Pro' | 'Enterprise' } = {
+          'Free Trial': 'Free',
+          'Pro': 'Pro', 
+          'Enterprise': 'Enterprise'
+        };
+        const validatedPlan = planMapping[row.subscription_plan] || 'Free';
 
-            if (churnResponse.ok) {
-              const churnData: ChurnResponse = await churnResponse.json();
-              churnScore = churnData.churn_score;
-              console.log(`External API churn score for row ${i + 1}:`, churnScore);
-            } else {
-              console.warn(`External API failed for row ${i + 1}, using fallback`);
-              // Use mock prediction as fallback
-              churnScore = Math.random() * 0.3 + (csvRow.usage_score > 100 ? 0.4 : 0.2);
-            }
-          } else {
-            console.log(`No external API configured, using mock prediction for row ${i + 1}`);
-            // Generate realistic mock score based on usage
-            churnScore = Math.random() * 0.3 + (csvRow.usage_score > 100 ? 0.4 : 0.2);
-          }
-        } catch (apiError) {
-          console.error(`API call failed for row ${i + 1}:`, apiError);
-          // Use mock prediction as fallback
-          churnScore = Math.random() * 0.3 + (csvRow.usage_score > 100 ? 0.4 : 0.2);
-        }
-
-        // Calculate risk level
-        let riskLevel: 'low' | 'medium' | 'high';
-        if (churnScore >= 0.7) {
-          riskLevel = 'high';
-        } else if (churnScore >= 0.4) {
-          riskLevel = 'medium';
-        } else {
-          riskLevel = 'low';
-        }
-
+        // Calculate last login date
+        const lastLoginDate = new Date();
+        lastLoginDate.setDate(lastLoginDate.getDate() - row.last_login_days_ago);
+        
         // Save to database
         const { error: saveError } = await supabase
           .from('user_data')
           .upsert({
-            user_id: csvRow.user_id,
+            user_id: row.user_id,
             owner_id: user.id,
-            plan: csvRow.plan as 'Free' | 'Pro' | 'Enterprise',
-            usage: csvRow.usage_score,
-            last_login: new Date(csvRow.last_login).toISOString(),
-            churn_score: churnScore,
-            risk_level: riskLevel,
+            plan: validatedPlan,
+            usage: row.monthly_revenue,
+            last_login: lastLoginDate.toISOString(),
+            churn_score: prediction.churn_score,
+            churn_reason: prediction.churn_reason,
+            risk_level: prediction.risk_level,
+            user_stage: prediction.user_stage,
+            understanding_score: prediction.understanding_score,
+            days_until_mature: prediction.days_until_mature,
+            action_recommended: prediction.action_recommended,
             updated_at: new Date().toISOString(),
           }, {
             onConflict: 'owner_id,user_id'
           });
 
         if (saveError) {
-          console.error(`Row ${i + 1} save error:`, saveError);
-          errors.push(`Row ${i + 1}: Database save failed - ${saveError.message}`);
+          console.error(`Failed to save user ${row.user_id}:`, saveError);
           failedCount++;
           continue;
         }
 
         results.push({
-          user_id: csvRow.user_id,
-          churn_score: churnScore,
-          risk_level: riskLevel,
+          user_id: row.user_id,
+          churn_probability: prediction.churn_score,
+          reason: prediction.churn_reason,
+          understanding_score: prediction.understanding_score,
+          user_stage: prediction.user_stage,
+          action: prediction.action_recommended,
+          skip_automation: prediction.skip_automation
         });
-
+        
         processedCount++;
-        console.log(`Successfully processed row ${i + 1} for user:`, csvRow.user_id);
-
+        
       } catch (error) {
-        console.error(`Error processing row ${i + 1}:`, error);
-        errors.push(`Row ${i + 1}: ${error.message}`);
+        console.error(`Error processing row ${index + 1}:`, error);
         failedCount++;
       }
     }
 
-    // Create upload record
-    await supabase
-      .from('csv_uploads')
-      .insert({
-        user_id: user.id,
-        filename: file.name,
-        rows_processed: processedCount,
-        rows_failed: failedCount,
-        status: failedCount === 0 ? 'completed' : 'completed_with_errors',
-      });
+    // Update upload record
+    if (uploadRecord) {
+      await supabase
+        .from('csv_uploads')
+        .update({
+          rows_processed: processedCount,
+          rows_failed: failedCount,
+          status: 'completed'
+        })
+        .eq('id', uploadRecord.id);
+    }
+
+    // Prepare response with validation errors
+    const response: any = {
+      status: 'completed',
+      processed: processedCount,
+      failed: failedCount,
+      total: csvData.length,
+      results
+    };
+
+    if (validationErrors.length > 0) {
+      response.validation_errors = validationErrors;
+      response.message = `Your CSV is missing key columns needed for accurate churn detection. Please review the validation errors.`;
+    }
 
     return new Response(
-      JSON.stringify({
-        success: true,
-        processed: processedCount,
-        failed: failedCount,
-        total_rows: lines.length - 1,
-        results: results.slice(0, 10), // Return first 10 results as preview
-        errors: errors.slice(0, 5), // Return first 5 errors
-      }),
-      {
-        status: 200,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      }
+      JSON.stringify(response),
+      { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
 
   } catch (error) {
-    console.error('Error in process-csv function:', error);
+    console.error('Error processing CSV:', error);
     return new Response(
-      JSON.stringify({ error: 'Internal server error' }),
-      {
-        status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      }
+      JSON.stringify({ error: 'Internal server error', details: error.message }),
+      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }
-};
-
-serve(handler);
+});

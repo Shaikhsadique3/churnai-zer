@@ -236,6 +236,139 @@ export type Database = {
         }
         Relationships: []
       }
+      playbook_actions_queue: {
+        Row: {
+          action_data: Json
+          action_type: string
+          created_at: string
+          error_message: string | null
+          execute_at: string
+          executed_at: string | null
+          id: string
+          playbook_id: string | null
+          status: string
+          step_index: number
+          target_user_id: string
+          user_id: string
+        }
+        Insert: {
+          action_data?: Json
+          action_type: string
+          created_at?: string
+          error_message?: string | null
+          execute_at?: string
+          executed_at?: string | null
+          id?: string
+          playbook_id?: string | null
+          status?: string
+          step_index?: number
+          target_user_id: string
+          user_id: string
+        }
+        Update: {
+          action_data?: Json
+          action_type?: string
+          created_at?: string
+          error_message?: string | null
+          execute_at?: string
+          executed_at?: string | null
+          id?: string
+          playbook_id?: string | null
+          status?: string
+          step_index?: number
+          target_user_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "playbook_actions_queue_playbook_id_fkey"
+            columns: ["playbook_id"]
+            isOneToOne: false
+            referencedRelation: "playbooks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      playbook_audit_log: {
+        Row: {
+          action_data: Json
+          action_type: string
+          error_message: string | null
+          executed_at: string
+          id: string
+          playbook_id: string | null
+          status: string
+          target_user_id: string
+          user_id: string
+        }
+        Insert: {
+          action_data?: Json
+          action_type: string
+          error_message?: string | null
+          executed_at?: string
+          id?: string
+          playbook_id?: string | null
+          status: string
+          target_user_id: string
+          user_id: string
+        }
+        Update: {
+          action_data?: Json
+          action_type?: string
+          error_message?: string | null
+          executed_at?: string
+          id?: string
+          playbook_id?: string | null
+          status?: string
+          target_user_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "playbook_audit_log_playbook_id_fkey"
+            columns: ["playbook_id"]
+            isOneToOne: false
+            referencedRelation: "playbooks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      playbooks: {
+        Row: {
+          actions: Json
+          conditions: Json
+          created_at: string
+          description: string | null
+          id: string
+          is_active: boolean
+          name: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          actions?: Json
+          conditions?: Json
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          name: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          actions?: Json
+          conditions?: Json
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          name?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null

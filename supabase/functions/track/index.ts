@@ -301,6 +301,31 @@ serve(async (req) => {
     const successful = results.filter(r => r.status === 'ok').length;
     const failed = results.filter(r => r.status === 'error').length;
 
+    // Process playbooks after successful user data processing
+    if (successful > 0) {
+      try {
+        console.log('Triggering playbook processing for updated users...');
+        
+        // Call the process-playbooks function
+        const playbookResponse = await fetch(`${supabaseUrl}/functions/v1/process-playbooks`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${supabaseKey}`,
+          },
+        });
+
+        if (playbookResponse.ok) {
+          const playbookResult = await playbookResponse.json();
+          console.log('Playbooks processed:', playbookResult);
+        } else {
+          console.warn('Playbook processing failed, but continuing...');
+        }
+      } catch (playbookError) {
+        console.warn('Error triggering playbooks, but continuing:', playbookError);
+      }
+    }
+
     return new Response(
       JSON.stringify({
         status: 'ok',

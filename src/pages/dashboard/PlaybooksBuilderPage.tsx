@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Plus, Trash2, Save, TestTube, ArrowLeft } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
 interface Condition {
   id: string;
@@ -157,13 +158,43 @@ export const PlaybooksBuilderPage = () => {
 
     console.log("Saving playbook:", playbook);
 
-    // TODO: Implement API call to save playbook
-    // await supabase.functions.invoke('save-playbook', { body: playbook });
+    try {
+      // Save playbook via Supabase function
+      const { data, error } = await supabase.functions.invoke('save-playbook', { 
+        body: playbook 
+      });
 
-    toast({
-      title: "Success!",
-      description: "Playbook saved successfully",
-    });
+      if (error) {
+        console.error('Error saving playbook:', error);
+        toast({
+          title: "Error",
+          description: "Failed to save playbook. Please try again.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      console.log('Playbook saved:', data);
+      
+      toast({
+        title: "Success!",
+        description: "Playbook saved successfully",
+      });
+
+      // Reset form
+      setPlaybookName("");
+      setDescription("");
+      setConditions([{ id: "1", field: "", operator: "", value: "" }]);
+      setActions([{ id: "1", type: "", value: "" }]);
+      
+    } catch (error) {
+      console.error('Error saving playbook:', error);
+      toast({
+        title: "Error",
+        description: "Failed to save playbook. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleTestLogic = () => {

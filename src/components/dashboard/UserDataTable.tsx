@@ -13,8 +13,9 @@ interface UserData {
   churn_reason: string | null;
   risk_level: 'low' | 'medium' | 'high';
   understanding_score?: number;
-  status_tag?: string;
+  user_stage?: string;
   days_until_mature?: number;
+  action_recommended?: string;
   created_at: string;
 }
 
@@ -25,20 +26,17 @@ interface UserDataTableProps {
 
 const UserDataTable = ({ data, isLoading }: UserDataTableProps) => {
   const getStatusBadge = (user: UserData) => {
-    const { status_tag, understanding_score, days_until_mature, risk_level, churn_score } = user;
+    const { user_stage, understanding_score, days_until_mature, risk_level, churn_score } = user;
     
     // Status configurations with enhanced lifecycle awareness
     const statusConfig = {
-      new_user: { variant: 'outline' as const, emoji: '⏳', label: 'New User', bgColor: 'bg-blue-50', textColor: 'text-blue-700' },
-      growing_user: { variant: 'secondary' as const, emoji: '🔍', label: 'Growing', bgColor: 'bg-purple-50', textColor: 'text-purple-700' },
-      mature_safe: { variant: 'default' as const, emoji: '🟢', label: 'Safe', bgColor: 'bg-green-50', textColor: 'text-green-700' },
-      mature_user: { variant: 'default' as const, emoji: '✅', label: 'Mature', bgColor: 'bg-gray-50', textColor: 'text-gray-700' },
-      high_risk_mature: { variant: 'destructive' as const, emoji: '🔴', label: 'High Risk', bgColor: 'bg-red-50', textColor: 'text-red-700' },
-      medium_risk_mature: { variant: 'secondary' as const, emoji: '🟡', label: 'Medium Risk', bgColor: 'bg-yellow-50', textColor: 'text-yellow-700' },
+      new_user: { variant: 'outline' as const, emoji: '🐣', label: 'New User', bgColor: 'bg-blue-50', textColor: 'text-blue-700' },
+      growing_user: { variant: 'secondary' as const, emoji: '🌱', label: 'Growing', bgColor: 'bg-purple-50', textColor: 'text-purple-700' },
+      mature_user: { variant: 'default' as const, emoji: '🌳', label: 'Mature', bgColor: 'bg-gray-50', textColor: 'text-gray-700' },
     };
     
     const fallbackConfig = { variant: 'outline' as const, emoji: '❓', label: 'Unknown', bgColor: 'bg-gray-50', textColor: 'text-gray-600' };
-    const config = statusConfig[status_tag as keyof typeof statusConfig] || fallbackConfig;
+    const config = statusConfig[user_stage as keyof typeof statusConfig] || fallbackConfig;
     
     return (
       <div className={`inline-flex flex-col space-y-1 px-2 py-1 rounded-lg ${config.bgColor}`}>
@@ -62,7 +60,7 @@ const UserDataTable = ({ data, isLoading }: UserDataTableProps) => {
               ></div>
             </div>
             <span className="text-xs text-muted-foreground">
-              {understanding_score.toFixed(0)}%
+              {understanding_score}%
             </span>
           </div>
         )}

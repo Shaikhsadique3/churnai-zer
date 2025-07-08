@@ -242,7 +242,7 @@ serve(async (req) => {
         const lastLoginDate = new Date();
         lastLoginDate.setDate(lastLoginDate.getDate() - last_login_days_ago);
         
-        // Save to user_data table
+        // Save to user_data table with enhanced fields
         const { error: saveError } = await supabase
           .from('user_data')
           .upsert({
@@ -254,6 +254,10 @@ serve(async (req) => {
             churn_score: churnScore,
             churn_reason: churnReason,
             risk_level: riskLevel,
+            user_stage: statusTag,
+            understanding_score: Math.round(understandingScore),
+            days_until_mature: daysUntilMature,
+            action_recommended: actionRecommended,
             updated_at: new Date().toISOString(),
           }, {
             onConflict: 'owner_id,user_id'

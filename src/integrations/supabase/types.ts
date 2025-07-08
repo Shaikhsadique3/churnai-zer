@@ -300,43 +300,55 @@ export type Database = {
       }
       user_data: {
         Row: {
+          action_recommended: string | null
           churn_reason: string | null
           churn_score: number | null
           created_at: string | null
+          days_until_mature: number | null
           id: string
           last_login: string | null
           owner_id: string
           plan: Database["public"]["Enums"]["plan_type"] | null
           risk_level: Database["public"]["Enums"]["risk_level"] | null
+          understanding_score: number | null
           updated_at: string | null
           usage: number | null
           user_id: string
+          user_stage: string | null
         }
         Insert: {
+          action_recommended?: string | null
           churn_reason?: string | null
           churn_score?: number | null
           created_at?: string | null
+          days_until_mature?: number | null
           id?: string
           last_login?: string | null
           owner_id: string
           plan?: Database["public"]["Enums"]["plan_type"] | null
           risk_level?: Database["public"]["Enums"]["risk_level"] | null
+          understanding_score?: number | null
           updated_at?: string | null
           usage?: number | null
           user_id: string
+          user_stage?: string | null
         }
         Update: {
+          action_recommended?: string | null
           churn_reason?: string | null
           churn_score?: number | null
           created_at?: string | null
+          days_until_mature?: number | null
           id?: string
           last_login?: string | null
           owner_id?: string
           plan?: Database["public"]["Enums"]["plan_type"] | null
           risk_level?: Database["public"]["Enums"]["risk_level"] | null
+          understanding_score?: number | null
           updated_at?: string | null
           usage?: number | null
           user_id?: string
+          user_stage?: string | null
         }
         Relationships: []
       }

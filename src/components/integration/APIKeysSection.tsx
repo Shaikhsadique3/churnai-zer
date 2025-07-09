@@ -59,26 +59,33 @@ export const APIKeysSection = ({
           </div>
           
           {isLoading ? (
-            <div className="animate-pulse bg-gray-200 h-10 rounded"></div>
+            <div className="animate-pulse bg-muted h-10 rounded"></div>
           ) : (
             <div className="space-y-2">
-              {apiKeys?.map((key) => (
-                <div key={key.id} className="flex items-center justify-between p-3 bg-gray-50 rounded">
-                  <div>
-                    <p className="font-medium">{key.name}</p>
-                    <p className="font-mono text-sm text-gray-600">
-                      {key.key.substring(0, 12)}...{key.key.slice(-4)}
-                    </p>
+              {apiKeys?.length ? (
+                apiKeys.map((key) => (
+                  <div key={key.id} className="flex items-center justify-between p-3 bg-muted/50 rounded">
+                    <div>
+                      <p className="font-medium">{key.name || 'Unnamed Key'}</p>
+                      <p className="font-mono text-sm text-muted-foreground">
+                        {key.key ? `${key.key.substring(0, 12)}...${key.key.slice(-4)}` : 'Invalid key'}
+                      </p>
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => key.key && onCopyKey(key.key)}
+                      disabled={!key.key}
+                    >
+                      <Copy className="h-4 w-4" />
+                    </Button>
                   </div>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => onCopyKey(key.key)}
-                  >
-                    <Copy className="h-4 w-4" />
-                  </Button>
+                ))
+              ) : (
+                <div className="text-center py-4 text-muted-foreground">
+                  No API keys found. Generate your first key above.
                 </div>
-              ))}
+              )}
             </div>
           )}
         </div>

@@ -11,7 +11,8 @@ import {
   LogOut,
   Shield,
   ChevronDown,
-  ChevronRight
+  ChevronRight,
+  Code
 } from "lucide-react";
 import {
   Sidebar,
@@ -69,6 +70,11 @@ const navigationItems = [
     title: "CRM & Email Integration",
     url: "/dashboard/integrations",
     icon: Puzzle
+  },
+  {
+    title: "Website Integration",
+    url: "/integration",
+    icon: Code
   },
   {
     title: "Settings",

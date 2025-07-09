@@ -2,11 +2,13 @@ import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Users, TrendingUp, AlertTriangle, Shield, Upload, Calendar, Bell } from "lucide-react";
+import { Users, TrendingUp, AlertTriangle, Shield, Upload, Calendar, Bell, Code, ExternalLink, Puzzle } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { format } from "date-fns";
+import { Button } from "@/components/ui/button";
+import { Link } from "react-router-dom";
 
 interface DashboardStats {
   totalUsers: number;
@@ -72,6 +74,22 @@ export const DashboardOverview = () => {
         .single();
       
       if (error && error.code !== 'PGRST116') throw error;
+      return data;
+    },
+    enabled: !!user?.id,
+  });
+
+  // Check if user has API keys (Website Integration status)
+  const { data: apiKeys } = useQuery({
+    queryKey: ['api-keys', user?.id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('api_keys')
+        .select('id')
+        .eq('user_id', user?.id)
+        .eq('is_active', true);
+      
+      if (error) throw error;
       return data;
     },
     enabled: !!user?.id,
@@ -210,6 +228,50 @@ export const DashboardOverview = () => {
           </CardContent>
         </Card>
 
+        {/* Website Integration Widget */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Code className="h-5 w-5" />
+              Website Integration
+            </CardTitle>
+            <CardDescription>
+              Connect ChurnGuard to your website via SDK
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-muted-foreground">Status:</span>
+              <Badge variant={apiKeys && apiKeys.length > 0 ? "default" : "secondary"}>
+                {apiKeys && apiKeys.length > 0 ? "Connected" : "Pending Setup"}
+              </Badge>
+            </div>
+            
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-muted-foreground">API Keys:</span>
+              <span className="text-sm font-medium">
+                {apiKeys?.length || 0} active
+              </span>
+            </div>
+
+            <div className="space-y-2">
+              <Button asChild className="w-full">
+                <Link to="/integration">
+                  Go to Setup
+                </Link>
+              </Button>
+              <Button variant="outline" size="sm" className="w-full" asChild>
+                <a href="https://churnaizer-sdk.netlify.app/test.html" target="_blank" rel="noopener noreferrer">
+                  <ExternalLink className="h-3 w-3 mr-1" />
+                  Test SDK
+                </a>
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Notifications/Warnings */}
         <Card>
           <CardHeader>
@@ -256,6 +318,47 @@ export const DashboardOverview = () => {
                 </AlertDescription>
               </Alert>
             )}
+
+            {(!apiKeys || apiKeys.length === 0) && (
+              <Alert className="border-purple-200 bg-purple-50 dark:border-purple-800 dark:bg-purple-950/20">
+                <Code className="h-4 w-4 text-purple-600" />
+                <AlertDescription className="text-purple-800 dark:text-purple-400">
+                  Set up Website Integration to start tracking users automatically.
+                </AlertDescription>
+              </Alert>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Integration Status</CardTitle>
+            <CardDescription>Your connection overview</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
+              <div className="flex items-center gap-3">
+                <Code className="h-5 w-5 text-primary" />
+                <div>
+                  <p className="font-medium">Website SDK</p>
+                  <p className="text-xs text-muted-foreground">JavaScript integration</p>
+                </div>
+              </div>
+              <Badge variant={apiKeys && apiKeys.length > 0 ? "default" : "outline"}>
+                {apiKeys && apiKeys.length > 0 ? "Active" : "Setup Required"}
+              </Badge>
+            </div>
+            
+            <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
+              <div className="flex items-center gap-3">
+                <Puzzle className="h-5 w-5 text-primary" />
+                <div>
+                  <p className="font-medium">CRM Integration</p>
+                  <p className="text-xs text-muted-foreground">Email & automation tools</p>
+                </div>
+              </div>
+              <Badge variant="outline">Coming Soon</Badge>
+            </div>
           </CardContent>
         </Card>
       </div>

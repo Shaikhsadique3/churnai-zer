@@ -20,6 +20,8 @@ import { UploadedUsersPage } from "./pages/dashboard/UploadedUsersPage";
 import { ChurnReportsPage } from "./pages/dashboard/ChurnReportsPage";
 import { AutomationsPage } from "./pages/dashboard/AutomationsPage";
 import { PlaybooksBuilderPage } from "./pages/dashboard/PlaybooksBuilderPage";
+import { EmailTemplatesPage } from "./pages/dashboard/EmailTemplatesPage";
+import { EmailLogsPage } from "./pages/dashboard/EmailLogsPage";
 import { IntegrationsPage } from "./pages/dashboard/IntegrationsPage";
 import { SettingsPage } from "./pages/dashboard/SettingsPage";
 
@@ -54,6 +56,8 @@ const App = () => (
               <Route path="automations/playbooks" element={<AutomationsPage />} />
               <Route path="automations/playbooks-builder" element={<PlaybooksBuilderPage />} />
               <Route path="automations/emails" element={<AutomationsPage />} />
+              <Route path="email-templates" element={<EmailTemplatesPage />} />
+              <Route path="email-logs" element={<EmailLogsPage />} />
               <Route path="integrations" element={<IntegrationsPage />} />
               <Route path="settings" element={<SettingsPage />} />
             </Route>

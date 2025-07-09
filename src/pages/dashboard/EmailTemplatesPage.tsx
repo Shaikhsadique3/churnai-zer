@@ -68,6 +68,7 @@ export const EmailTemplatesPage = () => {
       const { data, error } = await supabase
         .from('email_templates')
         .insert({
+          id: `template_${Date.now()}_${Math.random().toString(36).substring(2)}`,
           user_id: session.user.id,
           name: templateData.name,
           subject: templateData.subject,

@@ -5,9 +5,13 @@ import {
   Upload,
   Users,
   BarChart3,
+  Settings,
+  Cog,
+  Link as LinkIcon,
+  Bot,
+  Mail,
   Workflow,
   Puzzle,
-  Settings,
   LogOut,
   Shield,
   ChevronDown,
@@ -54,6 +58,16 @@ const navigationItems = [
   {
     title: "Churn Reports",
     url: "/dashboard/reports",
+    icon: BarChart3
+  },
+  {
+    title: "Email Templates",
+    url: "/dashboard/email-templates",
+    icon: Mail
+  },
+  {
+    title: "Email Logs",
+    url: "/dashboard/email-logs",
     icon: BarChart3
   },
   {

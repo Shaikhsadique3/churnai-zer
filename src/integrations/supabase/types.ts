@@ -170,30 +170,102 @@ export type Database = {
         }
         Relationships: []
       }
+      email_logs: {
+        Row: {
+          clicked_at: string | null
+          created_at: string
+          email_data: Json | null
+          error_message: string | null
+          id: string
+          opened_at: string | null
+          playbook_id: string | null
+          sent_at: string | null
+          status: string
+          target_email: string
+          target_user_id: string | null
+          template_id: string | null
+          user_id: string
+        }
+        Insert: {
+          clicked_at?: string | null
+          created_at?: string
+          email_data?: Json | null
+          error_message?: string | null
+          id?: string
+          opened_at?: string | null
+          playbook_id?: string | null
+          sent_at?: string | null
+          status?: string
+          target_email: string
+          target_user_id?: string | null
+          template_id?: string | null
+          user_id: string
+        }
+        Update: {
+          clicked_at?: string | null
+          created_at?: string
+          email_data?: Json | null
+          error_message?: string | null
+          id?: string
+          opened_at?: string | null
+          playbook_id?: string | null
+          sent_at?: string | null
+          status?: string
+          target_email?: string
+          target_user_id?: string | null
+          template_id?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "email_logs_playbook_id_fkey"
+            columns: ["playbook_id"]
+            isOneToOne: false
+            referencedRelation: "playbooks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "email_logs_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "email_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       email_templates: {
         Row: {
           content: string
           created_at: string | null
           id: string
+          is_active: boolean | null
           name: string
           subject: string
           updated_at: string | null
+          user_id: string | null
+          variables: Json | null
         }
         Insert: {
           content: string
           created_at?: string | null
           id: string
+          is_active?: boolean | null
           name: string
           subject: string
           updated_at?: string | null
+          user_id?: string | null
+          variables?: Json | null
         }
         Update: {
           content?: string
           created_at?: string | null
           id?: string
+          is_active?: boolean | null
           name?: string
           subject?: string
           updated_at?: string | null
+          user_id?: string | null
+          variables?: Json | null
         }
         Relationships: []
       }

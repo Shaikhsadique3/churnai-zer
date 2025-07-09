@@ -6,6 +6,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { useState } from "react";
+import { Button } from "@/components/ui/button";
 import DashboardHeader from "@/components/dashboard/DashboardHeader";
 import { APIKeysSection } from "@/components/integration/APIKeysSection";
 import { IntegrationScriptSection } from "@/components/integration/IntegrationScriptSection";
@@ -18,8 +19,20 @@ const Integration = () => {
   const [newKeyName, setNewKeyName] = useState('');
   const queryClient = useQueryClient();
 
+  // Show loading or redirect if not authenticated
+  if (!user) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <h2 className="text-xl font-semibold mb-2">Authentication Required</h2>
+          <p className="text-muted-foreground">Please log in to access the Integration page.</p>
+        </div>
+      </div>
+    );
+  }
+
   // Fetch API keys
-  const { data: apiKeys, isLoading } = useQuery({
+  const { data: apiKeys, isLoading, error: apiKeysError } = useQuery({
     queryKey: ['api-keys', user?.id],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -89,6 +102,46 @@ const Integration = () => {
     await signOut();
   };
 
+  // Show loading state
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-background">
+        <DashboardHeader 
+          userEmail={user?.email || ''}
+          onLogout={handleLogout}
+        />
+        <main className="container mx-auto px-2 sm:px-4 py-4 sm:py-8">
+          <div className="space-y-6">
+            {[...Array(4)].map((_, i) => (
+              <div key={i} className="animate-pulse bg-muted h-32 rounded-lg"></div>
+            ))}
+          </div>
+        </main>
+      </div>
+    );
+  }
+
+  // Show error state
+  if (apiKeysError) {
+    return (
+      <div className="min-h-screen bg-background">
+        <DashboardHeader 
+          userEmail={user?.email || ''}
+          onLogout={handleLogout}
+        />
+        <main className="container mx-auto px-2 sm:px-4 py-4 sm:py-8">
+          <div className="text-center py-12">
+            <h2 className="text-xl font-semibold mb-2 text-red-600">Error Loading Integration</h2>
+            <p className="text-muted-foreground mb-4">{apiKeysError.message}</p>
+            <Button onClick={() => window.location.reload()}>
+              Try Again
+            </Button>
+          </div>
+        </main>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-background">
       <DashboardHeader 
@@ -102,10 +155,23 @@ const Integration = () => {
             <ArrowLeft className="h-4 w-4 mr-1" />
             Back to Dashboard
           </Link>
-          <h1 className="text-2xl sm:text-3xl font-bold text-foreground">API Integration</h1>
+          <h1 className="text-2xl sm:text-3xl font-bold text-foreground">🔗 Website Integration</h1>
           <p className="text-muted-foreground mt-2 text-sm sm:text-base">
-            Integrate ChurnGuard with your application using our REST API
+            Connect ChurnGuard to your website via SDK and API
           </p>
+          <div className="flex items-center gap-2 mt-3">
+            <div className="flex items-center gap-2 text-sm">
+              <div className={`w-2 h-2 rounded-full ${apiKeys && apiKeys.length > 0 ? 'bg-green-500' : 'bg-yellow-500'}`}></div>
+              <span className="text-muted-foreground">
+                {apiKeys && apiKeys.length > 0 ? 'Connected' : 'Setup Required'}
+              </span>
+            </div>
+            <Button variant="outline" size="sm" asChild>
+              <a href="https://churnaizer-sdk.netlify.app/test.html" target="_blank" rel="noopener noreferrer">
+                🧪 Test SDK
+              </a>
+            </Button>
+          </div>
         </div>
 
         <APIKeysSection

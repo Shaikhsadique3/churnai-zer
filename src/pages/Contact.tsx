@@ -230,6 +230,7 @@ const Contact = () => {
               <Link to="/privacy" className="text-muted-foreground hover:text-foreground">Privacy Policy</Link>
               <Link to="/terms" className="text-muted-foreground hover:text-foreground">Terms of Service</Link>
               <Link to="/refund-policy" className="text-muted-foreground hover:text-foreground">Refund Policy</Link>
+              <Link to="/pricing" className="text-muted-foreground hover:text-foreground">Pricing</Link>
               <Link to="/contact" className="text-muted-foreground hover:text-foreground">Contact</Link>
             </div>
           </div>

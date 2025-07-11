@@ -43,13 +43,16 @@ const CRMIntegrationPanel = () => {
 
   const loadSettings = async () => {
     try {
+      // Get the most recent settings record for this user
       const { data, error } = await supabase
         .from('integration_settings')
         .select('*')
         .eq('user_id', user?.id)
-        .single();
+        .order('updated_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
 
-      if (error && error.code !== 'PGRST116') { // PGRST116 = no rows returned
+      if (error) {
         throw error;
       }
 
@@ -176,10 +179,16 @@ const CRMIntegrationPanel = () => {
     setLoading(prev => ({ ...prev, save: true }));
 
     try {
-      // Use upsert to insert or update the integration_settings record
+      // First, delete any existing records for this user to avoid duplicates
+      await supabase
+        .from('integration_settings')
+        .delete()
+        .eq('user_id', user.id);
+
+      // Then insert the new settings
       const { data, error } = await supabase
         .from('integration_settings')
-        .upsert({
+        .insert({
           user_id: user.id,
           email_provider: settings.email_provider || null,
           email_api_key: settings.email_api_key || null,

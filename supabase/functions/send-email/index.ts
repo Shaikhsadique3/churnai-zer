@@ -3,27 +3,20 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.50.2';
 import { Resend } from "npm:resend@4.0.0";
 
 const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Methods': 'POST, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Methods": "POST, OPTIONS"
 };
-
-interface SendEmailRequest {
-  to: string;
-  subject: string;
-  html: string;
-  from?: string;
-}
 
 serve(async (req) => {
   // Handle CORS preflight requests
-  if (req.method === 'OPTIONS') {
+  if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
   if (req.method !== 'POST') {
     return new Response(
-      JSON.stringify({ success: false, error: 'Method not allowed' }),
+      JSON.stringify({ error: 'Method not allowed' }),
       { status: 405, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }
@@ -31,72 +24,81 @@ serve(async (req) => {
   try {
     console.log('Send email request received');
     
-    // Get auth header
-    const authHeader = req.headers.get('Authorization');
+    // Initialize Supabase client
+    const supabaseUrl = Deno.env.get("SUPABASE_URL");
+    const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+    
+    if (!supabaseUrl || !supabaseKey) {
+      throw new Error('Missing Supabase configuration');
+    }
+    
+    const supabase = createClient(supabaseUrl, supabaseKey);
+
+    // Get and verify authorization header
+    const authHeader = req.headers.get("authorization");
     if (!authHeader) {
       console.error('Missing authorization header');
       return new Response(
-        JSON.stringify({ success: false, error: 'Missing authorization header' }),
+        JSON.stringify({ error: "Missing authorization header" }),
         { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    // Initialize Supabase client
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-    const supabase = createClient(supabaseUrl, supabaseKey);
+    // Verify JWT token and get user
+    const jwt = authHeader.replace("Bearer ", "");
+    const { data: { user }, error: userError } = await supabase.auth.getUser(jwt);
 
-    // Verify user
-    const token = authHeader.replace('Bearer ', '');
-    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
-    
-    if (authError || !user) {
-      console.error('Authentication failed:', authError);
+    if (userError || !user) {
+      console.error('Authentication failed:', userError);
       return new Response(
-        JSON.stringify({ success: false, error: 'Invalid authorization' }),
+        JSON.stringify({ error: "Invalid token or user not found" }),
         { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
     // Parse request body
-    const { to, subject, html, from }: SendEmailRequest = await req.json();
+    const { to, subject, html } = await req.json();
     
     if (!to || !subject || !html) {
       return new Response(
-        JSON.stringify({ success: false, error: 'Missing required fields: to, subject, html' }),
+        JSON.stringify({ error: 'Missing required fields: to, subject, html' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
     console.log('Sending email to:', to, 'Subject:', subject);
 
-    // Fetch user's email provider settings
-    const { data: emailProvider, error: providerError } = await supabase
-      .from('integration_settings')
-      .select('*')
-      .eq('user_id', user.id)
+    // Fetch user's email settings from integration_settings table
+    const { data: emailSettings, error: settingsError } = await supabase
+      .from("integration_settings")
+      .select("sender_email, sender_name, email_api_key, email_provider")
+      .eq("user_id", user.id)
       .maybeSingle();
 
-    if (providerError) {
-      console.error('Error fetching email provider:', providerError);
+    if (settingsError) {
+      console.error('Error fetching email settings:', settingsError);
       return new Response(
-        JSON.stringify({ success: false, error: 'Failed to fetch email settings' }),
+        JSON.stringify({ error: "Failed to fetch email settings" }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    // Determine from email and provider
-    let fromEmail = from || 'Churnaizer <notify@churnaizer.com>'; // Default fallback
-    let provider = 'resend'; // Default provider
-    
-    if (emailProvider?.sender_email) {
-      fromEmail = emailProvider.sender_name 
-        ? `${emailProvider.sender_name} <${emailProvider.sender_email}>`
-        : emailProvider.sender_email;
-      provider = emailProvider.email_provider || 'resend';
+    // Determine from email address
+    let fromEmail = 'Churnaizer <notify@churnaizer.com>'; // Default fallback
+    if (emailSettings?.sender_email) {
+      fromEmail = emailSettings.sender_name 
+        ? `${emailSettings.sender_name} <${emailSettings.sender_email}>`
+        : emailSettings.sender_email;
     }
 
-    console.log('Using from email:', fromEmail, 'Provider:', provider);
+    // Get Resend API key (from user settings or environment)
+    const resendApiKey = emailSettings?.email_api_key || Deno.env.get("RESEND_API_KEY");
+    if (!resendApiKey) {
+      return new Response(
+        JSON.stringify({ error: "Resend API key not configured" }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
 
     // Create email log entry
     const { data: emailLog, error: logError } = await supabase
@@ -109,7 +111,7 @@ serve(async (req) => {
           subject,
           html,
           from: fromEmail,
-          provider
+          provider: 'resend'
         }
       })
       .select('id')
@@ -119,77 +121,17 @@ serve(async (req) => {
       console.error('Failed to create email log:', logError);
     }
 
-    let emailResponse;
-    let emailId;
+    // Send email using Resend
+    const resend = new Resend(resendApiKey);
+    const emailResponse = await resend.emails.send({
+      from: fromEmail,
+      to: [to],
+      subject,
+      html,
+    });
 
-    try {
-      if (provider === 'resend' || !emailProvider?.email_provider) {
-        // Use Resend
-        const resendApiKey = emailProvider?.email_api_key || Deno.env.get('RESEND_API_KEY');
-        
-        if (!resendApiKey) {
-          throw new Error('Resend API key not configured');
-        }
-
-        const resend = new Resend(resendApiKey);
-        console.log('Sending via Resend...');
-        
-        emailResponse = await resend.emails.send({
-          from: fromEmail,
-          to: [to],
-          subject: subject,
-          html: html,
-        });
-
-        if (emailResponse.error) {
-          throw new Error(`Resend error: ${emailResponse.error.message}`);
-        }
-
-        emailId = emailResponse.data?.id;
-        console.log('Resend response:', emailResponse);
-
-      } else if (provider === 'smtp') {
-        // Use SMTP (placeholder - would need SMTP implementation)
-        console.log('SMTP sending would be implemented here');
-        emailId = `smtp_${Date.now()}`;
-        emailResponse = { data: { id: emailId } };
-        
-      } else {
-        throw new Error(`Unsupported email provider: ${provider}`);
-      }
-
-      // Update email log with success
-      if (emailLog?.id) {
-        await supabase
-          .from('email_logs')
-          .update({
-            status: 'sent',
-            sent_at: new Date().toISOString(),
-            email_data: {
-              subject,
-              html,
-              from: fromEmail,
-              provider,
-              email_id: emailId
-            }
-          })
-          .eq('id', emailLog.id);
-      }
-
-      console.log('Email sent successfully:', emailId);
-
-      return new Response(
-        JSON.stringify({
-          success: true,
-          message: 'Email sent successfully',
-          emailId: emailId,
-          provider: provider
-        }),
-        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-
-    } catch (emailError: any) {
-      console.error('Email sending failed:', emailError);
+    if (emailResponse.error) {
+      console.error('Resend API error:', emailResponse.error);
       
       // Update email log with failure
       if (emailLog?.id) {
@@ -197,30 +139,51 @@ serve(async (req) => {
           .from('email_logs')
           .update({
             status: 'failed',
-            error_message: emailError.message
+            error_message: emailResponse.error.message
           })
           .eq('id', emailLog.id);
       }
-
+      
       return new Response(
-        JSON.stringify({
-          success: false,
-          error: `Failed to send email: ${emailError.message}`,
-          provider: provider
-        }),
+        JSON.stringify({ error: `Resend error: ${emailResponse.error.message}` }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
+
+    // Update email log with success
+    if (emailLog?.id) {
+      await supabase
+        .from('email_logs')
+        .update({
+          status: 'sent',
+          sent_at: new Date().toISOString(),
+          email_data: {
+            subject,
+            html,
+            from: fromEmail,
+            provider: 'resend',
+            email_id: emailResponse.data?.id
+          }
+        })
+        .eq('id', emailLog.id);
+    }
+
+    console.log('Email sent successfully:', emailResponse.data?.id);
+
+    return new Response(
+      JSON.stringify({
+        success: true,
+        message: "Email sent successfully",
+        id: emailResponse.data?.id,
+      }),
+      { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
 
   } catch (error: any) {
     console.error('Unexpected error in send-email function:', error);
     
     return new Response(
-      JSON.stringify({
-        success: false,
-        error: 'Internal server error',
-        details: error.message
-      }),
+      JSON.stringify({ error: error.message }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }

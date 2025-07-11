@@ -103,13 +103,17 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   const resetPassword = async (email: string) => {
     try {
-      const redirectUrl = `${window.location.origin}/reset-password`;
-      
-      const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: redirectUrl,
+      // Use our custom edge function with Resend instead of Supabase's built-in email
+      const { data, error } = await supabase.functions.invoke('send-password-reset', {
+        body: { email }
       });
       
-      return { error };
+      if (error) {
+        console.error('Password reset function error:', error);
+        return { error: { message: error.message } };
+      }
+      
+      return { error: null };
     } catch (err) {
       console.error('Password reset error:', err);
       return { error: { message: 'Network error: Please check your internet connection and try again.' } };

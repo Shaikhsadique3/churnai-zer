@@ -200,9 +200,22 @@ const Auth = () => {
         variant: "destructive",
       });
     } else {
+      // Send welcome email
+      try {
+        await supabase.functions.invoke('send-welcome-email', {
+          body: { 
+            email,
+            name: email.split('@')[0] // Use email prefix as name
+          }
+        });
+      } catch (emailError) {
+        console.warn('Failed to send welcome email:', emailError);
+        // Don't fail signup if welcome email fails
+      }
+
       toast({
         title: "🎉 Account created successfully!",
-        description: "Welcome to ChurnGuard Lite!",
+        description: "Welcome to ChurnGuard Lite! Check your email for a welcome message.",
       });
       
       // For new signups, we can assume they are new users

@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Shield, Eye, EyeOff, Check, AlertCircle } from "lucide-react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { toast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 
 const ResetPassword = () => {
@@ -32,18 +33,36 @@ const ResetPassword = () => {
 
     const { access_token, refresh_token, type } = parseHashParams();
     
+    console.log('Reset password tokens:', { access_token: access_token ? 'present' : 'missing', refresh_token: refresh_token ? 'present' : 'missing', type });
+    
     if (!access_token || !refresh_token || type !== 'recovery') {
+      console.error('Invalid reset link parameters');
       toast({
         title: "Invalid reset link",
-        description: "This password reset link is invalid or has expired.",
+        description: "This password reset link is invalid or has expired. Please request a new one.",
         variant: "destructive",
       });
-      navigate('/auth');
+      // Give user time to see the error before redirecting
+      setTimeout(() => {
+        navigate('/forgot-password');
+      }, 3000);
     } else {
       // Set the session with the tokens from the URL
       supabase.auth.setSession({
         access_token,
         refresh_token
+      }).then(({ error }) => {
+        if (error) {
+          console.error('Error setting session:', error);
+          toast({
+            title: "Session error",
+            description: "Unable to verify reset link. Please try again.",
+            variant: "destructive",
+          });
+          navigate('/forgot-password');
+        } else {
+          console.log('Reset password session set successfully');
+        }
       });
     }
   }, [navigate]);
@@ -88,16 +107,28 @@ const ResetPassword = () => {
           variant: "destructive",
         });
       } else {
+        // Clear any existing auth state to ensure clean login
+        Object.keys(localStorage).forEach((key) => {
+          if (key.startsWith('supabase.auth.') || key.includes('sb-') || key === 'rememberMe') {
+            localStorage.removeItem(key);
+          }
+        });
+        
         toast({
           title: "🎉 Password updated successfully!",
-          description: "Your password has been reset. You can now sign in with your new password.",
+          description: "You're now signed in with your new password. Redirecting to dashboard...",
         });
-        navigate('/auth');
+        
+        // Wait a moment for the toast to show, then redirect to dashboard
+        setTimeout(() => {
+          window.location.href = '/dashboard';
+        }, 1500);
       }
     } catch (error) {
+      console.error('Password reset error:', error);
       toast({
         title: "Reset failed",
-        description: "An unexpected error occurred.",
+        description: "An unexpected error occurred. Please try again.",
         variant: "destructive",
       });
     } finally {

@@ -205,8 +205,7 @@ serve(async (req) => {
         console.log('Sending via SMTP:', smtpProvider.smtp_host);
         
         emailResponse = {
-          data: { id: `smtp_${Date.now()}` },
-          success: true
+          data: { id: `smtp_${Date.now()}` }
         };
         
       } catch (smtpError) {

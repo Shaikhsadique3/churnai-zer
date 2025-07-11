@@ -123,7 +123,7 @@ serve(async (req) => {
             .from('integration_settings')
             .select('id')
             .eq('user_id', user.id)
-            .single();
+            .maybeSingle();
 
           let result;
           if (existing) {

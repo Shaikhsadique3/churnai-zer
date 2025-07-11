@@ -164,36 +164,53 @@ const CRMIntegrationPanel = () => {
   };
 
   const saveSettings = async () => {
+    if (!user?.id) {
+      toast({
+        title: "Authentication Error",
+        description: "User not found. Please log in again.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setLoading(prev => ({ ...prev, save: true }));
 
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session?.access_token) throw new Error('Not authenticated');
-
-      const { data, error } = await supabase.functions.invoke('integration-test', {
-        headers: {
-          Authorization: `Bearer ${session.access_token}`
-        },
-        body: {
-          action: 'save-settings',
-          settings: settings,
-        },
-      });
+      // Use upsert to insert or update the integration_settings record
+      const { data, error } = await supabase
+        .from('integration_settings')
+        .upsert({
+          user_id: user.id,
+          email_provider: settings.email_provider || null,
+          email_api_key: settings.email_api_key || null,
+          sender_name: settings.sender_name || null,
+          sender_email: settings.sender_email || null,
+          webhook_url: settings.webhook_url || null,
+          status: 'connected',
+        })
+        .select()
+        .single();
 
       if (error) throw error;
 
-      if (data.success) {
-        toast({
-          title: "Settings Saved",
-          description: data.message,
+      toast({
+        title: "✅ Settings Saved",
+        description: "Your integration settings have been saved successfully.",
+      });
+
+      // Update local state with saved data
+      if (data) {
+        setSettings(data);
+        setConnectionStatus({
+          email: !!(data.email_provider && data.email_api_key),
+          webhook: !!data.webhook_url,
         });
-      } else {
-        throw new Error(data.error);
       }
     } catch (error) {
+      console.error('Save settings error:', error);
       toast({
-        title: "Save Failed",
-        description: error.message,
+        title: "❌ Save Failed",
+        description: error.message || "Failed to save settings. Please try again.",
         variant: "destructive",
       });
     } finally {

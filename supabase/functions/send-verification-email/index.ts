@@ -10,18 +10,9 @@ const corsHeaders = {
 
 const resend = new Resend(Deno.env.get('RESEND_API_KEY'));
 
-interface PasswordResetRequest {
+interface VerificationEmailRequest {
   email: string;
-}
-
-// Generate a secure reset token
-function generateResetToken(): string {
-  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-  let token = '';
-  for (let i = 0; i < 32; i++) {
-    token += chars.charAt(Math.floor(Math.random() * chars.length));
-  }
-  return token;
+  name?: string;
 }
 
 serve(async (req) => {
@@ -34,7 +25,7 @@ serve(async (req) => {
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    const { email }: PasswordResetRequest = await req.json();
+    const { email, name }: VerificationEmailRequest = await req.json();
 
     if (!email) {
       return new Response(
@@ -43,62 +34,48 @@ serve(async (req) => {
       );
     }
 
-    console.log('Processing password reset request for:', email);
+    console.log('Processing email verification request for:', email);
 
-    // Check if user exists
-    const { data: users, error: userError } = await supabase.auth.admin.listUsers();
-    const user = users?.users?.find(u => u.email === email);
+    const displayName = name || email.split('@')[0];
 
-    if (!user) {
-      // For security, we still return success even if user doesn't exist
-      console.log('User not found, but returning success for security');
-      return new Response(
-        JSON.stringify({ 
-          success: true, 
-          message: 'If an account with this email exists, a password reset link has been sent.' 
-        }),
-        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    // Generate password reset token using Supabase's built-in method
-    const { data, error: resetError } = await supabase.auth.admin.generateLink({
-      type: 'recovery',
+    // Generate email verification link using Supabase's built-in method
+    const { data, error: verificationError } = await supabase.auth.admin.generateLink({
+      type: 'signup',
       email: email,
       options: {
-        redirectTo: `${Deno.env.get('SUPABASE_URL').replace('https://ntbkydpgjaswmwruegyl.supabase.co', 'https://id-preview--19bbb304-3471-4d58-96e0-3f17ce42bb31.lovable.app')}/reset-password`
+        redirectTo: `${Deno.env.get('SUPABASE_URL').replace('https://ntbkydpgjaswmwruegyl.supabase.co', 'https://id-preview--19bbb304-3471-4d58-96e0-3f17ce42bb31.lovable.app')}/dashboard`
       }
     });
 
-    if (resetError) {
-      console.error('Failed to generate reset link:', resetError);
+    if (verificationError) {
+      console.error('Failed to generate verification link:', verificationError);
       return new Response(
-        JSON.stringify({ error: 'Failed to generate reset link' }),
+        JSON.stringify({ error: 'Failed to generate verification link' }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    const resetLink = data.properties?.action_link;
+    const verificationLink = data.properties?.action_link;
     
-    if (!resetLink) {
-      console.error('No reset link generated');
+    if (!verificationLink) {
+      console.error('No verification link generated');
       return new Response(
-        JSON.stringify({ error: 'Failed to generate reset link' }),
+        JSON.stringify({ error: 'Failed to generate verification link' }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    // Create beautiful HTML email template
+    // Create email verification template
     const emailHtml = `
       <!DOCTYPE html>
       <html lang="en">
       <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Password Reset - ChurnGuard Lite</title>
+        <title>Verify Your Email - Churnaizer</title>
         <style>
           body { 
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif; 
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif; 
             margin: 0; 
             padding: 0; 
             background-color: #f8fafc; 
@@ -140,7 +117,7 @@ serve(async (req) => {
             line-height: 1.6; 
             margin-bottom: 32px; 
           }
-          .reset-button { 
+          .verify-button { 
             display: inline-block; 
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
             color: #ffffff; 
@@ -149,10 +126,6 @@ serve(async (req) => {
             border-radius: 8px; 
             font-weight: 600; 
             font-size: 16px;
-            transition: transform 0.2s;
-          }
-          .reset-button:hover { 
-            transform: translateY(-2px); 
           }
           .alternative { 
             margin-top: 32px; 
@@ -160,11 +133,6 @@ serve(async (req) => {
             background-color: #f7fafc; 
             border-radius: 8px; 
             border-left: 4px solid #667eea; 
-          }
-          .alternative-title { 
-            font-weight: 600; 
-            color: #2d3748; 
-            margin-bottom: 8px; 
           }
           .link-text { 
             color: #667eea; 
@@ -178,93 +146,66 @@ serve(async (req) => {
             color: #718096; 
             font-size: 14px; 
           }
-          .security-note { 
-            margin-top: 24px; 
-            padding: 16px; 
-            background-color: #fef5e7; 
-            border-radius: 6px; 
-            border-left: 4px solid #f6ad55; 
-          }
-          .security-title { 
-            font-weight: 600; 
-            color: #c05621; 
-            margin-bottom: 8px; 
-          }
-          .security-text { 
-            color: #c05621; 
-            font-size: 14px; 
-          }
         </style>
       </head>
       <body>
         <div class="container">
           <div class="header">
-            <div class="logo">🛡️ ChurnGuard Lite</div>
+            <div class="logo">🛡️ Churnaizer</div>
             <div class="tagline">Predict and prevent customer churn with AI</div>
           </div>
           
           <div class="content">
-            <h1 class="title">Reset Your Password</h1>
+            <h1 class="title">Verify Your Email Address</h1>
             <p class="message">
-              We received a request to reset your password for your ChurnGuard Lite account. 
-              Click the button below to create a new password:
+              Hi ${displayName}! Please verify your email address to complete your Churnaizer account setup:
             </p>
             
             <div style="text-align: center; margin: 32px 0;">
-              <a href="${resetLink}" class="reset-button">Reset My Password</a>
+              <a href="${verificationLink}" class="verify-button">Verify Email Address</a>
             </div>
             
             <div class="alternative">
-              <div class="alternative-title">Button not working?</div>
-              <p style="margin: 8px 0; color: #4a5568; font-size: 14px;">Copy and paste this link into your browser:</p>
-              <div class="link-text">${resetLink}</div>
-            </div>
-            
-            <div class="security-note">
-              <div class="security-title">🔒 Security Notice</div>
-              <div class="security-text">
-                • This link will expire in 1 hour for security<br>
-                • If you didn't request this reset, please ignore this email<br>
-                • Never share this link with anyone
-              </div>
+              <p style="margin: 8px 0; color: #4a5568; font-size: 14px;">Button not working? Copy and paste this link:</p>
+              <div class="link-text">${verificationLink}</div>
             </div>
           </div>
           
           <div class="footer">
-            <p>This email was sent from ChurnGuard Lite</p>
-            <p>If you have any questions, please contact our support team.</p>
+            <p>This verification link will expire in 24 hours</p>
+            <p>If you didn't create this account, please ignore this email</p>
           </div>
         </div>
       </body>
       </html>
     `;
 
-    // Send email via Resend
+    // Send verification email
     try {
       const emailResponse = await resend.emails.send({
         from: 'Churnaizer <notify@churnaizer.com>',
         to: [email],
-        subject: '🔑 Reset Your ChurnGuard Lite Password',
+        subject: '📧 Verify Your Churnaizer Email Address',
         html: emailHtml,
       });
 
-      console.log('Password reset email sent successfully:', emailResponse.data?.id);
+      console.log('Verification email sent successfully:', emailResponse.data?.id);
 
       return new Response(
         JSON.stringify({
           success: true,
-          message: 'Password reset email sent successfully',
+          message: 'Verification email sent successfully',
           emailId: emailResponse.data?.id
         }),
         { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
 
     } catch (emailError) {
-      console.error('Failed to send password reset email:', emailError);
+      console.error('Failed to send verification email:', emailError);
 
       return new Response(
         JSON.stringify({
-          error: 'Failed to send password reset email',
+          error: 'Failed to send verification email',
           details: emailError.message
         }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -272,7 +213,7 @@ serve(async (req) => {
     }
 
   } catch (error) {
-    console.error('Error in send-password-reset function:', error);
+    console.error('Error in send-verification-email function:', error);
     return new Response(
       JSON.stringify({ error: 'Internal server error', details: error.message }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }

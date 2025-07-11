@@ -229,7 +229,7 @@ serve(async (req) => {
     // Send welcome email via Resend
     try {
       const emailResponse = await resend.emails.send({
-        from: 'ChurnGuard Lite <welcome@resend.dev>', // Update with your verified domain
+        from: 'Churnaizer <notify@churnaizer.com>',
         to: [email],
         subject: '🎉 Welcome to ChurnGuard Lite - Let\'s Prevent Churn Together!',
         html: emailHtml,

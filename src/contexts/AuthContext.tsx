@@ -62,15 +62,44 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     try {
       console.log('Starting signup process for:', email);
       
-      const { error } = await supabase.auth.signUp({
+      const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
-          // Disable email verification
+          emailRedirectTo: `${window.location.origin}/dashboard`
         }
       });
       
-      console.log('Signup response:', { error });
+      console.log('Signup response:', { data, error });
+
+      // If signup successful, trigger welcome and admin notification emails
+      if (!error && data.user) {
+        try {
+          // Send welcome email
+          await supabase.functions.invoke('send-welcome-email', {
+            body: { 
+              email: data.user.email,
+              name: data.user.email?.split('@')[0] 
+            }
+          });
+
+          // Send admin notification
+          await supabase.functions.invoke('send-admin-notification', {
+            body: {
+              userEmail: data.user.email,
+              userName: data.user.email?.split('@')[0],
+              signupTime: data.user.created_at,
+              referrer: document.referrer || 'Direct'
+            }
+          });
+
+          console.log('Welcome and admin notification emails triggered');
+        } catch (emailError) {
+          console.error('Failed to send signup emails:', emailError);
+          // Don't fail signup if emails fail
+        }
+      }
+      
       return { error };
     } catch (err) {
       console.error('Network error during signup:', err);

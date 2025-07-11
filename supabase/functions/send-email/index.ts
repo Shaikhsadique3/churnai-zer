@@ -145,7 +145,7 @@ serve(async (req) => {
     // Send email via Resend
     try {
       const emailResponse = await resend.emails.send({
-        from: 'Churnaizer <notifications@resend.dev>', // Update with your verified domain
+        from: 'Churnaizer <notify@churnaizer.com>',
         to: [targetEmail],
         subject: emailSubject,
         html: emailContent,

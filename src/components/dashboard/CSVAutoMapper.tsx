@@ -138,7 +138,8 @@ const CSVAutoMapper = ({ csvHeaders, csvPreview, onMappingConfirmed, onCancel, s
   }, [mapping]);
 
   const handleFieldMapping = (field: string, csvColumn: string) => {
-    setMapping(prev => ({ ...prev, [field]: csvColumn }));
+    const value = csvColumn === "__not_mapped__" ? '' : csvColumn;
+    setMapping(prev => ({ ...prev, [field]: value }));
   };
 
   const handleConfirm = () => {
@@ -195,14 +196,14 @@ const CSVAutoMapper = ({ csvHeaders, csvPreview, onMappingConfirmed, onCancel, s
                     </Badge>
                   </Label>
                   <Select
-                    value={mapping[field.key as keyof ColumnMapping] || ''}
+                    value={mapping[field.key as keyof ColumnMapping] || "__not_mapped__"}
                     onValueChange={(value) => handleFieldMapping(field.key, value)}
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Select CSV column..." />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">-- Not mapped --</SelectItem>
+                      <SelectItem value="__not_mapped__">-- Not mapped --</SelectItem>
                       {csvHeaders.map(header => (
                         <SelectItem key={header} value={header}>
                           {header}
@@ -230,14 +231,14 @@ const CSVAutoMapper = ({ csvHeaders, csvPreview, onMappingConfirmed, onCancel, s
                     <Badge variant="secondary" className="ml-2 text-xs">Optional</Badge>
                   </Label>
                   <Select
-                    value={mapping[field.key as keyof ColumnMapping] || ''}
+                    value={mapping[field.key as keyof ColumnMapping] || "__not_mapped__"}
                     onValueChange={(value) => handleFieldMapping(field.key, value)}
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Select CSV column..." />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">-- Not mapped --</SelectItem>
+                      <SelectItem value="__not_mapped__">-- Not mapped --</SelectItem>
                       {csvHeaders.map(header => (
                         <SelectItem key={header} value={header}>
                           {header}

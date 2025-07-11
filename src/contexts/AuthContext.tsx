@@ -75,11 +75,12 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       // If signup successful, trigger welcome and admin notification emails
       if (!error && data.user) {
         try {
-          // Send welcome email
-          await supabase.functions.invoke('send-welcome-email', {
+          // Send welcome email using unified function
+          await supabase.functions.invoke('send-auth-email', {
             body: { 
               email: data.user.email,
-              name: data.user.email?.split('@')[0] 
+              name: data.user.email?.split('@')[0],
+              type: 'welcome'
             }
           });
 
@@ -132,9 +133,12 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   const resetPassword = async (email: string) => {
     try {
-      // Use our custom edge function with Resend instead of Supabase's built-in email
-      const { data, error } = await supabase.functions.invoke('send-password-reset', {
-        body: { email }
+      // Use our unified auth email function
+      const { data, error } = await supabase.functions.invoke('send-auth-email', {
+        body: { 
+          email,
+          type: 'reset'
+        }
       });
       
       if (error) {

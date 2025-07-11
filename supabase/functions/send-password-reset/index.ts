@@ -242,7 +242,7 @@ serve(async (req) => {
     // Send email via Resend
     try {
       const emailResponse = await resend.emails.send({
-        from: 'ChurnGuard Lite <no-reply@resend.dev>', // Update with your verified domain
+        from: 'ChurnGuard Lite <onboarding@resend.dev>',
         to: [email],
         subject: '🔑 Reset Your ChurnGuard Lite Password',
         html: emailHtml,

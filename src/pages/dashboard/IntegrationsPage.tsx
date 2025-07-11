@@ -1,5 +1,6 @@
 import React from 'react';
 import CRMIntegrationPanel from "@/components/dashboard/CRMIntegrationPanel";
+import SMTPConfigPanel from "@/components/dashboard/SMTPConfigPanel";
 
 export const IntegrationsPage = () => {
   return (
@@ -11,6 +12,7 @@ export const IntegrationsPage = () => {
       </div>
 
       <CRMIntegrationPanel />
+      <SMTPConfigPanel />
     </div>
   );
 };

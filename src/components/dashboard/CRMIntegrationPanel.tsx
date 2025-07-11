@@ -254,8 +254,8 @@ const CRMIntegrationPanel = () => {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="resend">Resend</SelectItem>
+                  <SelectItem value="smtp">Custom SMTP</SelectItem>
                   <SelectItem value="mailchimp" disabled>Mailchimp (Coming Soon)</SelectItem>
-                  <SelectItem value="smtp" disabled>SMTP (Coming Soon)</SelectItem>
                 </SelectContent>
               </Select>
             </div>

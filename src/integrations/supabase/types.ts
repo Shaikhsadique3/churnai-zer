@@ -535,6 +535,54 @@ export type Database = {
           },
         ]
       }
+      smtp_providers: {
+        Row: {
+          created_at: string
+          from_email: string
+          from_name: string | null
+          id: string
+          is_verified: boolean
+          provider_name: string | null
+          smtp_host: string
+          smtp_password_encrypted: string
+          smtp_port: number
+          smtp_username: string
+          test_email: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          from_email: string
+          from_name?: string | null
+          id?: string
+          is_verified?: boolean
+          provider_name?: string | null
+          smtp_host: string
+          smtp_password_encrypted: string
+          smtp_port?: number
+          smtp_username: string
+          test_email?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          from_email?: string
+          from_name?: string | null
+          id?: string
+          is_verified?: boolean
+          provider_name?: string | null
+          smtp_host?: string
+          smtp_password_encrypted?: string
+          smtp_port?: number
+          smtp_username?: string
+          test_email?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       support_interactions: {
         Row: {
           category: string | null

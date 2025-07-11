@@ -40,11 +40,15 @@ serve(async (req) => {
   }
 
   try {
+    // Debug: Log all headers
+    console.log('Request headers:', Object.fromEntries(req.headers.entries()));
+    
     // Get auth header
     const authHeader = req.headers.get('Authorization');
     if (!authHeader) {
+      console.error('Missing authorization header');
       return new Response(
-        JSON.stringify({ error: 'Authorization header required' }),
+        JSON.stringify({ code: 401, message: 'Missing authorization header' }),
         { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }

@@ -105,6 +105,8 @@ export const EmailTemplatesPage = () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) throw new Error('Not authenticated');
 
+      console.log('Sending test email with session:', session.user.id);
+      
       const response = await supabase.functions.invoke('send-email', {
         body: {
           templateId,
@@ -119,6 +121,7 @@ export const EmailTemplatesPage = () => {
         }
       });
 
+      console.log('Response:', response);
       if (response.error) throw new Error(response.error.message);
       return response.data;
     },

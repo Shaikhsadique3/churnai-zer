@@ -56,12 +56,11 @@ serve(async (req) => {
       );
     }
 
-    // Parse request body
+    // Parse request body - supabase.functions.invoke() sends JSON already
     let requestBody;
     try {
-      const bodyText = await req.text();
-      console.log('Raw request body:', bodyText);
-      requestBody = JSON.parse(bodyText);
+      requestBody = await req.json();
+      console.log('Parsed request body:', requestBody);
     } catch (parseError) {
       console.error('JSON parsing failed:', parseError);
       return new Response(

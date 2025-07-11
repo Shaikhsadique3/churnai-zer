@@ -1,0 +1,201 @@
+import { useState } from 'react';
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
+import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
+import { Mail, Loader2, Send } from "lucide-react";
+
+interface SendEmailModalProps {
+  trigger?: React.ReactNode;
+  defaultTo?: string;
+  defaultSubject?: string;
+  defaultHtml?: string;
+  defaultFrom?: string;
+}
+
+export const SendEmailModal = ({ 
+  trigger, 
+  defaultTo = '', 
+  defaultSubject = '', 
+  defaultHtml = '', 
+  defaultFrom = '' 
+}: SendEmailModalProps) => {
+  const { user } = useAuth();
+  const { toast } = useToast();
+  const [open, setOpen] = useState(false);
+  const [loading, setLoading] = useState(false);
+  
+  const [formData, setFormData] = useState({
+    to: defaultTo,
+    subject: defaultSubject,
+    html: defaultHtml,
+    from: defaultFrom,
+  });
+
+  const handleInputChange = (field: string, value: string) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
+  };
+
+  const sendTestEmail = async () => {
+    if (!formData.to || !formData.subject || !formData.html) {
+      toast({
+        title: "Missing Fields",
+        description: "Please fill in all required fields (To, Subject, Body)",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) throw new Error('Not authenticated');
+
+      console.log('Sending email request:', formData);
+
+      const response = await supabase.functions.invoke('send-email', {
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+          'Content-Type': 'application/json',
+        },
+        body: formData,
+      });
+
+      console.log('Email API Response:', response);
+
+      if (response.error) {
+        throw new Error(response.error.message || 'Unknown error occurred');
+      }
+
+      if (response.data?.success) {
+        toast({
+          title: "✅ Email Sent Successfully",
+          description: `Email sent via ${response.data.provider || 'Resend'}. ID: ${response.data.emailId}`,
+        });
+        setOpen(false);
+        // Reset form
+        setFormData({
+          to: defaultTo,
+          subject: defaultSubject,
+          html: defaultHtml,
+          from: defaultFrom,
+        });
+      } else {
+        throw new Error(response.data?.error || 'Failed to send email');
+      }
+
+    } catch (error: any) {
+      console.error('Email sending error:', error);
+      toast({
+        title: "❌ Email Failed",
+        description: error.message || 'Unknown error occurred',
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        {trigger || (
+          <Button>
+            <Mail className="h-4 w-4 mr-2" />
+            Send Test Email
+          </Button>
+        )}
+      </DialogTrigger>
+      <DialogContent className="sm:max-w-[500px]">
+        <DialogHeader>
+          <VisuallyHidden>
+            <DialogTitle>Send Test Email</DialogTitle>
+          </VisuallyHidden>
+        </DialogHeader>
+        
+        <div className="space-y-4">
+          <div className="flex items-center space-x-2 mb-4">
+            <Mail className="h-5 w-5 text-primary" />
+            <h2 className="text-lg font-semibold">Send Test Email</h2>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="from">From (Sender)</Label>
+            <Input
+              id="from"
+              placeholder="Auto-filled from connected provider"
+              value={formData.from}
+              onChange={(e) => handleInputChange('from', e.target.value)}
+              disabled
+            />
+            <p className="text-xs text-muted-foreground">
+              This will be auto-filled from your connected email provider
+            </p>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="to">To (Recipient) *</Label>
+            <Input
+              id="to"
+              type="email"
+              placeholder="test@example.com"
+              value={formData.to}
+              onChange={(e) => handleInputChange('to', e.target.value)}
+              required
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="subject">Subject *</Label>
+            <Input
+              id="subject"
+              placeholder="Test Email Subject"
+              value={formData.subject}
+              onChange={(e) => handleInputChange('subject', e.target.value)}
+              required
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="html">Email Body (HTML) *</Label>
+            <Textarea
+              id="html"
+              placeholder="<p>Hello! This is a test email.</p>"
+              value={formData.html}
+              onChange={(e) => handleInputChange('html', e.target.value)}
+              rows={6}
+              required
+            />
+            <p className="text-xs text-muted-foreground">
+              You can use HTML tags for formatting
+            </p>
+          </div>
+
+          <div className="flex space-x-2 pt-4">
+            <Button 
+              onClick={sendTestEmail} 
+              disabled={loading}
+              className="flex-1"
+            >
+              {loading ? (
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              ) : (
+                <Send className="h-4 w-4 mr-2" />
+              )}
+              Send Test Email
+            </Button>
+            <Button variant="outline" onClick={() => setOpen(false)}>
+              Cancel
+            </Button>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+};

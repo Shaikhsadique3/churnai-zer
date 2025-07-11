@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Upload, FileText, Clock, CheckCircle } from "lucide-react";
-import CSVUploadModal from "@/components/dashboard/CSVUploadModal";
+import EnhancedCSVUploader from "@/components/dashboard/EnhancedCSVUploader";
 import UploadHistorySection from "@/components/dashboard/UploadHistorySection";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -94,9 +94,9 @@ export const CSVUploadPage = () => {
           <div className="space-y-4">
             <div className="border-2 border-dashed border-muted rounded-lg p-8 text-center">
               <Upload className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-              <h3 className="text-lg font-medium mb-2">Ready to upload your data?</h3>
+              <h3 className="text-lg font-medium mb-2">Smart CSV Upload with Auto-Mapping</h3>
               <p className="text-muted-foreground mb-4">
-                Upload a CSV file with your customer data to get started with churn analysis.
+                Upload any CSV format and our AI will automatically map your columns for churn analysis.
               </p>
               <Button onClick={() => setUploadModalOpen(true)} size="lg">
                 <Upload className="h-4 w-4 mr-2" />
@@ -105,10 +105,13 @@ export const CSVUploadPage = () => {
             </div>
             
             <div className="text-sm text-muted-foreground">
-              <p className="font-medium mb-2">Required CSV format:</p>
-              <code className="bg-muted px-2 py-1 rounded text-xs">
-                user_id, plan, usage, last_login, churn_score, risk_level
-              </code>
+              <p className="font-medium mb-2">✨ New Features:</p>
+              <ul className="text-xs space-y-1">
+                <li>🔄 <strong>Auto-mapping:</strong> Works with any CSV format (CRM exports, Stripe data, etc.)</li>
+                <li>📊 <strong>Smart detection:</strong> Automatically suggests column mappings</li>
+                <li>💾 <strong>Saved mappings:</strong> Remembers your preferences for future uploads</li>
+                <li>📈 <strong>Date conversion:</strong> Converts dates to days automatically</li>
+              </ul>
             </div>
           </div>
         </CardContent>
@@ -117,7 +120,7 @@ export const CSVUploadPage = () => {
       {/* Upload History */}
       <UploadHistorySection />
 
-      <CSVUploadModal 
+      <EnhancedCSVUploader 
         open={uploadModalOpen}
         onOpenChange={setUploadModalOpen}
         onUploadComplete={() => setUploadModalOpen(false)}

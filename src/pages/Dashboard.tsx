@@ -8,7 +8,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import DashboardHeader from "@/components/dashboard/DashboardHeader";
 import { DashboardOverview } from "@/components/dashboard/DashboardOverview";
 import { UploadedUsersTable } from "@/components/dashboard/UploadedUsersTable";
-import CSVUploadModal from "@/components/dashboard/CSVUploadModal";
+import EnhancedCSVUploader from "@/components/dashboard/EnhancedCSVUploader";
 
 const Dashboard = () => {
   const { user, signOut } = useAuth();
@@ -90,7 +90,7 @@ const Dashboard = () => {
         </div>
       </main>
 
-      <CSVUploadModal 
+      <EnhancedCSVUploader 
         open={uploadModalOpen}
         onOpenChange={setUploadModalOpen}
         onUploadComplete={() => {

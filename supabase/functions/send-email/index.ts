@@ -153,14 +153,14 @@ serve(async (req) => {
       .eq('is_verified', true)
       .order('created_at', { ascending: false })
       .limit(1)
-      .single();
+      .maybeSingle();
 
     // Check for Resend/email provider configuration
     const { data: emailProvider } = await supabase
       .from('integration_settings')
       .select('*')
       .eq('user_id', user.id)
-      .single();
+      .maybeSingle();
 
     // Determine from email address
     let fromEmail = 'Churnaizer <notify@churnaizer.com>'; // Default fallback

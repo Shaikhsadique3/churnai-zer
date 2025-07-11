@@ -155,6 +155,30 @@ serve(async (req) => {
       .limit(1)
       .single();
 
+    // Check for Resend/email provider configuration
+    const { data: emailProvider } = await supabase
+      .from('integration_settings')
+      .select('*')
+      .eq('user_id', user.id)
+      .single();
+
+    // Determine from email address
+    let fromEmail = 'Churnaizer <notify@churnaizer.com>'; // Default fallback
+    
+    if (smtpProvider) {
+      // Use SMTP provider's from email
+      fromEmail = smtpProvider.from_name 
+        ? `${smtpProvider.from_name} <${smtpProvider.from_email}>`
+        : smtpProvider.from_email;
+    } else if (emailProvider?.sender_email) {
+      // Use configured sender email from integration settings
+      fromEmail = emailProvider.sender_name 
+        ? `${emailProvider.sender_name} <${emailProvider.sender_email}>`
+        : emailProvider.sender_email;
+    }
+
+    console.log('Using from email:', fromEmail);
+
     let emailResponse;
 
     if (smtpProvider) {
@@ -176,20 +200,38 @@ serve(async (req) => {
         console.error('SMTP sending failed, falling back to Resend:', smtpError);
         // Fallback to Resend
         emailResponse = await resend.emails.send({
-          from: 'Churnaizer <notify@churnaizer.com>',
+          from: fromEmail,
           to: [targetEmail],
           subject: emailSubject,
           html: emailContent,
         });
       }
     } else {
-      // Use Resend as default
-      emailResponse = await resend.emails.send({
-        from: 'Churnaizer <notify@churnaizer.com>',
-        to: [targetEmail],
-        subject: emailSubject,
-        html: emailContent,
-      });
+      // Use Resend as default or with configured email provider
+      try {
+        emailResponse = await resend.emails.send({
+          from: fromEmail,
+          to: [targetEmail],
+          subject: emailSubject,
+          html: emailContent,
+        });
+      } catch (resendError: any) {
+        console.error('Resend sending failed:', resendError);
+        
+        // Check if it's a domain verification issue
+        if (resendError.message?.includes('domain') || resendError.message?.includes('verify')) {
+          console.warn('Domain verification issue detected, falling back to default sender');
+          // Fallback to default domain if domain verification fails
+          emailResponse = await resend.emails.send({
+            from: 'Churnaizer <notify@churnaizer.com>',
+            to: [targetEmail],
+            subject: emailSubject,
+            html: emailContent,
+          });
+        } else {
+          throw resendError;
+        }
+      }
     }
 
     if (!emailResponse || !emailResponse.data) {

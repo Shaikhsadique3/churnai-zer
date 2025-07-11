@@ -42,6 +42,7 @@ const SMTPConfigPanel = () => {
     delete: '',
   });
   const [showForm, setShowForm] = useState(false);
+  const [sendTestEmail, setSendTestEmail] = useState(true);
   const [formData, setFormData] = useState<SMTPFormData>({
     provider_name: '',
     smtp_host: '',
@@ -83,10 +84,19 @@ const SMTPConfigPanel = () => {
   };
 
   const handleVerifyAndSave = async () => {
-    if (!formData.smtp_host || !formData.smtp_username || !formData.smtp_password || !formData.from_email || !formData.test_email) {
+    if (!formData.smtp_host || !formData.smtp_username || !formData.smtp_password || !formData.from_email) {
       toast({
         title: "Missing Fields",
-        description: "Please fill in all required fields",
+        description: "Please fill in all required SMTP fields",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (sendTestEmail && !formData.test_email) {
+      toast({
+        title: "Test Email Required",
+        description: "Please provide a test email address to verify the connection",
         variant: "destructive",
       });
       return;
@@ -116,9 +126,12 @@ const SMTPConfigPanel = () => {
       if (data.success) {
         toast({
           title: "✅ SMTP Provider Verified & Saved",
-          description: data.message,
+          description: sendTestEmail 
+            ? `${data.message}. Check your inbox at ${formData.test_email}`
+            : data.message,
         });
         setShowForm(false);
+        setSendTestEmail(true);
         setFormData({
           provider_name: '',
           smtp_host: '',
@@ -362,15 +375,30 @@ const SMTPConfigPanel = () => {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="test_email">Test Email *</Label>
+                  <Label htmlFor="test_email">Test Email {sendTestEmail ? '*' : ''}</Label>
                   <Input
                     id="test_email"
                     type="email"
                     placeholder="test@yourdomain.com"
                     value={formData.test_email}
                     onChange={(e) => updateFormData('test_email', e.target.value)}
+                    disabled={!sendTestEmail}
                   />
                 </div>
+              </div>
+
+              {/* Test Email Checkbox */}
+              <div className="flex items-center space-x-2 p-4 bg-muted rounded-lg">
+                <input
+                  type="checkbox"
+                  id="send_test_email"
+                  checked={sendTestEmail}
+                  onChange={(e) => setSendTestEmail(e.target.checked)}
+                  className="h-4 w-4 text-primary"
+                />
+                <Label htmlFor="send_test_email" className="text-sm">
+                  ✅ Send test email and confirm delivery before saving
+                </Label>
               </div>
 
               <Button 
@@ -383,7 +411,7 @@ const SMTPConfigPanel = () => {
                 ) : (
                   <Mail className="h-4 w-4 mr-2" />
                 )}
-                Verify & Save SMTP Provider
+                {sendTestEmail ? 'Send Test Email & Save Provider' : 'Save SMTP Provider'}
               </Button>
             </div>
           </>

@@ -129,21 +129,30 @@ serve(async (req) => {
     };
 
     let emailLog: any = null;
-    const { data: logData, error: logError } = await supabase
-      .from('email_logs')
-      .insert(emailLogData)
-      .select('id')
-      .single();
+    
+    try {
+      const { data: logData, error: logError } = await supabase
+        .from('email_logs')
+        .insert(emailLogData)
+        .select('id')
+        .single();
 
-    if (logError) {
-      console.error('Failed to create email log:', logError);
+      if (logError) {
+        console.error('Failed to create email log:', logError);
+        return new Response(
+          JSON.stringify({ error: 'Failed to create email log' }),
+          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      emailLog = logData;
+    } catch (dbError) {
+      console.error('Database error when creating email log:', dbError);
       return new Response(
-        JSON.stringify({ error: 'Failed to create email log' }),
+        JSON.stringify({ error: 'Database error' }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
-
-    emailLog = logData;
 
     // Check if user has a verified SMTP provider
     const { data: smtpProvider } = await supabase
@@ -270,6 +279,10 @@ serve(async (req) => {
     // Update email log with failure if emailLog exists
     if (emailLog?.id) {
       try {
+        const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+        const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+        const supabase = createClient(supabaseUrl, supabaseKey);
+        
         await supabase
           .from('email_logs')
           .update({

@@ -57,7 +57,20 @@ serve(async (req) => {
     }
 
     // Parse request body
-    const { to, subject, html } = await req.json();
+    let requestBody;
+    try {
+      const bodyText = await req.text();
+      console.log('Raw request body:', bodyText);
+      requestBody = JSON.parse(bodyText);
+    } catch (parseError) {
+      console.error('JSON parsing failed:', parseError);
+      return new Response(
+        JSON.stringify({ error: 'Invalid JSON in request body' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    const { to, subject, html } = requestBody;
     
     if (!to || !subject || !html) {
       return new Response(
@@ -115,7 +128,7 @@ serve(async (req) => {
         }
       })
       .select('id')
-      .single();
+      .maybeSingle();
 
     if (logError) {
       console.error('Failed to create email log:', logError);

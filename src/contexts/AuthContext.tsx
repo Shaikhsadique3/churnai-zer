@@ -75,8 +75,15 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       // If signup successful, trigger welcome and admin notification emails
       if (!error && data.user) {
         try {
+          // Get the new session for the user
+          const { data: { session } } = await supabase.auth.getSession();
+          const authHeaders = session?.access_token ? {
+            Authorization: `Bearer ${session.access_token}`
+          } : {};
+
           // Send welcome email using unified function
           await supabase.functions.invoke('send-auth-email', {
+            headers: authHeaders,
             body: { 
               email: data.user.email,
               name: data.user.email?.split('@')[0],
@@ -86,6 +93,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
           // Send admin notification
           await supabase.functions.invoke('send-admin-notification', {
+            headers: authHeaders,
             body: {
               userEmail: data.user.email,
               userName: data.user.email?.split('@')[0],
@@ -133,8 +141,15 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   const resetPassword = async (email: string) => {
     try {
+      // Get current session (may be null for password reset)
+      const { data: { session } } = await supabase.auth.getSession();
+      const authHeaders = session?.access_token ? {
+        Authorization: `Bearer ${session.access_token}`
+      } : {};
+
       // Use our unified auth email function
       const { data, error } = await supabase.functions.invoke('send-auth-email', {
+        headers: authHeaders,
         body: { 
           email,
           type: 'reset'

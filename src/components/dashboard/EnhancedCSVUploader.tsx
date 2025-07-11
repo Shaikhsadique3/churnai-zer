@@ -207,8 +207,17 @@ const EnhancedCSVUploader = ({ open, onOpenChange, onUploadComplete }: EnhancedC
         message: 'Sending to churn prediction API...'
       });
 
+      // Get auth session
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) {
+        throw new Error('Not authenticated');
+      }
+
       // Call the enhanced process-csv function
       const { data, error } = await supabase.functions.invoke('process-csv-enhanced', {
+        headers: {
+          Authorization: `Bearer ${session.access_token}`
+        },
         body: {
           csvData: transformedData,
           filename: file?.name || 'mapped-data.csv',

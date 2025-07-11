@@ -103,11 +103,14 @@ export const EmailTemplatesPage = () => {
   const sendTestEmail = useMutation({
     mutationFn: async ({ templateId, email }: { templateId: string; email: string }) => {
       const { data: { session } } = await supabase.auth.getSession();
-      if (!session) throw new Error('Not authenticated');
+      if (!session?.access_token) throw new Error('Not authenticated');
 
       console.log('Sending test email with session:', session.user.id);
       
       const response = await supabase.functions.invoke('send-email', {
+        headers: {
+          Authorization: `Bearer ${session.access_token}`
+        },
         body: {
           templateId,
           targetEmail: email,

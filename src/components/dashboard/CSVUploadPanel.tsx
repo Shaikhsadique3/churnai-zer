@@ -196,7 +196,7 @@ const CSVUploadPanel = ({ open, onOpenChange, onUploadComplete }: CSVUploadPanel
 
             // Get auth session
             const { data: { session } } = await supabase.auth.getSession();
-            if (!session) {
+            if (!session?.access_token) {
               throw new Error('Not authenticated');
             }
 
@@ -204,6 +204,9 @@ const CSVUploadPanel = ({ open, onOpenChange, onUploadComplete }: CSVUploadPanel
 
             // Call process-csv function
             const { data, error } = await supabase.functions.invoke('process-csv', {
+              headers: {
+                Authorization: `Bearer ${session.access_token}`
+              },
               body: {
                 csvData: results.data,
                 filename: file.name

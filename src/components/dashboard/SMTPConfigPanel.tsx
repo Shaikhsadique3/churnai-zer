@@ -105,7 +105,13 @@ const SMTPConfigPanel = () => {
     setLoading(prev => ({ ...prev, verify: true }));
 
     try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) throw new Error('Not authenticated');
+
       const { data, error } = await supabase.functions.invoke('smtp-test', {
+        headers: {
+          Authorization: `Bearer ${session.access_token}`
+        },
         body: {
           action: 'verify-and-save',
           config: {

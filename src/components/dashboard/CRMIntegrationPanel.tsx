@@ -80,7 +80,13 @@ const CRMIntegrationPanel = () => {
     setLoading(prev => ({ ...prev, testEmail: true }));
 
     try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) throw new Error('Not authenticated');
+
       const { data, error } = await supabase.functions.invoke('integration-test', {
+        headers: {
+          Authorization: `Bearer ${session.access_token}`
+        },
         body: {
           action: 'test-email',
           settings: settings,
@@ -122,7 +128,13 @@ const CRMIntegrationPanel = () => {
     setLoading(prev => ({ ...prev, testWebhook: true }));
 
     try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) throw new Error('Not authenticated');
+
       const { data, error } = await supabase.functions.invoke('integration-test', {
+        headers: {
+          Authorization: `Bearer ${session.access_token}`
+        },
         body: {
           action: 'test-webhook',
           settings: settings,
@@ -155,7 +167,13 @@ const CRMIntegrationPanel = () => {
     setLoading(prev => ({ ...prev, save: true }));
 
     try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) throw new Error('Not authenticated');
+
       const { data, error } = await supabase.functions.invoke('integration-test', {
+        headers: {
+          Authorization: `Bearer ${session.access_token}`
+        },
         body: {
           action: 'save-settings',
           settings: settings,

@@ -141,6 +141,133 @@ const Index = () => {
         </div>
       </section>
 
+      {/* Pricing Section */}
+      <section className="container mx-auto px-4 py-20">
+        <div className="text-center mb-16">
+          <h3 className="text-4xl font-bold text-foreground mb-4">
+            Simple, Transparent Pricing
+          </h3>
+          <p className="text-xl text-muted-foreground">
+            Start free and scale as you grow
+          </p>
+        </div>
+        
+        <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
+          {/* Free Plan */}
+          <Card className="border-2 hover:border-primary transition-colors duration-300">
+            <CardHeader className="text-center">
+              <CardTitle className="text-xl">Free</CardTitle>
+              <div className="mt-4">
+                <span className="text-3xl font-bold">₹0</span>
+                <span className="text-muted-foreground ml-2">/forever</span>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <ul className="space-y-3 mb-6">
+                <li className="flex items-center">
+                  <div className="w-2 h-2 bg-primary rounded-full mr-3"></div>
+                  <span className="text-sm">Up to 100 customers</span>
+                </li>
+                <li className="flex items-center">
+                  <div className="w-2 h-2 bg-primary rounded-full mr-3"></div>
+                  <span className="text-sm">Basic churn predictions</span>
+                </li>
+                <li className="flex items-center">
+                  <div className="w-2 h-2 bg-primary rounded-full mr-3"></div>
+                  <span className="text-sm">Weekly email reports</span>
+                </li>
+                <li className="flex items-center">
+                  <div className="w-2 h-2 bg-primary rounded-full mr-3"></div>
+                  <span className="text-sm">CSV upload</span>
+                </li>
+              </ul>
+              <Button variant="outline" className="w-full" asChild>
+                <Link to="/auth">Get Started Free</Link>
+              </Button>
+            </CardContent>
+          </Card>
+
+          {/* Pro Plan */}
+          <Card className="border-2 border-primary shadow-lg relative">
+            <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
+              <span className="bg-primary text-primary-foreground px-4 py-1 rounded-full text-sm font-medium">
+                Most Popular
+              </span>
+            </div>
+            <CardHeader className="text-center">
+              <CardTitle className="text-xl">Pro</CardTitle>
+              <div className="mt-4">
+                <span className="text-3xl font-bold">₹3,999</span>
+                <span className="text-muted-foreground ml-2">/month</span>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <ul className="space-y-3 mb-6">
+                <li className="flex items-center">
+                  <div className="w-2 h-2 bg-primary rounded-full mr-3"></div>
+                  <span className="text-sm">Up to 10,000 customers</span>
+                </li>
+                <li className="flex items-center">
+                  <div className="w-2 h-2 bg-primary rounded-full mr-3"></div>
+                  <span className="text-sm">AI-powered predictions</span>
+                </li>
+                <li className="flex items-center">
+                  <div className="w-2 h-2 bg-primary rounded-full mr-3"></div>
+                  <span className="text-sm">Real-time alerts</span>
+                </li>
+                <li className="flex items-center">
+                  <div className="w-2 h-2 bg-primary rounded-full mr-3"></div>
+                  <span className="text-sm">API access & automation</span>
+                </li>
+              </ul>
+              <Button className="w-full" asChild>
+                <Link to="/auth">Start Pro Trial</Link>
+              </Button>
+            </CardContent>
+          </Card>
+
+          {/* Enterprise Plan */}
+          <Card className="border-2 hover:border-primary transition-colors duration-300">
+            <CardHeader className="text-center">
+              <CardTitle className="text-xl">Enterprise</CardTitle>
+              <div className="mt-4">
+                <span className="text-3xl font-bold">Custom</span>
+                <span className="text-muted-foreground ml-2">/contact us</span>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <ul className="space-y-3 mb-6">
+                <li className="flex items-center">
+                  <div className="w-2 h-2 bg-primary rounded-full mr-3"></div>
+                  <span className="text-sm">Unlimited customers</span>
+                </li>
+                <li className="flex items-center">
+                  <div className="w-2 h-2 bg-primary rounded-full mr-3"></div>
+                  <span className="text-sm">Custom integrations</span>
+                </li>
+                <li className="flex items-center">
+                  <div className="w-2 h-2 bg-primary rounded-full mr-3"></div>
+                  <span className="text-sm">Dedicated support</span>
+                </li>
+                <li className="flex items-center">
+                  <div className="w-2 h-2 bg-primary rounded-full mr-3"></div>
+                  <span className="text-sm">SLA guarantees</span>
+                </li>
+              </ul>
+              <Button variant="outline" className="w-full" asChild>
+                <Link to="/contact">Contact Sales</Link>
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+
+        <div className="text-center mt-12">
+          <Link to="/pricing" className="text-primary hover:underline">
+            View detailed pricing and features →
+          </Link>
+        </div>
+      </section>
+
       {/* CTA Section */}
       <section className="bg-secondary py-20 relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-r from-secondary to-secondary/80"></div>
@@ -163,12 +290,12 @@ const Index = () => {
       {/* Footer */}
       <footer className="border-t bg-card">
         <div className="container mx-auto px-4 py-8">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col md:flex-row items-center justify-between gap-4">
             <div className="flex items-center space-x-2">
               <Logo size="sm" />
               <span className="text-sm text-muted-foreground">© 2024 Churnaizer. All rights reserved.</span>
             </div>
-            <div className="flex space-x-4 text-sm">
+            <div className="flex flex-wrap justify-center md:justify-end gap-x-4 gap-y-2 text-sm">
               <Link to="/privacy" className="text-muted-foreground hover:text-primary transition-colors">Privacy Policy</Link>
               <Link to="/terms" className="text-muted-foreground hover:text-primary transition-colors">Terms of Service</Link>
               <Link to="/refund-policy" className="text-muted-foreground hover:text-primary transition-colors">Refund Policy</Link>

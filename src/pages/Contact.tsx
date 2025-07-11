@@ -146,19 +146,21 @@ const Contact = () => {
                   <Phone className="h-5 w-5 text-primary mt-1" />
                   <div>
                     <h3 className="font-semibold">Phone</h3>
-                    <p className="text-muted-foreground">+1 (555) 123-4567</p>
-                    <p className="text-sm text-muted-foreground">Mon-Fri, 9 AM - 6 PM EST</p>
+                    <p className="text-muted-foreground">+91 80 4567 8900</p>
+                    <p className="text-sm text-muted-foreground">Mon-Fri, 10 AM - 7 PM IST</p>
                   </div>
                 </div>
                 
                 <div className="flex items-start space-x-3">
                   <MapPin className="h-5 w-5 text-primary mt-1" />
                   <div>
-                    <h3 className="font-semibold">Office</h3>
+                    <h3 className="font-semibold">Indian Office</h3>
                     <p className="text-muted-foreground">
-                      123 Business Ave<br />
-                      Suite 456<br />
-                      San Francisco, CA 94105
+                      Churnaizer Technologies Pvt Ltd<br />
+                      #123, 2nd Floor, Tech Arcade<br />
+                      MG Road, Koramangala<br />
+                      Bengaluru, Karnataka 560034<br />
+                      India
                     </p>
                   </div>
                 </div>
@@ -168,8 +170,9 @@ const Contact = () => {
                   <div>
                     <h3 className="font-semibold">Business Hours</h3>
                     <p className="text-muted-foreground">
-                      Monday - Friday: 9:00 AM - 6:00 PM EST<br />
-                      Weekend: Emergency support only
+                      Monday - Friday: 10:00 AM - 7:00 PM IST<br />
+                      Saturday: 10:00 AM - 2:00 PM IST<br />
+                      Sunday: Emergency support only
                     </p>
                   </div>
                 </div>
@@ -221,12 +224,12 @@ const Contact = () => {
       {/* Footer */}
       <footer className="border-t bg-muted/30">
         <div className="container mx-auto px-4 py-8">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col md:flex-row items-center justify-between gap-4">
             <div className="flex items-center space-x-2">
               <Logo size="sm" />
               <span className="text-sm text-muted-foreground">© 2024 Churnaizer. All rights reserved.</span>
             </div>
-            <div className="flex space-x-4 text-sm">
+            <div className="flex flex-wrap justify-center md:justify-end gap-x-4 gap-y-2 text-sm">
               <Link to="/privacy" className="text-muted-foreground hover:text-foreground">Privacy Policy</Link>
               <Link to="/terms" className="text-muted-foreground hover:text-foreground">Terms of Service</Link>
               <Link to="/refund-policy" className="text-muted-foreground hover:text-foreground">Refund Policy</Link>

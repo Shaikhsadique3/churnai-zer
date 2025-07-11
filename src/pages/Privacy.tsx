@@ -12,7 +12,7 @@ const Privacy = () => {
         <div className="container mx-auto px-4 py-6 flex items-center justify-between">
           <Link to="/" className="flex items-center space-x-2">
             <Logo size="md" />
-            <h1 className="text-2xl font-bold text-foreground">ChurnGuard Lite</h1>
+            <h1 className="text-2xl font-bold text-foreground">Churnaizer</h1>
           </Link>
           <Link to="/">
             <Button variant="outline">
@@ -35,7 +35,7 @@ const Privacy = () => {
               <section>
                 <h2 className="text-2xl font-semibold mb-4">1. Information We Collect</h2>
                 <p>
-                  ChurnGuard Lite collects and processes the following types of information:
+                  Churnaizer collects and processes the following types of information:
                 </p>
                 <h3 className="text-lg font-semibold mt-4 mb-2">Account Information</h3>
                 <ul className="list-disc pl-6 space-y-1">
@@ -141,8 +141,8 @@ const Privacy = () => {
                   If you have any questions about this Privacy Policy or our data practices, please contact us at:
                 </p>
                 <ul className="mt-2 space-y-1">
-                  <li>Email: privacy@churnguard.com</li>
-                  <li>Address: ChurnGuard Lite Privacy Team</li>
+                  <li>Email: privacy@churnaizer.com</li>
+                  <li>Address: Churnaizer Privacy Team, 123 Tech Park, Bengaluru, Karnataka 560001, India</li>
                 </ul>
               </section>
             </div>
@@ -153,12 +153,12 @@ const Privacy = () => {
       {/* Footer */}
       <footer className="border-t bg-muted/30">
         <div className="container mx-auto px-4 py-8">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col md:flex-row items-center justify-between gap-4">
             <div className="flex items-center space-x-2">
               <Logo size="sm" />
-              <span className="text-sm text-muted-foreground">© 2024 ChurnGuard Lite. All rights reserved.</span>
+              <span className="text-sm text-muted-foreground">© 2024 Churnaizer. All rights reserved.</span>
             </div>
-            <div className="flex space-x-4 text-sm">
+            <div className="flex flex-wrap justify-center md:justify-end gap-x-4 gap-y-2 text-sm">
               <Link to="/privacy" className="text-muted-foreground hover:text-foreground">Privacy Policy</Link>
               <Link to="/terms" className="text-muted-foreground hover:text-foreground">Terms of Service</Link>
               <Link to="/refund-policy" className="text-muted-foreground hover:text-foreground">Refund Policy</Link>

@@ -9,7 +9,7 @@ const Pricing = () => {
   const plans = [
     {
       name: "Free",
-      price: "$0",
+      price: "₹0",
       period: "forever",
       description: "Perfect for getting started with churn prediction",
       features: [
@@ -24,7 +24,7 @@ const Pricing = () => {
     },
     {
       name: "Pro",
-      price: "$49",
+      price: "₹3,999",
       period: "per month",
       description: "Advanced features for growing businesses",
       features: [
@@ -186,12 +186,12 @@ const Pricing = () => {
       {/* Footer */}
       <footer className="border-t bg-muted/30">
         <div className="container mx-auto px-4 py-8">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col md:flex-row items-center justify-between gap-4">
             <div className="flex items-center space-x-2">
               <Logo size="sm" />
               <span className="text-sm text-muted-foreground">© 2024 Churnaizer. All rights reserved.</span>
             </div>
-            <div className="flex space-x-4 text-sm">
+            <div className="flex flex-wrap justify-center md:justify-end gap-x-4 gap-y-2 text-sm">
               <Link to="/privacy" className="text-muted-foreground hover:text-foreground">Privacy Policy</Link>
               <Link to="/terms" className="text-muted-foreground hover:text-foreground">Terms of Service</Link>
               <Link to="/refund-policy" className="text-muted-foreground hover:text-foreground">Refund Policy</Link>

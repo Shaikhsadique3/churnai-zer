@@ -95,6 +95,22 @@ export const DashboardOverview = () => {
     enabled: !!user?.id,
   });
 
+  // Check CRM integration status
+  const { data: integrationSettings } = useQuery({
+    queryKey: ['integration-settings', user?.id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('integration_settings')
+        .select('is_crm_connected, crm_webhook_url, email_provider, sender_email')
+        .eq('user_id', user?.id)
+        .maybeSingle();
+      
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!user?.id,
+  });
+
   if (statsLoading) {
     return (
       <div className="space-y-6">
@@ -357,7 +373,9 @@ export const DashboardOverview = () => {
                   <p className="text-xs text-muted-foreground">Email & automation tools</p>
                 </div>
               </div>
-              <Badge variant="outline">Coming Soon</Badge>
+              <Badge variant={integrationSettings?.is_crm_connected ? "default" : "outline"}>
+                {integrationSettings?.is_crm_connected ? "Active" : "Not Connected"}
+              </Badge>
             </div>
           </CardContent>
         </Card>

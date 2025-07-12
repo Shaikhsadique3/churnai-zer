@@ -28,122 +28,80 @@ const Privacy = () => {
         <Card>
           <CardHeader>
             <CardTitle className="text-3xl">Privacy Policy</CardTitle>
+            <p className="text-muted-foreground">For Churnaizer.com</p>
             <p className="text-muted-foreground">Last updated: {new Date().toLocaleDateString()}</p>
           </CardHeader>
           <CardContent className="prose prose-slate max-w-none">
             <div className="space-y-6">
+              <p>
+                We respect SaaS founders' data privacy and are committed to protecting your personal information. 
+                This policy explains how we collect, use, and safeguard your data.
+              </p>
+
               <section>
                 <h2 className="text-2xl font-semibold mb-4">1. Information We Collect</h2>
-                <p>
-                  Churnaizer collects and processes the following types of information:
-                </p>
-                <h3 className="text-lg font-semibold mt-4 mb-2">Account Information</h3>
-                <ul className="list-disc pl-6 space-y-1">
-                  <li>Email address and account credentials</li>
-                  <li>Profile information you provide</li>
-                  <li>Billing and subscription information</li>
-                </ul>
-                
-                <h3 className="text-lg font-semibold mt-4 mb-2">Customer Data</h3>
-                <ul className="list-disc pl-6 space-y-1">
-                  <li>Customer user IDs and usage metrics</li>
-                  <li>Subscription plan information</li>
-                  <li>Login and activity timestamps</li>
-                  <li>Usage scores and behavioral data</li>
-                </ul>
-              </section>
-
-              <section>
-                <h2 className="text-2xl font-semibold mb-4">2. How We Use Your Information</h2>
-                <p>We use the collected information to:</p>
+                <p>We store the following information:</p>
                 <ul className="list-disc pl-6 mt-2 space-y-1">
-                  <li>Provide and improve our churn prediction services</li>
-                  <li>Generate AI-powered analytics and insights</li>
-                  <li>Send weekly reports and notifications</li>
-                  <li>Ensure service security and prevent fraud</li>
-                  <li>Comply with legal obligations</li>
+                  <li>Your name and email address</li>
+                  <li>CRM data (if you choose to integrate)</li>
+                  <li>Usage statistics and analytics</li>
+                  <li>Account preferences and settings</li>
                 </ul>
               </section>
 
               <section>
-                <h2 className="text-2xl font-semibold mb-4">3. Data Sharing and Disclosure</h2>
+                <h2 className="text-2xl font-semibold mb-4">2. How We Use Your Data</h2>
                 <p>
-                  We do not sell, trade, or rent your personal information to third parties. We may share information in the following circumstances:
+                  Data is encrypted and used solely to improve our AI recommendations and provide you with 
+                  better churn prevention insights for your business.
                 </p>
-                <ul className="list-disc pl-6 mt-2 space-y-1">
-                  <li>With your explicit consent</li>
-                  <li>To comply with legal requirements or court orders</li>
-                  <li>To protect our rights and prevent fraud</li>
-                  <li>With trusted service providers who assist in our operations (under strict confidentiality agreements)</li>
-                </ul>
               </section>
 
               <section>
-                <h2 className="text-2xl font-semibold mb-4">4. Data Security</h2>
+                <h2 className="text-2xl font-semibold mb-4">3. Cookies and Analytics</h2>
                 <p>
-                  We implement robust security measures to protect your data:
+                  We use cookies for analytics purposes through services like Google Analytics and Plausible. 
+                  These help us understand how our platform is being used to improve the service.
                 </p>
-                <ul className="list-disc pl-6 mt-2 space-y-1">
-                  <li>Encryption of data in transit and at rest</li>
-                  <li>Regular security audits and monitoring</li>
-                  <li>Access controls and authentication measures</li>
-                  <li>Secure API key management</li>
-                </ul>
               </section>
 
               <section>
-                <h2 className="text-2xl font-semibold mb-4">5. Data Retention</h2>
+                <h2 className="text-2xl font-semibold mb-4">4. Data Sharing</h2>
                 <p>
-                  We retain your data only as long as necessary to provide our services and comply with legal obligations. 
-                  Customer data is typically retained for the duration of your subscription plus 90 days for backup purposes.
+                  No user data is sold or shared with third parties without your explicit consent. 
+                  We maintain strict confidentiality of all customer information.
+                </p>
+              </section>
+
+              <section>
+                <h2 className="text-2xl font-semibold mb-4">5. Data Security</h2>
+                <p>
+                  All data is encrypted both in transit and at rest. We implement industry-standard 
+                  security measures to protect your information from unauthorized access.
                 </p>
               </section>
 
               <section>
                 <h2 className="text-2xl font-semibold mb-4">6. Your Rights</h2>
-                <p>Depending on your location, you may have the right to:</p>
-                <ul className="list-disc pl-6 mt-2 space-y-1">
-                  <li>Access your personal data</li>
-                  <li>Correct inaccurate data</li>
-                  <li>Delete your data (right to be forgotten)</li>
-                  <li>Port your data to another service</li>
-                  <li>Object to certain processing activities</li>
-                </ul>
-              </section>
-
-              <section>
-                <h2 className="text-2xl font-semibold mb-4">7. Cookies and Tracking</h2>
                 <p>
-                  We use essential cookies to maintain your session and provide core functionality. 
-                  We do not use tracking cookies for advertising purposes.
+                  You may request deletion of your account and associated data at any time by contacting 
+                  our support team. We will process deletion requests within 30 days.
                 </p>
               </section>
 
               <section>
-                <h2 className="text-2xl font-semibold mb-4">8. International Data Transfers</h2>
+                <h2 className="text-2xl font-semibold mb-4">7. Changes to This Policy</h2>
                 <p>
-                  Your data may be processed in countries other than your own. We ensure appropriate safeguards 
-                  are in place to protect your data during international transfers.
+                  We may update this Privacy Policy from time to time. Any material changes will be 
+                  communicated to you via email or through our platform.
                 </p>
               </section>
 
               <section>
-                <h2 className="text-2xl font-semibold mb-4">9. Changes to This Policy</h2>
+                <h2 className="text-2xl font-semibold mb-4">8. Contact Information</h2>
                 <p>
-                  We may update this Privacy Policy from time to time. We will notify you of any material changes 
-                  via email or through our service interface.
+                  If you have any questions about this Privacy Policy, please contact us at help@churnaizer.com
                 </p>
-              </section>
-
-              <section>
-                <h2 className="text-2xl font-semibold mb-4">10. Contact Us</h2>
-                <p>
-                  If you have any questions about this Privacy Policy or our data practices, please contact us at:
-                </p>
-                <ul className="mt-2 space-y-1">
-                  <li>Email: privacy@churnaizer.com</li>
-                  <li>Address: Churnaizer Privacy Team, 123 Tech Park, Bengaluru, Karnataka 560001, India</li>
-                </ul>
               </section>
             </div>
           </CardContent>

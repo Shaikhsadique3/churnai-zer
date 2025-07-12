@@ -137,7 +137,7 @@ const Contact = () => {
                   <Mail className="h-5 w-5 text-primary mt-1" />
                   <div>
                     <h3 className="font-semibold">Email</h3>
-                    <p className="text-muted-foreground">support@churnaizer.com</p>
+                    <p className="text-muted-foreground">help@churnaizer.com</p>
                     <p className="text-sm text-muted-foreground">We respond within 24 hours</p>
                   </div>
                 </div>
@@ -146,20 +146,18 @@ const Contact = () => {
                   <Phone className="h-5 w-5 text-primary mt-1" />
                   <div>
                     <h3 className="font-semibold">Phone</h3>
-                    <p className="text-muted-foreground">+91 80 4567 8900</p>
-                    <p className="text-sm text-muted-foreground">Mon-Fri, 10 AM - 7 PM IST</p>
+                    <p className="text-muted-foreground">+91-7798997439</p>
+                    <p className="text-sm text-muted-foreground">Available for urgent matters</p>
                   </div>
                 </div>
                 
                 <div className="flex items-start space-x-3">
                   <MapPin className="h-5 w-5 text-primary mt-1" />
                   <div>
-                    <h3 className="font-semibold">Indian Office</h3>
+                    <h3 className="font-semibold">Business Address</h3>
                     <p className="text-muted-foreground">
-                      Churnaizer Technologies Pvt Ltd<br />
-                      #123, 2nd Floor, Tech Arcade<br />
-                      MG Road, Koramangala<br />
-                      Bengaluru, Karnataka 560034<br />
+                      Khamu Jamdar Nagar<br />
+                      Shegaon, Maharashtra<br />
                       India
                     </p>
                   </div>
@@ -168,11 +166,10 @@ const Contact = () => {
                 <div className="flex items-start space-x-3">
                   <Clock className="h-5 w-5 text-primary mt-1" />
                   <div>
-                    <h3 className="font-semibold">Business Hours</h3>
+                    <h3 className="font-semibold">Contact Form</h3>
                     <p className="text-muted-foreground">
-                      Monday - Friday: 10:00 AM - 7:00 PM IST<br />
-                      Saturday: 10:00 AM - 2:00 PM IST<br />
-                      Sunday: Emergency support only
+                      Use the form on the left or visit:<br />
+                      https://churnaizer.com/contact
                     </p>
                   </div>
                 </div>

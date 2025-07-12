@@ -27,87 +27,72 @@ const Terms = () => {
       <div className="container mx-auto px-4 py-12 max-w-4xl">
         <Card>
           <CardHeader>
-            <CardTitle className="text-3xl">Terms of Service</CardTitle>
-            <p className="text-muted-foreground">Last updated: {new Date().toLocaleDateString()}</p>
+            <CardTitle className="text-3xl">Terms & Conditions</CardTitle>
+            <p className="text-muted-foreground">Effective Date: January 12, 2025</p>
+            <p className="text-muted-foreground">Website: https://churnaizer.com</p>
           </CardHeader>
           <CardContent className="prose prose-slate max-w-none">
             <div className="space-y-6">
-              <section>
-                <h2 className="text-2xl font-semibold mb-4">1. Acceptance of Terms</h2>
-                <p>
-                  By accessing and using Churnaizer ("Service"), you accept and agree to be bound by the terms and provision of this agreement.
-                </p>
-              </section>
+              <p>
+                By accessing or using Churnaizer (an AI-driven churn prevention tool), you agree to be bound by these Terms & Conditions. 
+                Please read them carefully before using our service.
+              </p>
 
               <section>
-                <h2 className="text-2xl font-semibold mb-4">2. Description of Service</h2>
-                <p>
-                  Churnaizer provides AI-powered customer churn prediction and analysis tools for SaaS businesses. Our service includes:
-                </p>
-                <ul className="list-disc pl-6 mt-2 space-y-1">
-                  <li>Customer data tracking and analysis</li>
-                  <li>AI-powered churn risk predictions</li>
-                  <li>Weekly automated reports</li>
-                  <li>API integration capabilities</li>
-                </ul>
-              </section>
-
-              <section>
-                <h2 className="text-2xl font-semibold mb-4">3. User Responsibilities</h2>
+                <h2 className="text-2xl font-semibold mb-4">1. Use of Service</h2>
                 <p>You agree to:</p>
                 <ul className="list-disc pl-6 mt-2 space-y-1">
-                  <li>Provide accurate and lawful customer data</li>
-                  <li>Comply with all applicable privacy laws and regulations</li>
-                  <li>Obtain necessary consent from your customers for data processing</li>
-                  <li>Not use the service for any illegal or unauthorized purpose</li>
-                  <li>Maintain the security of your API keys and account credentials</li>
+                  <li>Use it legally and ethically for your business only</li>
+                  <li>Respect our platform's intellectual property</li>
+                  <li>Not reverse-engineer or resell our product</li>
+                  <li>Comply with all applicable laws and regulations</li>
                 </ul>
               </section>
 
               <section>
-                <h2 className="text-2xl font-semibold mb-4">4. Data Privacy and Security</h2>
+                <h2 className="text-2xl font-semibold mb-4">2. Subscription and Billing</h2>
                 <p>
-                  We take data privacy seriously. Customer data you provide is processed in accordance with our Privacy Policy. 
-                  We implement industry-standard security measures to protect your data, but cannot guarantee absolute security.
+                  Subscription plans are billed monthly or annually as selected during signup. 
+                  All payments are processed securely through our payment providers.
                 </p>
               </section>
 
               <section>
-                <h2 className="text-2xl font-semibold mb-4">5. Service Availability</h2>
+                <h2 className="text-2xl font-semibold mb-4">3. Account Termination</h2>
                 <p>
-                  While we strive for 99.9% uptime, we do not guarantee uninterrupted access to the service. 
-                  We may temporarily suspend the service for maintenance or updates.
+                  Violation of these terms may result in account termination at our discretion. 
+                  We reserve the right to suspend or terminate accounts that violate our terms of service.
                 </p>
               </section>
 
               <section>
-                <h2 className="text-2xl font-semibold mb-4">6. Limitation of Liability</h2>
+                <h2 className="text-2xl font-semibold mb-4">4. Intellectual Property</h2>
                 <p>
-                  Churnaizer provides predictions and analysis based on available data. These are estimates and should not be 
-                  considered as guaranteed outcomes. We are not liable for business decisions made based on our predictions.
+                  All content, features, and functionality of Churnaizer are owned by us and are protected by 
+                  copyright, trademark, and other intellectual property laws.
                 </p>
               </section>
 
               <section>
-                <h2 className="text-2xl font-semibold mb-4">7. Termination</h2>
+                <h2 className="text-2xl font-semibold mb-4">5. Limitation of Liability</h2>
                 <p>
-                  Either party may terminate this agreement at any time. Upon termination, your access to the service will be 
-                  discontinued, and we will delete your data in accordance with our data retention policy.
+                  Churnaizer provides AI-driven predictions and analysis. These are estimates based on available data 
+                  and should not be considered as guaranteed outcomes. We are not liable for business decisions made based on our predictions.
                 </p>
               </section>
 
               <section>
-                <h2 className="text-2xl font-semibold mb-4">8. Changes to Terms</h2>
+                <h2 className="text-2xl font-semibold mb-4">6. Changes to Terms</h2>
                 <p>
-                  We reserve the right to modify these terms at any time. We will notify users of any material changes 
-                  via email or through the service interface.
+                  We reserve the right to modify these terms at any time. Material changes will be communicated 
+                  to users via email or through the service interface.
                 </p>
               </section>
 
               <section>
-                <h2 className="text-2xl font-semibold mb-4">9. Contact Information</h2>
+                <h2 className="text-2xl font-semibold mb-4">7. Contact Information</h2>
                 <p>
-                  If you have any questions about these Terms of Service, please contact us at legal@churnaizer.com
+                  If you have any questions about these Terms & Conditions, please contact us at help@churnaizer.com
                 </p>
               </section>
             </div>

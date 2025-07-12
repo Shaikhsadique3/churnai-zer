@@ -127,8 +127,13 @@ export const EmailProviderIntegration = () => {
 
       console.log('Session found, calling email-provider-test function');
 
-      const response = await supabase.functions.invoke('email-provider-test', {
-        body: {
+      const response = await fetch(`https://ntbkydpgjaswmwruegyl.supabase.co/functions/v1/email-provider-test`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({
           provider,
           sender_email: formData.sender_email,
           sender_name: formData.sender_name,
@@ -138,14 +143,15 @@ export const EmailProviderIntegration = () => {
           smtp_username: formData.smtp_username,
           smtp_password: formData.smtp_password,
           test_email: formData.test_email
-        }
+        })
       });
 
-      if (response.error) {
-        throw new Error(response.error.message || 'Test failed');
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || `HTTP ${response.status}: ${response.statusText}`);
       }
 
-      const result = response.data;
+      const result = await response.json();
       setTestResult(result);
 
       if (result.status === 'success') {

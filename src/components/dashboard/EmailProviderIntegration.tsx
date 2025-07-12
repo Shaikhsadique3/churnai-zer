@@ -118,10 +118,14 @@ export const EmailProviderIntegration = () => {
     setTestResult(null);
 
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session?.access_token) {
-        throw new Error('No session found');
+      // Get the current session
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      
+      if (sessionError || !session) {
+        throw new Error('Please log in to continue');
       }
+
+      console.log('Session found, calling email-provider-test function');
 
       const response = await supabase.functions.invoke('email-provider-test', {
         body: {
@@ -134,9 +138,6 @@ export const EmailProviderIntegration = () => {
           smtp_username: formData.smtp_username,
           smtp_password: formData.smtp_password,
           test_email: formData.test_email
-        },
-        headers: {
-          Authorization: `Bearer ${session.access_token}`
         }
       });
 

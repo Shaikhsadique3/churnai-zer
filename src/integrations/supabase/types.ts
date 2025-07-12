@@ -74,6 +74,42 @@ export type Database = {
         }
         Relationships: []
       }
+      crm_logs: {
+        Row: {
+          created_at: string
+          id: string
+          is_test: boolean | null
+          request_payload: Json | null
+          response_body: string | null
+          response_status: number | null
+          status: string
+          user_id: string
+          webhook_url: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_test?: boolean | null
+          request_payload?: Json | null
+          response_body?: string | null
+          response_status?: number | null
+          status?: string
+          user_id: string
+          webhook_url: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_test?: boolean | null
+          request_payload?: Json | null
+          response_body?: string | null
+          response_status?: number | null
+          status?: string
+          user_id?: string
+          webhook_url?: string
+        }
+        Relationships: []
+      }
       csv_uploads: {
         Row: {
           created_at: string | null
@@ -272,9 +308,12 @@ export type Database = {
       integration_settings: {
         Row: {
           created_at: string
+          crm_api_key: string | null
+          crm_webhook_url: string | null
           email_api_key: string | null
           email_provider: string | null
           id: string
+          is_crm_connected: boolean | null
           sender_email: string | null
           sender_name: string | null
           smtp_host: string | null
@@ -288,9 +327,12 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          crm_api_key?: string | null
+          crm_webhook_url?: string | null
           email_api_key?: string | null
           email_provider?: string | null
           id?: string
+          is_crm_connected?: boolean | null
           sender_email?: string | null
           sender_name?: string | null
           smtp_host?: string | null
@@ -304,9 +346,12 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          crm_api_key?: string | null
+          crm_webhook_url?: string | null
           email_api_key?: string | null
           email_provider?: string | null
           id?: string
+          is_crm_connected?: boolean | null
           sender_email?: string | null
           sender_name?: string | null
           smtp_host?: string | null

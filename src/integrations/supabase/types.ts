@@ -277,6 +277,10 @@ export type Database = {
           id: string
           sender_email: string | null
           sender_name: string | null
+          smtp_host: string | null
+          smtp_password: string | null
+          smtp_port: number | null
+          smtp_username: string | null
           status: string | null
           updated_at: string
           user_id: string
@@ -289,6 +293,10 @@ export type Database = {
           id?: string
           sender_email?: string | null
           sender_name?: string | null
+          smtp_host?: string | null
+          smtp_password?: string | null
+          smtp_port?: number | null
+          smtp_username?: string | null
           status?: string | null
           updated_at?: string
           user_id: string
@@ -301,6 +309,10 @@ export type Database = {
           id?: string
           sender_email?: string | null
           sender_name?: string | null
+          smtp_host?: string | null
+          smtp_password?: string | null
+          smtp_port?: number | null
+          smtp_username?: string | null
           status?: string | null
           updated_at?: string
           user_id?: string

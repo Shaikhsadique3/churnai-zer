@@ -71,9 +71,29 @@ serve(async (req) => {
 
     const { to, subject, html } = requestBody;
     
-    if (!to || !subject || !html) {
+    // Enhanced validation - check for missing, empty, or whitespace-only values
+    const missingFields = [];
+    if (!to || typeof to !== 'string' || to.trim() === '') missingFields.push('to');
+    if (!subject || typeof subject !== 'string' || subject.trim() === '') missingFields.push('subject');
+    if (!html || typeof html !== 'string' || html.trim() === '') missingFields.push('html');
+    
+    if (missingFields.length > 0) {
+      console.error('Validation failed - missing fields:', missingFields);
       return new Response(
-        JSON.stringify({ error: 'Missing required fields: to, subject, html' }),
+        JSON.stringify({ 
+          error: `Missing or empty required fields: ${missingFields.join(', ')}`,
+          missingFields 
+        }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(to.trim())) {
+      console.error('Invalid email format:', to);
+      return new Response(
+        JSON.stringify({ error: 'Invalid email address format' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
@@ -187,6 +207,8 @@ serve(async (req) => {
         success: true,
         message: "Email sent successfully",
         id: emailResponse.data?.id,
+        emailId: emailResponse.data?.id, // Keep both for compatibility
+        provider: 'resend'
       }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );

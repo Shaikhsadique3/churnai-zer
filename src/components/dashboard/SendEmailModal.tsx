@@ -42,10 +42,26 @@ export const SendEmailModal = ({
   };
 
   const sendTestEmail = async () => {
-    if (!formData.to || !formData.subject || !formData.html) {
+    // Enhanced validation - check for empty/whitespace values
+    const trimmedTo = formData.to?.trim();
+    const trimmedSubject = formData.subject?.trim(); 
+    const trimmedHtml = formData.html?.trim();
+    
+    if (!trimmedTo || !trimmedSubject || !trimmedHtml) {
       toast({
         title: "Missing Fields",
         description: "Please fill in all required fields (To, Subject, Body)",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(trimmedTo)) {
+      toast({
+        title: "Invalid Email",
+        description: "Please enter a valid email address",
         variant: "destructive",
       });
       return;
@@ -64,7 +80,12 @@ export const SendEmailModal = ({
           Authorization: `Bearer ${session.access_token}`,
           'Content-Type': 'application/json',
         },
-        body: formData,
+        body: {
+          to: trimmedTo,
+          subject: trimmedSubject,
+          html: trimmedHtml,
+          from: formData.from?.trim()
+        },
       });
 
       console.log('Email API Response:', response);
@@ -75,8 +96,8 @@ export const SendEmailModal = ({
 
       if (response.data?.success) {
         toast({
-          title: "✅ Email Sent Successfully",
-          description: `Email sent via ${response.data.provider || 'Resend'}. ID: ${response.data.emailId}`,
+          title: "✅ Email Sent Successfully", 
+          description: `Email sent via ${response.data.provider || 'Resend'}. ID: ${response.data.emailId || response.data.id}`,
         });
         setOpen(false);
         // Reset form
@@ -92,9 +113,22 @@ export const SendEmailModal = ({
 
     } catch (error: any) {
       console.error('Email sending error:', error);
+      
+      // Enhanced error handling with specific messages
+      let errorMessage = 'Unknown error occurred';
+      if (error.message?.includes('Edge Function returned a non-2xx status code')) {
+        errorMessage = 'Email configuration error. Please check your email provider settings.';
+      } else if (error.message?.includes('Missing authorization')) {
+        errorMessage = 'Authentication error. Please try logging in again.';
+      } else if (error.message?.includes('Invalid email')) {
+        errorMessage = 'Invalid email address format.';
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      
       toast({
         title: "❌ Email Failed",
-        description: error.message || 'Unknown error occurred',
+        description: errorMessage,
         variant: "destructive",
       });
     } finally {

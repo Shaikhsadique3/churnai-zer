@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
@@ -114,9 +114,10 @@ export const SendEmailModal = ({
       </DialogTrigger>
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
-          <VisuallyHidden>
-            <DialogTitle>Send Test Email</DialogTitle>
-          </VisuallyHidden>
+          <DialogTitle>Send Test Email</DialogTitle>
+          <DialogDescription>
+            Send a test email to verify your email configuration is working properly.
+          </DialogDescription>
         </DialogHeader>
         
         <div className="space-y-4">

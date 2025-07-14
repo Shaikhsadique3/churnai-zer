@@ -18,12 +18,7 @@ export interface EmailLog {
   status: string;
   sent_at?: string;
   error_message?: string;
-  email_data: {
-    subject: string;
-    provider: string;
-    email_id?: string;
-    template_id?: string;
-  };
+  email_data: any; // Json type from database
   created_at: string;
 }
 

@@ -184,7 +184,7 @@ export const EmailAnalyticsDashboard = () => {
                       <div className="w-3 h-3 rounded-full bg-primary"></div>
                       <span className="capitalize">{provider}</span>
                     </div>
-                    <Badge variant="secondary">{count}</Badge>
+                    <Badge variant="secondary">{count as number}</Badge>
                   </div>
                 ))}
               </div>
@@ -251,16 +251,16 @@ export const EmailAnalyticsDashboard = () => {
                 .map(([date, stats]) => {
                   const dailyStats = stats as { sent: number; failed: number; pending: number };
                   return (
-                <div key={date} className="flex items-center justify-between p-2 border rounded">
-                  <span className="text-sm font-medium">
-                    {new Date(date).toLocaleDateString()}
-                  </span>
-                  <div className="flex space-x-4 text-sm">
-                    <span className="text-green-600">✓ {dailyStats.sent}</span>
-                    <span className="text-red-600">✗ {dailyStats.failed}</span>
-                    <span className="text-yellow-600">⏳ {dailyStats.pending}</span>
-                  </div>
-                </div>
+                    <div key={date} className="flex items-center justify-between p-2 border rounded">
+                      <span className="text-sm font-medium">
+                        {new Date(date).toLocaleDateString()}
+                      </span>
+                      <div className="flex space-x-4 text-sm">
+                        <span className="text-green-600">✓ {dailyStats.sent}</span>
+                        <span className="text-red-600">✗ {dailyStats.failed}</span>
+                        <span className="text-yellow-600">⏳ {dailyStats.pending}</span>
+                      </div>
+                    </div>
                   );
                 })}
             </div>

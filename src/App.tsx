@@ -25,7 +25,7 @@ import { UserDetailPage } from "./pages/dashboard/UserDetailPage";
 import { ChurnReportsPage } from "./pages/dashboard/ChurnReportsPage";
 import { AutomationsPage } from "./pages/dashboard/AutomationsPage";
 import { PlaybooksBuilderPage } from "./pages/dashboard/PlaybooksBuilderPage";
-import { EmailTemplatesPage } from "./pages/dashboard/EmailTemplatesPage";
+import { EnhancedEmailSystemPage } from "./pages/dashboard/EnhancedEmailSystemPage";
 import { EmailLogsPage } from "./pages/dashboard/EmailLogsPage";
 import { IntegrationsPage } from "./pages/dashboard/IntegrationsPage";
 import { EmailProviderVerificationPage } from "./pages/dashboard/EmailProviderVerificationPage";
@@ -67,7 +67,7 @@ const App = () => (
               <Route path="automations/playbooks" element={<AutomationsPage />} />
               <Route path="automations/playbooks-builder" element={<PlaybooksBuilderPage />} />
               <Route path="automations/emails" element={<AutomationsPage />} />
-              <Route path="email-templates" element={<EmailTemplatesPage />} />
+              <Route path="email-templates" element={<EnhancedEmailSystemPage />} />
               <Route path="email-logs" element={<EmailLogsPage />} />
               <Route path="integrations" element={<IntegrationsPage />} />
               <Route path="integrations/email-verification" element={<EmailProviderVerificationPage />} />

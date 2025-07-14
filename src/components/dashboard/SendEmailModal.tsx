@@ -7,7 +7,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
-import { supabase } from "@/integrations/supabase/client";
+import { useEmailService } from "@/hooks/useEmailService";
 import { Mail, Loader2, Send } from "lucide-react";
 
 interface SendEmailModalProps {
@@ -27,8 +27,8 @@ export const SendEmailModal = ({
 }: SendEmailModalProps) => {
   const { user } = useAuth();
   const { toast } = useToast();
+  const { sendEmail, loading: emailLoading } = useEmailService();
   const [open, setOpen] = useState(false);
-  const [loading, setLoading] = useState(false);
   
   const [formData, setFormData] = useState({
     to: defaultTo,
@@ -41,7 +41,7 @@ export const SendEmailModal = ({
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
-  const sendTestEmail = async () => {
+  const handleSendEmail = async () => {
     // Enhanced validation - check for empty/whitespace values
     const trimmedTo = formData.to?.trim();
     const trimmedSubject = formData.subject?.trim(); 
@@ -67,80 +67,25 @@ export const SendEmailModal = ({
       return;
     }
 
-    setLoading(true);
-
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session?.access_token) {
-        toast({
-          title: "Authentication Error",
-          description: "Please log in again to send emails",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      // Prepare the request payload
-      const emailPayload = {
+      await sendEmail({
         to: trimmedTo,
         subject: trimmedSubject,
-        html: trimmedHtml
-      };
-
-      console.log('Sending email with payload:', emailPayload);
-
-      const response = await supabase.functions.invoke('send-email', {
-        body: emailPayload
+        html: trimmedHtml,
+        priority: 'high',
       });
 
-      console.log('Email API Response:', response);
-
-      if (response.error) {
-        console.error('Supabase function error:', response.error);
-        throw new Error(response.error.message || 'Failed to send email');
-      }
-
-      if (response.data?.success) {
-        toast({
-          title: "✅ Email Sent Successfully", 
-          description: `Email sent via ${response.data.provider || 'Resend'}. ID: ${response.data.emailId || response.data.id}`,
-        });
-        setOpen(false);
-        // Reset form
-        setFormData({
-          to: defaultTo,
-          subject: defaultSubject,
-          html: defaultHtml,
-          from: defaultFrom,
-        });
-      } else {
-        throw new Error(response.data?.error || 'Failed to send email');
-      }
-
-    } catch (error: any) {
-      console.error('Email sending error:', error);
-      
-      // Enhanced error handling with specific messages
-      let errorMessage = 'Unknown error occurred';
-      if (error.message?.includes('Edge Function returned a non-2xx status code')) {
-        errorMessage = 'Email configuration error. Please check your email provider settings.';
-      } else if (error.message?.includes('Missing authorization')) {
-        errorMessage = 'Authentication error. Please try logging in again.';
-      } else if (error.message?.includes('Invalid email')) {
-        errorMessage = 'Invalid email address format.';
-      } else if (error.message?.includes('Invalid JSON')) {
-        errorMessage = 'Request format error. Please try again.';
-      } else if (error.message) {
-        errorMessage = error.message;
-      }
-      
-      toast({
-        title: "❌ Email Failed",
-        description: errorMessage,
-        variant: "destructive",
+      setOpen(false);
+      // Reset form
+      setFormData({
+        to: defaultTo,
+        subject: defaultSubject,
+        html: defaultHtml,
+        from: defaultFrom,
       });
-    } finally {
-      setLoading(false);
+    } catch (error) {
+      // Error handling is done in useEmailService hook
+      console.error('Send email error:', error);
     }
   };
 
@@ -222,16 +167,16 @@ export const SendEmailModal = ({
 
           <div className="flex space-x-2 pt-4">
             <Button 
-              onClick={sendTestEmail} 
-              disabled={loading}
+              onClick={handleSendEmail} 
+              disabled={emailLoading}
               className="flex-1"
             >
-              {loading ? (
+              {emailLoading ? (
                 <Loader2 className="h-4 w-4 mr-2 animate-spin" />
               ) : (
                 <Send className="h-4 w-4 mr-2" />
               )}
-              Send Test Email
+              {emailLoading ? "Sending..." : "Send Test Email"}
             </Button>
             <Button variant="outline" onClick={() => setOpen(false)}>
               Cancel

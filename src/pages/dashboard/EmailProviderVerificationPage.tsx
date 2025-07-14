@@ -6,17 +6,21 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { Loader2, Mail, CheckCircle, XCircle, ExternalLink, ArrowLeft } from "lucide-react";
+import { Loader2, Mail, CheckCircle, XCircle, ExternalLink, ArrowLeft, Trash2 } from "lucide-react";
 import { Link } from "react-router-dom";
 
 export const EmailProviderVerificationPage = () => {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [verificationStatus, setVerificationStatus] = useState<'verified' | 'not-verified' | null>(null);
   const [lastTestResult, setLastTestResult] = useState<{ success: boolean; message: string } | null>(null);
+  const [hasExistingSettings, setHasExistingSettings] = useState(false);
 
   // Form data
   const [formData, setFormData] = useState({
@@ -49,6 +53,7 @@ export const EmailProviderVerificationPage = () => {
       }
 
       if (settings) {
+        setHasExistingSettings(true);
         setFormData({
           email_provider: settings.email_provider || 'Resend',
           sender_name: settings.sender_name || '',
@@ -65,6 +70,8 @@ export const EmailProviderVerificationPage = () => {
           .limit(1);
 
         setVerificationStatus(emailLogs && emailLogs.length > 0 ? 'verified' : 'not-verified');
+      } else {
+        setHasExistingSettings(false);
       }
     } catch (error) {
       console.error('Error loading settings:', error);
@@ -182,6 +189,64 @@ export const EmailProviderVerificationPage = () => {
       });
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    setIsDeleting(true);
+    
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        throw new Error('Session expired. Please log in again.');
+      }
+
+      console.log('Deleting email provider settings...');
+      
+      const deleteResponse = await supabase.functions.invoke('delete-email-provider', {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${session.access_token}`,
+        },
+      });
+
+      console.log('Delete response:', deleteResponse);
+
+      if (deleteResponse.error) {
+        throw new Error(deleteResponse.error.message || 'Failed to delete email provider');
+      }
+
+      if (deleteResponse.data?.success) {
+        // Reset form and state
+        setFormData({
+          email_provider: 'Resend',
+          sender_name: '',
+          sender_email: '',
+          email_api_key: ''
+        });
+        setVerificationStatus(null);
+        setLastTestResult(null);
+        setHasExistingSettings(false);
+        
+        toast({
+          title: "Success!",
+          description: "Email provider configuration deleted successfully.",
+        });
+      } else {
+        throw new Error('Failed to delete email provider configuration');
+      }
+
+    } catch (error: any) {
+      console.error('Delete error:', error);
+      toast({
+        title: "Deletion Failed",
+        description: `Failed to delete email provider: ${error.message}`,
+        variant: "destructive"
+      });
+    } finally {
+      setIsDeleting(false);
+      setShowDeleteDialog(false);
     }
   };
 
@@ -375,27 +440,99 @@ export const EmailProviderVerificationPage = () => {
             </Alert>
           )}
 
-          {/* Submit Button */}
-          <Button 
-            onClick={handleSubmit} 
-            disabled={isSaving}
-            className="w-full"
-            size="lg"
-          >
-            {isSaving ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Saving & Testing...
-              </>
-            ) : (
-              <>
-                <Mail className="mr-2 h-4 w-4" />
-                Save & Test Configuration
-              </>
+          {/* Action Buttons */}
+          <div className="flex flex-col sm:flex-row gap-3">
+            <Button 
+              onClick={handleSubmit} 
+              disabled={isSaving || isDeleting}
+              className="flex-1"
+              size="lg"
+            >
+              {isSaving ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Saving & Testing...
+                </>
+              ) : (
+                <>
+                  <Mail className="mr-2 h-4 w-4" />
+                  Save & Test Configuration
+                </>
+              )}
+            </Button>
+
+            {hasExistingSettings && (
+              <Button 
+                variant="destructive"
+                onClick={() => setShowDeleteDialog(true)}
+                disabled={isSaving || isDeleting}
+                size="lg"
+                className="sm:w-auto"
+              >
+                {isDeleting ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Deleting...
+                  </>
+                ) : (
+                  <>
+                    <Trash2 className="mr-2 h-4 w-4" />
+                    Delete Provider
+                  </>
+                )}
+              </Button>
             )}
-          </Button>
+          </div>
         </CardContent>
       </Card>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <Trash2 className="h-5 w-5 text-destructive" />
+              Delete Email Provider Configuration?
+            </AlertDialogTitle>
+            <AlertDialogDescription className="space-y-2">
+              <p>
+                This will permanently remove your email provider configuration and disable all email-based features including:
+              </p>
+              <ul className="list-disc list-inside space-y-1 text-sm">
+                <li>Automated playbook email actions</li>
+                <li>Customer retention emails</li>
+                <li>Test email functionality</li>
+                <li>Email logs and tracking</li>
+              </ul>
+              <p className="font-medium text-foreground mt-3">
+                This action cannot be undone. You'll need to reconfigure your email provider to re-enable these features.
+              </p>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isDeleting}>
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDelete}
+              disabled={isDeleting}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {isDeleting ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Deleting...
+                </>
+              ) : (
+                <>
+                  <Trash2 className="mr-2 h-4 w-4" />
+                  Delete Configuration
+                </>
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

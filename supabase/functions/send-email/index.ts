@@ -65,14 +65,18 @@ serve(async (req) => {
     // Parse request body - supabase.functions.invoke() sends JSON already  
     let requestBody;
     try {
-      const bodyText = await req.text();
-      console.log('Raw request body:', bodyText);
-      requestBody = JSON.parse(bodyText);
-      console.log('Parsed request body fields:', {
+      requestBody = await req.json();
+      console.log('Parsed request body successfully:', {
         to: requestBody.to ? 'present' : 'missing',
         subject: requestBody.subject ? 'present' : 'missing', 
         html: requestBody.html ? 'present' : 'missing',
         from: requestBody.from ? 'present' : 'missing'
+      });
+      console.log('Request body values:', {
+        to: requestBody.to,
+        subject: requestBody.subject,
+        html: requestBody.html ? `${requestBody.html.length} chars` : 'empty',
+        from: requestBody.from
       });
     } catch (parseError) {
       console.error('JSON parsing failed:', parseError);

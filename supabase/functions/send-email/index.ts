@@ -9,12 +9,18 @@ const corsHeaders = {
 };
 
 serve(async (req) => {
+  console.log('=== SEND EMAIL FUNCTION STARTED ===');
+  console.log('Method:', req.method);
+  console.log('Headers:', Object.fromEntries(req.headers.entries()));
+  
   // Handle CORS preflight requests
   if (req.method === "OPTIONS") {
+    console.log('Handling CORS preflight request');
     return new Response(null, { headers: corsHeaders });
   }
 
   if (req.method !== 'POST') {
+    console.log('Invalid method:', req.method);
     return new Response(
       JSON.stringify({ error: 'Method not allowed' }),
       { status: 405, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -22,7 +28,7 @@ serve(async (req) => {
   }
 
   try {
-    console.log('Send email request received');
+    console.log('Processing POST request for email sending');
     
     // Initialize Supabase client
     const supabaseUrl = Deno.env.get("SUPABASE_URL");
@@ -56,15 +62,22 @@ serve(async (req) => {
       );
     }
 
-    // Parse request body - supabase.functions.invoke() sends JSON already
+    // Parse request body - supabase.functions.invoke() sends JSON already  
     let requestBody;
     try {
-      requestBody = await req.json();
-      console.log('Parsed request body:', requestBody);
+      const bodyText = await req.text();
+      console.log('Raw request body:', bodyText);
+      requestBody = JSON.parse(bodyText);
+      console.log('Parsed request body fields:', {
+        to: requestBody.to ? 'present' : 'missing',
+        subject: requestBody.subject ? 'present' : 'missing', 
+        html: requestBody.html ? 'present' : 'missing',
+        from: requestBody.from ? 'present' : 'missing'
+      });
     } catch (parseError) {
       console.error('JSON parsing failed:', parseError);
       return new Response(
-        JSON.stringify({ error: 'Invalid JSON in request body' }),
+        JSON.stringify({ error: 'Invalid JSON in request body', details: parseError.message }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
@@ -214,10 +227,17 @@ serve(async (req) => {
     );
 
   } catch (error: any) {
-    console.error('Unexpected error in send-email function:', error);
+    console.error('=== UNEXPECTED ERROR IN SEND-EMAIL FUNCTION ===');
+    console.error('Error type:', error.constructor.name);
+    console.error('Error message:', error.message);
+    console.error('Error stack:', error.stack);
     
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ 
+        error: error.message || 'Internal server error',
+        type: error.constructor.name,
+        timestamp: new Date().toISOString()
+      }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }

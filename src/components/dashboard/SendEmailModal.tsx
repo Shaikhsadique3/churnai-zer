@@ -73,7 +73,12 @@ export const SendEmailModal = ({
       const { data: { session } } = await supabase.auth.getSession();
       if (!session?.access_token) throw new Error('Not authenticated');
 
-      console.log('Sending email request:', formData);
+      console.log('Sending email request:', {
+        to: trimmedTo,
+        subject: trimmedSubject,
+        html: trimmedHtml ? trimmedHtml.substring(0, 100) + '...' : trimmedHtml,
+        from: formData.from?.trim()
+      });
 
       const response = await supabase.functions.invoke('send-email', {
         headers: {
@@ -89,9 +94,15 @@ export const SendEmailModal = ({
       });
 
       console.log('Email API Response:', response);
+      console.log('Response status:', response.error?.status);
+      console.log('Response details:', response.error?.message);
 
       if (response.error) {
-        throw new Error(response.error.message || 'Unknown error occurred');
+        console.error('Supabase function error:', response.error);
+        // Try to get more details about the error
+        const errorMessage = response.error.message || 'Unknown error occurred';
+        const statusCode = response.error.status || 'unknown';
+        throw new Error(`${errorMessage} (Status: ${statusCode})`);
       }
 
       if (response.data?.success) {

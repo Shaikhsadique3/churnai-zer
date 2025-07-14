@@ -26,15 +26,29 @@ export const useEmailService = () => {
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
 
-  // Send email using the new v2 service
+  // Send email using the new v2 service with fallback to v1
   const sendEmail = async (request: EmailRequest) => {
     setLoading(true);
     try {
       console.log('Sending email via v2 service:', request);
       
-      const response = await supabase.functions.invoke('send-email-v2', {
-        body: request
-      });
+      // Try v2 first
+      let response;
+      try {
+        response = await supabase.functions.invoke('send-email-v2', {
+          body: request
+        });
+      } catch (v2Error) {
+        console.warn('v2 failed, falling back to v1:', v2Error);
+        // Fallback to original send-email function
+        response = await supabase.functions.invoke('send-email', {
+          body: {
+            to: request.to,
+            subject: request.subject,
+            html: request.html,
+          }
+        });
+      }
 
       if (response.error) {
         console.error('Email service error:', response.error);
@@ -44,7 +58,7 @@ export const useEmailService = () => {
       if (response.data?.success) {
         toast({
           title: "✅ Email Sent Successfully",
-          description: `Email sent via ${response.data.provider}. ID: ${response.data.email_id}`,
+          description: `Email sent via ${response.data.provider || 'email service'}. ID: ${response.data.email_id || response.data.emailId || response.data.id || 'N/A'}`,
         });
         return response.data;
       } else {

@@ -6,3 +6,6 @@ verify_jwt = false
 
 [functions.process-csv]
 verify_jwt = false
+
+[functions.send-email-v2]
+verify_jwt = true

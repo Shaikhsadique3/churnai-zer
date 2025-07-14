@@ -268,7 +268,12 @@ export const UploadedUsersTable = () => {
                   <TableRow key={userData.id}>
                     <TableCell className="font-medium">
                       <div className="flex items-center gap-2">
-                        {userData.user_id}
+                        <button
+                          onClick={() => window.location.href = `/dashboard/users/${userData.id}`}
+                          className="text-primary hover:underline focus:outline-none"
+                        >
+                          {userData.user_id}
+                        </button>
                         {isNewUser(userData.days_until_mature) && (
                           <Badge variant="secondary" className="text-xs">NEW</Badge>
                         )}

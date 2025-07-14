@@ -359,7 +359,12 @@ const EnhancedUserDataTable = ({
                   />
                 </TableCell>
                 <TableCell className="font-mono text-sm text-foreground">
-                  {user.user_id}
+                  <button
+                    onClick={() => window.location.href = `/dashboard/users/${user.id}`}
+                    className="text-primary hover:underline focus:outline-none"
+                  >
+                    {user.user_id}
+                  </button>
                 </TableCell>
                 {isColumnVisible('plan') && (
                   <TableCell>

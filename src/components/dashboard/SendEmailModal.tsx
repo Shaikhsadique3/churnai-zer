@@ -71,38 +71,37 @@ export const SendEmailModal = ({
 
     try {
       const { data: { session } } = await supabase.auth.getSession();
-      if (!session?.access_token) throw new Error('Not authenticated');
+      if (!session?.access_token) {
+        toast({
+          title: "Authentication Error",
+          description: "Please log in again to send emails",
+          variant: "destructive",
+        });
+        return;
+      }
 
-      console.log('Sending email request:', {
+      // Prepare the request payload
+      const emailPayload = {
         to: trimmedTo,
         subject: trimmedSubject,
-        html: trimmedHtml ? trimmedHtml.substring(0, 100) + '...' : trimmedHtml,
-        from: formData.from?.trim()
-      });
+        html: trimmedHtml
+      };
+
+      console.log('Sending email with payload:', emailPayload);
 
       const response = await supabase.functions.invoke('send-email', {
+        body: emailPayload,
         headers: {
-          Authorization: `Bearer ${session.access_token}`,
           'Content-Type': 'application/json',
-        },
-        body: {
-          to: trimmedTo,
-          subject: trimmedSubject,
-          html: trimmedHtml,
-          from: formData.from?.trim()
+          Authorization: `Bearer ${session.access_token}`,
         },
       });
 
       console.log('Email API Response:', response);
-      console.log('Response status:', response.error?.status);
-      console.log('Response details:', response.error?.message);
 
       if (response.error) {
         console.error('Supabase function error:', response.error);
-        // Try to get more details about the error
-        const errorMessage = response.error.message || 'Unknown error occurred';
-        const statusCode = response.error.status || 'unknown';
-        throw new Error(`${errorMessage} (Status: ${statusCode})`);
+        throw new Error(response.error.message || 'Failed to send email');
       }
 
       if (response.data?.success) {
@@ -133,6 +132,8 @@ export const SendEmailModal = ({
         errorMessage = 'Authentication error. Please try logging in again.';
       } else if (error.message?.includes('Invalid email')) {
         errorMessage = 'Invalid email address format.';
+      } else if (error.message?.includes('Invalid JSON')) {
+        errorMessage = 'Request format error. Please try again.';
       } else if (error.message) {
         errorMessage = error.message;
       }

@@ -28,6 +28,7 @@ import { PlaybooksBuilderPage } from "./pages/dashboard/PlaybooksBuilderPage";
 import { EmailTemplatesPage } from "./pages/dashboard/EmailTemplatesPage";
 import { EmailLogsPage } from "./pages/dashboard/EmailLogsPage";
 import { IntegrationsPage } from "./pages/dashboard/IntegrationsPage";
+import { EmailProviderVerificationPage } from "./pages/dashboard/EmailProviderVerificationPage";
 import { SettingsPage } from "./pages/dashboard/SettingsPage";
 
 const queryClient = new QueryClient();
@@ -69,6 +70,7 @@ const App = () => (
               <Route path="email-templates" element={<EmailTemplatesPage />} />
               <Route path="email-logs" element={<EmailLogsPage />} />
               <Route path="integrations" element={<IntegrationsPage />} />
+              <Route path="integrations/email-verification" element={<EmailProviderVerificationPage />} />
               <Route path="settings" element={<SettingsPage />} />
             </Route>
             <Route 

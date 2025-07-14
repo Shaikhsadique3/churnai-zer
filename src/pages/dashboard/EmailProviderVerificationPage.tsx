@@ -147,17 +147,14 @@ export const EmailProviderVerificationPage = () => {
       }
 
       console.log('Testing email with saved configuration...');
+      console.log('Session access_token exists:', !!session.access_token);
       
       const emailResponse = await supabase.functions.invoke('send-email', {
         body: {
           to: formData.sender_email, // Send test email to the sender email
           subject: "Test Email from Churnaizer",
           html: "<p>Hello! This is a test email from your Churnaizer app. If you received it, your integration works correctly.</p>"
-        },
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${session.access_token}`,
-        },
+        }
       });
 
       console.log('Email test response:', emailResponse);

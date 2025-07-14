@@ -90,11 +90,7 @@ export const SendEmailModal = ({
       console.log('Sending email with payload:', emailPayload);
 
       const response = await supabase.functions.invoke('send-email', {
-        body: emailPayload,
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${session.access_token}`,
-        },
+        body: emailPayload
       });
 
       console.log('Email API Response:', response);

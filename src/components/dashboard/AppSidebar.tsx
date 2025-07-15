@@ -61,6 +61,11 @@ const navigationItems = [
     icon: BarChart3
   },
   {
+    title: "Churn Prediction",
+    url: "/dashboard/churn",
+    icon: BarChart3
+  },
+  {
     title: "Email Templates",
     url: "/dashboard/email-templates",
     icon: Mail

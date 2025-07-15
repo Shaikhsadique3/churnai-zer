@@ -23,6 +23,7 @@ import { CSVUploadPage } from "./pages/dashboard/CSVUploadPage";
 import { UploadedUsersPage } from "./pages/dashboard/UploadedUsersPage";
 import { UserDetailPage } from "./pages/dashboard/UserDetailPage";
 import { ChurnReportsPage } from "./pages/dashboard/ChurnReportsPage";
+import { ChurnPredictionPage } from "./pages/dashboard/ChurnPredictionPage";
 import { AutomationsPage } from "./pages/dashboard/AutomationsPage";
 import { PlaybooksBuilderPage } from "./pages/dashboard/PlaybooksBuilderPage";
 import { EnhancedEmailSystemPage } from "./pages/dashboard/EnhancedEmailSystemPage";
@@ -63,6 +64,7 @@ const App = () => (
               <Route path="users" element={<UploadedUsersPage />} />
               <Route path="users/:userId" element={<UserDetailPage />} />
               <Route path="reports" element={<ChurnReportsPage />} />
+              <Route path="churn" element={<ChurnPredictionPage />} />
               <Route path="automations" element={<AutomationsPage />} />
               <Route path="automations/playbooks" element={<AutomationsPage />} />
               <Route path="automations/playbooks-builder" element={<PlaybooksBuilderPage />} />

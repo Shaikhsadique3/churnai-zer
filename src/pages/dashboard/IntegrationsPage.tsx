@@ -1,5 +1,5 @@
 import React from 'react';
-import { EmailProviderIntegration } from "@/components/dashboard/EmailProviderIntegration";
+import { EmailProviderStatus } from "@/components/dashboard/EmailProviderStatus";
 import { CRMIntegrationPanel } from "@/components/dashboard/CRMIntegrationPanel";
 
 export const IntegrationsPage = () => {
@@ -13,7 +13,7 @@ export const IntegrationsPage = () => {
       </div>
       
       <div className="max-w-4xl space-y-6">
-        <EmailProviderIntegration />
+        <EmailProviderStatus />
         <CRMIntegrationPanel />
       </div>
     </div>

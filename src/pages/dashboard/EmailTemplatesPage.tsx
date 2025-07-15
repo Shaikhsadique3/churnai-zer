@@ -9,7 +9,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { Mail, Plus, Edit, Trash2, Send } from "lucide-react";
-import { SendEmailModal } from "@/components/dashboard/SendEmailModal";
+
 
 interface EmailTemplate {
   id: string;
@@ -151,31 +151,6 @@ export const EmailTemplatesPage = () => {
         <p className="text-muted-foreground">Create and manage email templates for customer retention campaigns</p>
       </div>
 
-      {/* Quick Send Email */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center space-x-2">
-            <Send className="h-5 w-5" />
-            <span>Quick Send Email</span>
-          </CardTitle>
-          <CardDescription>
-            Send a test email using your configured email provider
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <SendEmailModal 
-            defaultTo="test@example.com"
-            defaultSubject="Test Email from Churnaizer"
-            defaultHtml="<p>Hello! This is a test email from your Churnaizer app.</p><p>If you received this, your email integration is working correctly!</p>"
-            trigger={
-              <Button>
-                <Mail className="h-4 w-4 mr-2" />
-                Send Test Email
-              </Button>
-            }
-          />
-        </CardContent>
-      </Card>
 
       {/* Create New Template */}
       <Card>
@@ -262,16 +237,6 @@ export const EmailTemplatesPage = () => {
                     />
                     
                     <div className="flex space-x-2">
-                      <SendEmailModal 
-                        defaultSubject={template.subject}
-                        defaultHtml={template.content}
-                        trigger={
-                          <Button size="sm" variant="outline">
-                            <Send className="h-3 w-3 mr-1" />
-                            Test
-                          </Button>
-                        }
-                      />
                       <Button size="sm" variant="outline">
                         <Edit className="h-3 w-3 mr-1" />
                         Edit

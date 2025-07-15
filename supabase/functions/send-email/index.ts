@@ -117,31 +117,11 @@ serve(async (req) => {
 
     console.log('Sending email to:', to, 'Subject:', subject);
 
-    // Fetch user's email settings from integration_settings table
-    const { data: emailSettings, error: settingsError } = await supabase
-      .from("integration_settings")
-      .select("sender_email, sender_name, email_api_key, email_provider")
-      .eq("user_id", user.id)
-      .maybeSingle();
-
-    if (settingsError) {
-      console.error('Error fetching email settings:', settingsError);
-      return new Response(
-        JSON.stringify({ error: "Failed to fetch email settings" }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    // Determine from email address
-    let fromEmail = 'Churnaizer <notify@churnaizer.com>'; // Default fallback
-    if (emailSettings?.sender_email) {
-      fromEmail = emailSettings.sender_name 
-        ? `${emailSettings.sender_name} <${emailSettings.sender_email}>`
-        : emailSettings.sender_email;
-    }
-
-    // Get Resend API key (from user settings or environment)
-    const resendApiKey = emailSettings?.email_api_key || Deno.env.get("RESEND_API_KEY");
+    // Use Churnaizer's default email configuration
+    const fromEmail = 'Churnaizer <notify@churnaizer.com>';
+    
+    // Get Resend API key from environment
+    const resendApiKey = Deno.env.get("RESEND_API_KEY");
     if (!resendApiKey) {
       return new Response(
         JSON.stringify({ error: "Resend API key not configured" }),

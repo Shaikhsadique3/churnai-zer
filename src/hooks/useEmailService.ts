@@ -8,8 +8,6 @@ export interface EmailRequest {
   html: string;
   template_id?: string;
   variables?: Record<string, any>;
-  priority?: 'low' | 'normal' | 'high';
-  send_at?: string;
 }
 
 export interface EmailLog {
@@ -26,29 +24,21 @@ export const useEmailService = () => {
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
 
-  // Send email using the new v2 service with fallback to v1
+  // Send email using Churnaizer's default email service
   const sendEmail = async (request: EmailRequest) => {
     setLoading(true);
     try {
-      console.log('Sending email via v2 service:', request);
+      console.log('Sending email via Churnaizer service:', request);
       
-      // Try v2 first
-      let response;
-      try {
-        response = await supabase.functions.invoke('send-email-v2', {
-          body: request
-        });
-      } catch (v2Error) {
-        console.warn('v2 failed, falling back to v1:', v2Error);
-        // Fallback to original send-email function
-        response = await supabase.functions.invoke('send-email', {
-          body: {
-            to: request.to,
-            subject: request.subject,
-            html: request.html,
-          }
-        });
-      }
+      const response = await supabase.functions.invoke('send-email', {
+        body: {
+          to: request.to,
+          subject: request.subject,
+          html: request.html,
+          template_id: request.template_id,
+          variables: request.variables,
+        }
+      });
 
       if (response.error) {
         console.error('Email service error:', response.error);
@@ -58,7 +48,7 @@ export const useEmailService = () => {
       if (response.data?.success) {
         toast({
           title: "✅ Email Sent Successfully",
-          description: `Email sent via ${response.data.provider || 'email service'}. ID: ${response.data.email_id || response.data.emailId || response.data.id || 'N/A'}`,
+          description: `Email sent via Churnaizer Email Service`,
         });
         return response.data;
       } else {
@@ -66,13 +56,10 @@ export const useEmailService = () => {
       }
     } catch (error: any) {
       console.error('Email sending error:', error);
-      const errorMessage = error.message?.includes('Edge Function returned a non-2xx status code')
-        ? 'Email service error. Please check your email provider settings.'
-        : error.message || 'Unknown email error';
       
       toast({
         title: "❌ Email Failed",
-        description: errorMessage,
+        description: error.message || 'Unknown email error',
         variant: "destructive",
       });
       throw error;
@@ -85,8 +72,7 @@ export const useEmailService = () => {
   const sendTemplateEmail = async (
     to: string, 
     templateId: string, 
-    variables: Record<string, any> = {},
-    priority: EmailRequest['priority'] = 'normal'
+    variables: Record<string, any> = {}
   ) => {
     return sendEmail({
       to,
@@ -94,7 +80,6 @@ export const useEmailService = () => {
       html: '', // Will be filled by template
       template_id: templateId,
       variables,
-      priority,
     });
   };
 
@@ -184,36 +169,12 @@ export const useEmailService = () => {
     }
   };
 
-  // Test email configuration
-  const testEmailConfig = async (testEmail?: string) => {
-    const defaultTestEmail = testEmail || 'test@example.com';
-    
-    return sendEmail({
-      to: defaultTestEmail,
-      subject: 'Test Email from Churnaizer',
-      html: `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-          <h2 style="color: #333;">Email Configuration Test</h2>
-          <p>Hello!</p>
-          <p>This is a test email from your Churnaizer application.</p>
-          <p>If you received this email, your email integration is working correctly! ✅</p>
-          <hr style="margin: 20px 0; border: none; border-top: 1px solid #eee;">
-          <p style="font-size: 12px; color: #666;">
-            Sent at: ${new Date().toLocaleString()}<br>
-            From: Churnaizer Email Service
-          </p>
-        </div>
-      `,
-      priority: 'high',
-    });
-  };
 
   return {
     sendEmail,
     sendTemplateEmail,
     getEmailLogs,
     getEmailAnalytics,
-    testEmailConfig,
     loading,
   };
 };

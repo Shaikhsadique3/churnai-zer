@@ -2,9 +2,9 @@ import { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { EmailAnalyticsDashboard } from "@/components/dashboard/EmailAnalyticsDashboard";
+import { EmailProviderStatus } from "@/components/dashboard/EmailProviderStatus";
 import { EnhancedEmailTemplateManager } from "@/components/dashboard/EnhancedEmailTemplateManager";
-import { useEmailService } from "@/hooks/useEmailService";
+import { EmailAnalyticsDashboard } from "@/components/dashboard/EmailAnalyticsDashboard";
 import { 
   Mail, 
   BarChart3, 
@@ -17,16 +17,7 @@ import {
 } from "lucide-react";
 
 export const EnhancedEmailSystemPage = () => {
-  const { testEmailConfig } = useEmailService();
   const [activeTab, setActiveTab] = useState("overview");
-
-  const quickTest = async () => {
-    try {
-      await testEmailConfig('test@example.com');
-    } catch (error) {
-      console.error('Quick test failed:', error);
-    }
-  };
 
   return (
     <div className="space-y-6">
@@ -36,16 +27,12 @@ export const EnhancedEmailSystemPage = () => {
           <div>
             <h1 className="text-3xl font-bold flex items-center space-x-3">
               <Mail className="h-8 w-8 text-blue-600" />
-              <span>Enterprise Email System</span>
+              <span>Churnaizer Email System</span>
             </h1>
             <p className="text-muted-foreground text-lg mt-2">
-              Industry-level email automation and analytics platform
+              Simplified email service for launch - custom integrations coming soon!
             </p>
           </div>
-          <Button onClick={quickTest} size="lg">
-            <Zap className="h-4 w-4 mr-2" />
-            Quick Test
-          </Button>
         </div>
       </div>
 
@@ -114,6 +101,7 @@ export const EnhancedEmailSystemPage = () => {
         </TabsList>
 
         <TabsContent value="overview" className="space-y-6">
+          <EmailProviderStatus />
           <EmailAnalyticsDashboard />
         </TabsContent>
 

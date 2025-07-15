@@ -76,7 +76,7 @@ const TEMPLATE_CATEGORIES = [
 export const EnhancedEmailTemplateManager = () => {
   const { user } = useAuth();
   const { toast } = useToast();
-  const { sendTemplateEmail, testEmailConfig } = useEmailService();
+  const { sendTemplateEmail } = useEmailService();
   
   const [templates, setTemplates] = useState<EmailTemplate[]>([]);
   const [loading, setLoading] = useState(true);
@@ -313,13 +313,9 @@ export const EnhancedEmailTemplateManager = () => {
             <p className="text-sm text-muted-foreground mb-3">
               Test your email setup
             </p>
-            <Button 
-              size="sm" 
-              onClick={() => testEmailConfig()}
-              className="w-full"
-            >
-              Send Test Email
-            </Button>
+            <div className="text-center text-sm text-muted-foreground">
+              Test emails are temporarily disabled for launch simplicity
+            </div>
           </CardContent>
         </Card>
 

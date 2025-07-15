@@ -74,6 +74,48 @@ export type Database = {
         }
         Relationships: []
       }
+      churn_trigger_logs: {
+        Row: {
+          action_taken: string
+          churn_score: number
+          created_at: string
+          error_message: string | null
+          id: string
+          playbook_name: string
+          success: boolean
+          target_user_id: string
+          trigger_reason: string | null
+          triggered_at: string
+          user_id: string
+        }
+        Insert: {
+          action_taken: string
+          churn_score: number
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          playbook_name?: string
+          success?: boolean
+          target_user_id: string
+          trigger_reason?: string | null
+          triggered_at?: string
+          user_id: string
+        }
+        Update: {
+          action_taken?: string
+          churn_score?: number
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          playbook_name?: string
+          success?: boolean
+          target_user_id?: string
+          trigger_reason?: string | null
+          triggered_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       crm_logs: {
         Row: {
           created_at: string

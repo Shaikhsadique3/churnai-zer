@@ -26,11 +26,28 @@ serve(async (req) => {
   }
 
   try {
+    console.log("📧 Email function called");
+    
     // ✅ Parse request body safely
     let requestBody;
     try {
-      requestBody = await req.json();
+      const bodyText = await req.text();
+      console.log("📧 Raw request body:", bodyText);
+      
+      if (!bodyText || bodyText.trim() === '') {
+        return new Response(JSON.stringify({
+          error: "Empty request body",
+          details: "Request body cannot be empty"
+        }), {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" }
+        });
+      }
+      
+      requestBody = JSON.parse(bodyText);
+      console.log("📧 Parsed request body:", requestBody);
     } catch (err) {
+      console.error("📧 JSON parsing error:", err);
       return new Response(JSON.stringify({
         error: "Invalid JSON in request body",
         details: err.message

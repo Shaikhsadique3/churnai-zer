@@ -26,13 +26,13 @@ serve(async (req) => {
   }
 
   try {
-    console.log("📧 Email function called");
+    console.log("Email function called");
     
     // ✅ Parse request body safely
     let requestBody;
     try {
       const bodyText = await req.text();
-      console.log("📧 Raw request body:", bodyText);
+      console.log("Raw request body:", bodyText);
       
       if (!bodyText || bodyText.trim() === '') {
         return new Response(JSON.stringify({
@@ -45,9 +45,9 @@ serve(async (req) => {
       }
       
       requestBody = JSON.parse(bodyText);
-      console.log("📧 Parsed request body:", requestBody);
+      console.log("Parsed request body:", requestBody);
     } catch (err) {
-      console.error("📧 JSON parsing error:", err);
+      console.error("JSON parsing error:", err);
       return new Response(JSON.stringify({
         error: "Invalid JSON in request body",
         details: err.message

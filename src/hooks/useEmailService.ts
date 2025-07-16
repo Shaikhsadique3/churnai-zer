@@ -30,14 +30,17 @@ export const useEmailService = () => {
     try {
       console.log('Sending email via Churnaizer service:', request);
       
+      // Ensure we only send required fields to match edge function expectations
+      const emailBody = {
+        to: request.to,
+        subject: request.subject,
+        html: request.html,
+      };
+      
+      console.log('Email body being sent:', emailBody);
+      
       const response = await supabase.functions.invoke('send-email', {
-        body: {
-          to: request.to,
-          subject: request.subject,
-          html: request.html,
-          template_id: request.template_id,
-          variables: request.variables,
-        }
+        body: emailBody
       });
 
       if (response.error) {
@@ -74,13 +77,8 @@ export const useEmailService = () => {
     templateId: string, 
     variables: Record<string, any> = {}
   ) => {
-    return sendEmail({
-      to,
-      subject: '', // Will be filled by template
-      html: '', // Will be filled by template
-      template_id: templateId,
-      variables,
-    });
+    // Template functionality not implemented yet - throw error for now
+    throw new Error('Template email functionality not implemented yet. Please use sendEmail with complete subject and html.');
   };
 
   // Get email logs for current user

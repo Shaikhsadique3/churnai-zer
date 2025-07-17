@@ -76,8 +76,24 @@ serve(async (req) => {
 
     // ✅ Validate email format
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(to)) {
+    if (!emailRegex.test(to.trim())) {
+      console.error("Invalid email format:", to);
       return new Response(JSON.stringify({ error: "Invalid recipient email format" }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" }
+      });
+    }
+
+    // ✅ Additional validation for common issues
+    if (subject.length > 998) {
+      return new Response(JSON.stringify({ error: "Subject line too long (max 998 chars)" }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" }
+      });
+    }
+
+    if (html.length > 100000) {
+      return new Response(JSON.stringify({ error: "HTML content too long (max 100kb)" }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" }
       });
@@ -112,13 +128,23 @@ serve(async (req) => {
       });
     }
 
-    // ✅ Log email (optional)
+    // ✅ Log email before sending
     const { data: emailLog, error: logError } = await supabase.from('email_logs').insert({
       user_id: user.id,
-      target_email: to,
+      target_email: to.trim(),
       status: 'pending',
-      email_data: { from: fromEmail, subject, html }
+      email_data: { 
+        from: fromEmail, 
+        subject: subject.trim(), 
+        html_preview: html.substring(0, 500) + (html.length > 500 ? '...' : ''),
+        provider: 'resend'
+      }
     }).select('id').maybeSingle();
+
+    if (logError) {
+      console.error('Failed to log email:', logError);
+      // Continue anyway - don't block email sending due to logging issues
+    }
 
     // ✅ Send email
     const resend = new Resend(resendApiKey);

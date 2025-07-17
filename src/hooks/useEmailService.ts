@@ -71,45 +71,26 @@ export const useEmailService = () => {
     }
   };
 
-  // Send email using template with variables (simplified for testing)
+  // DISABLED: Template email functionality - fallback to basic sendEmail
   const sendTemplateEmail = async (
     to: string, 
     templateId: string, 
     variables: Record<string, any> = {}
   ) => {
-    // For now, get the template from database and send via regular email
-    try {
-      const { data: template, error } = await supabase
-        .from('email_templates')
-        .select('*')
-        .eq('id', templateId)
-        .single();
-
-      if (error || !template) {
-        throw new Error('Template not found');
-      }
-
-      // Simple variable replacement for basic testing
-      let subject = template.subject;
-      let html = template.content;
-      
-      // Replace variables in subject and content
-      Object.entries(variables).forEach(([key, value]) => {
-        const placeholder = `{{${key}}}`;
-        subject = subject.replace(new RegExp(placeholder, 'g'), String(value));
-        html = html.replace(new RegExp(placeholder, 'g'), String(value));
-      });
-
-      // Use regular sendEmail function
-      return await sendEmail({
-        to,
-        subject,
-        html
-      });
-    } catch (error: any) {
-      console.error('Template email error:', error);
-      throw error;
-    }
+    // Template system disabled for MVP - fallback to basic test email
+    console.warn('Template email system disabled. Using fallback test email.');
+    
+    return await sendEmail({
+      to,
+      subject: '🔔 Test Email from Churnaizer',
+      html: `
+        <h2>Hello 👋</h2>
+        <p>This is a test email from <strong>Churnaizer</strong> to verify that your email system works correctly.</p>
+        <p>✅ If you received this, your backend email function is working fine.</p>
+        <hr>
+        <small>Churnaizer MVP Test</small>
+      `
+    });
   };
 
   // Get email logs for current user

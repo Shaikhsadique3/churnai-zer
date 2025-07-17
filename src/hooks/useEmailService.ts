@@ -71,14 +71,45 @@ export const useEmailService = () => {
     }
   };
 
-  // Send email using template with variables
+  // Send email using template with variables (simplified for testing)
   const sendTemplateEmail = async (
     to: string, 
     templateId: string, 
     variables: Record<string, any> = {}
   ) => {
-    // Template functionality not implemented yet - throw error for now
-    throw new Error('Template email functionality not implemented yet. Please use sendEmail with complete subject and html.');
+    // For now, get the template from database and send via regular email
+    try {
+      const { data: template, error } = await supabase
+        .from('email_templates')
+        .select('*')
+        .eq('id', templateId)
+        .single();
+
+      if (error || !template) {
+        throw new Error('Template not found');
+      }
+
+      // Simple variable replacement for basic testing
+      let subject = template.subject;
+      let html = template.content;
+      
+      // Replace variables in subject and content
+      Object.entries(variables).forEach(([key, value]) => {
+        const placeholder = `{{${key}}}`;
+        subject = subject.replace(new RegExp(placeholder, 'g'), String(value));
+        html = html.replace(new RegExp(placeholder, 'g'), String(value));
+      });
+
+      // Use regular sendEmail function
+      return await sendEmail({
+        to,
+        subject,
+        html
+      });
+    } catch (error: any) {
+      console.error('Template email error:', error);
+      throw error;
+    }
   };
 
   // Get email logs for current user

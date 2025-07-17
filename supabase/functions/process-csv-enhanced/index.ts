@@ -8,17 +8,18 @@ const corsHeaders = {
 }
 
 interface MappedCSVRow {
-  user_id: string;
-  email?: string;
-  signup_date?: string;
-  last_login_date?: string;
-  subscription_plan: string;
-  monthly_revenue: number;
-  active_features_used: number;
-  support_tickets_opened: number;
-  payment_status: string;
-  email_opens_last30days: number;
-  billing_issue_count: number;
+  customer_name: string;
+  customer_email: string;
+  signup_date: string;
+  last_active_date: string;
+  plan: string;
+  billing_status: string;
+  user_id?: string;
+  monthly_revenue?: number;
+  active_features_used?: number;
+  support_tickets_opened?: number;
+  email_opens_last30days?: number;
+  billing_issue_count?: number;
   days_since_signup?: number;
   last_login_days_ago?: number;
   number_of_logins_last30days?: number;
@@ -157,20 +158,35 @@ function analyzeUserStage(daysSignup: number) {
 function validateMappedRow(row: MappedCSVRow): { isValid: boolean; errors: string[] } {
   const errors: string[] = [];
   
-  if (!row.user_id || String(row.user_id).trim() === '') {
-    errors.push('Missing user_id');
+  // Validate mandatory columns
+  if (!row.customer_name || String(row.customer_name).trim() === '') {
+    errors.push('Missing customer_name');
   }
   
-  if (!row.subscription_plan || String(row.subscription_plan).trim() === '') {
-    errors.push('Missing subscription_plan');
+  if (!row.customer_email || String(row.customer_email).trim() === '') {
+    errors.push('Missing customer_email');
+  } else {
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(row.customer_email)) {
+      errors.push('Invalid email format');
+    }
   }
   
-  if (row.monthly_revenue === undefined || row.monthly_revenue === null) {
-    errors.push('Missing monthly_revenue');
+  if (!row.signup_date || String(row.signup_date).trim() === '') {
+    errors.push('Missing signup_date');
   }
   
-  if (row.active_features_used === undefined || row.active_features_used === null) {
-    errors.push('Missing active_features_used');
+  if (!row.last_active_date || String(row.last_active_date).trim() === '') {
+    errors.push('Missing last_active_date');
+  }
+  
+  if (!row.plan || String(row.plan).trim() === '') {
+    errors.push('Missing plan');
+  }
+  
+  if (!row.billing_status || String(row.billing_status).trim() === '') {
+    errors.push('Missing billing_status');
   }
   
   return {
@@ -187,7 +203,7 @@ async function processChurnPrediction(userData: MappedCSVRow) {
   let churnScore = 0.3; // Default low risk
   let churnReason = '';
   
-  // Use days_since_signup or calculate it
+  // Use days_since_signup or calculate it from signup_date
   let daysSignup = userData.days_since_signup || 30; // Default if not provided
   if (!userData.days_since_signup && userData.signup_date) {
     const signupDate = parseDate(userData.signup_date);
@@ -196,10 +212,10 @@ async function processChurnPrediction(userData: MappedCSVRow) {
     }
   }
   
-  // Calculate last_login_days_ago if not provided
+  // Calculate last_login_days_ago from last_active_date
   let lastLoginDaysAgo = userData.last_login_days_ago || 3; // Default
-  if (!userData.last_login_days_ago && userData.last_login_date) {
-    const loginDate = parseDate(userData.last_login_date);
+  if (!userData.last_login_days_ago && userData.last_active_date) {
+    const loginDate = parseDate(userData.last_active_date);
     if (loginDate) {
       lastLoginDaysAgo = calculateDaysDifference(loginDate);
     }
@@ -210,8 +226,9 @@ async function processChurnPrediction(userData: MappedCSVRow) {
   
   if (churnApiUrl && churnApiKey && !stageAnalysis.skipAutomation) {
     try {
-      // Prepare data for external API
-      const normalizedPlan = normalizeSubscriptionPlan(userData.subscription_plan);
+      // Prepare data for external API  
+      const normalizedPlan = normalizeSubscriptionPlan(userData.plan);
+      const normalizedBillingStatus = normalizePaymentStatus(userData.billing_status);
       
       const modelData = {
         days_since_signup: daysSignup,
@@ -221,13 +238,13 @@ async function processChurnPrediction(userData: MappedCSVRow) {
         number_of_logins_last30days: userData.number_of_logins_last30days || 10,
         active_features_used: parseNumericValue(userData.active_features_used),
         support_tickets_opened: parseNumericValue(userData.support_tickets_opened),
-        last_payment_status_Success: normalizePaymentStatus(userData.payment_status) === 'Success' ? 1 : 0,
+        last_payment_status_Success: normalizedBillingStatus === 'Success' ? 1 : 0,
         email_opens_last30days: parseNumericValue(userData.email_opens_last30days),
         last_login_days_ago: lastLoginDaysAgo,
         billing_issue_count: parseNumericValue(userData.billing_issue_count)
       };
       
-      console.log('Calling churn API for user:', userData.user_id, modelData);
+      console.log('Calling churn API for user:', userData.customer_email, modelData);
       
       const response = await fetch(churnApiUrl, {
         method: 'POST',
@@ -384,7 +401,7 @@ serve(async (req) => {
         const prediction = await processChurnPrediction(row);
         
         // Normalize data for database storage
-        const normalizedPlan = normalizeSubscriptionPlan(row.subscription_plan);
+        const normalizedPlan = normalizeSubscriptionPlan(row.plan);
         
         // Calculate last login date if we have the days ago
         let lastLoginDate = null;
@@ -393,11 +410,14 @@ serve(async (req) => {
           lastLoginDate.setDate(lastLoginDate.getDate() - prediction.last_login_calculated);
         }
         
+        // Generate user_id if not provided (use email as fallback)
+        const userId = row.user_id || row.customer_email || `user_${index + 1}`;
+        
         // Save to database
         const { error: saveError } = await supabase
           .from('user_data')
           .upsert({
-            user_id: row.user_id,
+            user_id: userId,
             owner_id: user.id,
             plan: normalizedPlan,
             usage: parseNumericValue(row.monthly_revenue),
@@ -449,14 +469,28 @@ serve(async (req) => {
       }
     }
 
-    // Update upload record
+    // Update upload record with detailed export data
     if (uploadRecord) {
       await supabase
         .from('csv_uploads')
         .update({
           rows_processed: processedCount,
           rows_failed: failedCount,
-          status: 'completed'
+          status: 'completed',
+          export_data: {
+            import_timestamp: new Date().toISOString(),
+            total_customers: csvData.length,
+            successful_imports: processedCount,
+            failed_imports: failedCount,
+            user_id: user.id,
+            filename: filename || 'enhanced-upload.csv',
+            mandatory_columns_validated: true,
+            sample_data: results.slice(0, 3).map(r => ({
+              user_id: r.user_id,
+              churn_probability: r.churn_probability,
+              user_stage: r.user_stage
+            }))
+          }
         })
         .eq('id', uploadRecord.id);
     }

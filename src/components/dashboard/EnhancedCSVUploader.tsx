@@ -21,6 +21,29 @@ interface UploadStage {
   message: string;
 }
 
+// Required columns for churn prediction
+const MANDATORY_COLUMNS = [
+  'customer_name',
+  'customer_email', 
+  'signup_date',
+  'last_active_date',
+  'plan',
+  'billing_status'
+];
+
+interface ValidationError {
+  row: number;
+  issue: string;
+  customer_name?: string;
+  customer_email?: string;
+}
+
+interface UploadError {
+  missing_columns?: string[];
+  validation_errors?: ValidationError[];
+  invalid_rows?: any[];
+}
+
 const EnhancedCSVUploader = ({ open, onOpenChange, onUploadComplete }: EnhancedCSVUploaderProps) => {
   const [file, setFile] = useState<File | null>(null);
   const [uploadStage, setUploadStage] = useState<UploadStage>({
@@ -32,6 +55,8 @@ const EnhancedCSVUploader = ({ open, onOpenChange, onUploadComplete }: EnhancedC
   const [csvHeaders, setCsvHeaders] = useState<string[]>([]);
   const [csvPreview, setCsvPreview] = useState<any[]>([]);
   const [uploadResult, setUploadResult] = useState<any>(null);
+  const [uploadErrors, setUploadErrors] = useState<UploadError | null>(null);
+  const [showPreview, setShowPreview] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
@@ -51,6 +76,8 @@ const EnhancedCSVUploader = ({ open, onOpenChange, onUploadComplete }: EnhancedC
     setCsvHeaders([]);
     setCsvPreview([]);
     setUploadResult(null);
+    setUploadErrors(null);
+    setShowPreview(false);
     setUploadStage({
       stage: 'upload',
       progress: 0,
@@ -59,6 +86,88 @@ const EnhancedCSVUploader = ({ open, onOpenChange, onUploadComplete }: EnhancedC
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
+  };
+
+  // Validate mandatory columns
+  const validateMandatoryColumns = (headers: string[]): string[] => {
+    const normalizedHeaders = headers.map(h => h.toLowerCase().trim());
+    const missingColumns: string[] = [];
+    
+    MANDATORY_COLUMNS.forEach(required => {
+      const found = normalizedHeaders.some(header => 
+        header.includes(required.toLowerCase()) || 
+        required.toLowerCase().includes(header)
+      );
+      if (!found) {
+        missingColumns.push(required);
+      }
+    });
+    
+    return missingColumns;
+  };
+
+  // Validate data rows for required fields
+  const validateDataRows = (data: any[]): ValidationError[] => {
+    const errors: ValidationError[] = [];
+    
+    data.forEach((row, index) => {
+      const rowNumber = index + 1;
+      const issues: string[] = [];
+      
+      // Check for customer_name (required)
+      if (!row.customer_name && !row.name && !row.customer && !row.user_name) {
+        issues.push('Missing customer name');
+      }
+      
+      // Check for customer_email (required)
+      if (!row.customer_email && !row.email && !row.user_email) {
+        issues.push('Missing customer email');
+      } else {
+        // Validate email format
+        const email = row.customer_email || row.email || row.user_email;
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(email)) {
+          issues.push('Invalid email format');
+        }
+      }
+      
+      // Check for signup_date
+      if (!row.signup_date && !row.created_at && !row.registration_date) {
+        issues.push('Missing signup date');
+      }
+      
+      // Check for plan
+      if (!row.plan && !row.subscription_plan && !row.plan_type) {
+        issues.push('Missing subscription plan');
+      }
+      
+      if (issues.length > 0) {
+        errors.push({
+          row: rowNumber,
+          issue: issues.join(', '),
+          customer_name: row.customer_name || row.name || row.customer || 'Unknown',
+          customer_email: row.customer_email || row.email || row.user_email || 'Unknown'
+        });
+      }
+    });
+    
+    return errors;
+  };
+
+  // Download invalid rows as CSV
+  const downloadInvalidRows = () => {
+    if (!uploadErrors?.invalid_rows || uploadErrors.invalid_rows.length === 0) return;
+    
+    const csv = Papa.unparse(uploadErrors.invalid_rows);
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', 'invalid_rows.csv');
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   };
 
   const handleFileSelect = useCallback((selectedFile: File) => {
@@ -105,20 +214,76 @@ const EnhancedCSVUploader = ({ open, onOpenChange, onUploadComplete }: EnhancedC
 
         const headers = results.meta.fields || [];
         const preview = results.data.slice(0, 5);
+        
+        // Validate mandatory columns
+        const missingColumns = validateMandatoryColumns(headers);
+        if (missingColumns.length > 0) {
+          setUploadErrors({
+            missing_columns: missingColumns
+          });
+          setUploadStage({
+            stage: 'error',
+            progress: 0,
+            message: `Missing required columns: ${missingColumns.join(', ')}`
+          });
+          toast({
+            title: "Missing required columns",
+            description: `Your CSV is missing: ${missingColumns.join(', ')}`,
+            variant: "destructive"
+          });
+          return;
+        }
+        
+        // Validate data rows
+        const validationErrors = validateDataRows(results.data);
+        if (validationErrors.length > 0) {
+          // Filter out invalid rows
+          const validRows = results.data.filter((_, index) => 
+            !validationErrors.some(error => error.row === index + 1)
+          );
+          const invalidRows = results.data.filter((_, index) => 
+            validationErrors.some(error => error.row === index + 1)
+          );
+          
+          setUploadErrors({
+            validation_errors: validationErrors,
+            invalid_rows: invalidRows
+          });
+          
+          if (validRows.length === 0) {
+            setUploadStage({
+              stage: 'error',
+              progress: 0,
+              message: `All rows have validation errors. Please fix your data.`
+            });
+            return;
+          }
+          
+          // Continue with valid rows only
+          setCsvData(validRows);
+          toast({
+            title: `${validationErrors.length} rows have issues`,
+            description: `${validRows.length} valid rows will be processed. Check errors below.`,
+            variant: "destructive"
+          });
+        } else {
+          setCsvData(results.data);
+          setUploadErrors(null);
+        }
 
-        setCsvData(results.data);
         setCsvHeaders(headers);
         setCsvPreview(preview);
+        setShowPreview(true);
         
         setUploadStage({
           stage: 'mapping',
           progress: 50,
-          message: `File parsed successfully. ${results.data.length} rows found.`
+          message: `File validated. ${results.data.length} rows ready for processing.`
         });
 
         toast({
-          title: "File uploaded successfully",
-          description: `Found ${results.data.length} rows with ${headers.length} columns`,
+          title: "✅ File validated successfully",
+          description: `${results.data.length} customers ready for churn analysis`,
         });
       },
       error: (error) => {
@@ -260,31 +425,29 @@ const EnhancedCSVUploader = ({ open, onOpenChange, onUploadComplete }: EnhancedC
   const downloadTemplate = () => {
     const templateData = [
       {
-        user_id: 'USR-001',
-        email: 'user1@example.com',
+        customer_name: 'John Smith',
+        customer_email: 'john.smith@example.com',
         signup_date: '2024-06-01',
-        last_login_date: '2024-07-09',
-        subscription_plan: 'Pro',
+        last_active_date: '2024-07-09',
+        plan: 'Pro',
+        billing_status: 'Active',
         monthly_revenue: 89.99,
         active_features_used: 6,
         support_tickets_opened: 0,
-        payment_status: 'Success',
         email_opens_last30days: 12,
-        billing_issue_count: 0,
         number_of_logins_last30days: 22
       },
       {
-        user_id: 'USR-002',
-        email: 'user2@example.com',
+        customer_name: 'Sarah Johnson',
+        customer_email: 'sarah.johnson@example.com',
         signup_date: '2024-07-08',
-        last_login_date: '2024-07-10',
-        subscription_plan: 'Free',
+        last_active_date: '2024-07-10',
+        plan: 'Free',
+        billing_status: 'Trial',
         monthly_revenue: 0,
         active_features_used: 1,
         support_tickets_opened: 0,
-        payment_status: 'Success',
         email_opens_last30days: 2,
-        billing_issue_count: 0,
         number_of_logins_last30days: 3
       }
     ];
@@ -294,7 +457,7 @@ const EnhancedCSVUploader = ({ open, onOpenChange, onUploadComplete }: EnhancedC
     const link = document.createElement('a');
     const url = URL.createObjectURL(blob);
     link.setAttribute('href', url);
-    link.setAttribute('download', 'churnaizer-template.csv');
+    link.setAttribute('download', 'churnaizer-sample-format.csv');
     link.style.visibility = 'hidden';
     document.body.appendChild(link);
     link.click();
@@ -366,14 +529,97 @@ const EnhancedCSVUploader = ({ open, onOpenChange, onUploadComplete }: EnhancedC
 
           {uploadStage.stage === 'mapping' && (
             <div className="space-y-4">
-              <h3 className="text-lg font-medium">2. Map Your Columns</h3>
-              <CSVAutoMapper
-                csvHeaders={csvHeaders}
-                csvPreview={csvPreview}
-                onMappingConfirmed={handleMappingConfirmed}
-                onCancel={() => setUploadStage({ stage: 'upload', progress: 0, message: 'Select a CSV file to begin' })}
-                savedMappings={getSavedMappings()}
-              />
+              <h3 className="text-lg font-medium">2. Preview & Validation</h3>
+              
+              {/* Required columns info */}
+              <Alert>
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>
+                  <strong>Required columns found:</strong> {MANDATORY_COLUMNS.join(', ')}
+                </AlertDescription>
+              </Alert>
+              
+              {/* Preview table */}
+              {showPreview && csvPreview.length > 0 && (
+                <div className="space-y-2">
+                  <h4 className="font-medium">Preview (First 5 rows)</h4>
+                  <div className="border rounded-md overflow-x-auto max-h-48">
+                    <table className="w-full text-xs">
+                      <thead className="bg-muted">
+                        <tr>
+                          {csvHeaders.map((header) => (
+                            <th key={header} className="p-2 text-left font-medium min-w-[100px]">
+                              {header}
+                            </th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {csvPreview.map((row, idx) => (
+                          <tr key={idx} className="border-t">
+                            {csvHeaders.map((header) => (
+                              <td key={header} className="p-2 truncate max-w-[150px]" title={String(row[header] || '')}>
+                                {String(row[header] || '')}
+                              </td>
+                            ))}
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+              
+              {/* Validation errors display */}
+              {uploadErrors?.validation_errors && uploadErrors.validation_errors.length > 0 && (
+                <Alert variant="destructive">
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertDescription>
+                    <div className="space-y-2">
+                      <strong>⚠️ {uploadErrors.validation_errors.length} rows have issues:</strong>
+                      <div className="max-h-32 overflow-y-auto space-y-1">
+                        {uploadErrors.validation_errors.slice(0, 5).map((error, idx) => (
+                          <div key={idx} className="text-xs bg-destructive/10 p-2 rounded">
+                            <strong>Row {error.row}:</strong> {error.issue}
+                            <br />
+                            <span className="text-muted-foreground">
+                              {error.customer_name} ({error.customer_email})
+                            </span>
+                          </div>
+                        ))}
+                        {uploadErrors.validation_errors.length > 5 && (
+                          <div className="text-xs text-muted-foreground">
+                            +{uploadErrors.validation_errors.length - 5} more errors
+                          </div>
+                        )}
+                      </div>
+                      {uploadErrors.invalid_rows && uploadErrors.invalid_rows.length > 0 && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={downloadInvalidRows}
+                          className="mt-2"
+                        >
+                          <Download className="h-4 w-4 mr-2" />
+                          Download Invalid Rows
+                        </Button>
+                      )}
+                    </div>
+                  </AlertDescription>
+                </Alert>
+              )}
+              
+              {/* Proceed with mapping */}
+              <div className="border-t pt-4">
+                <h4 className="font-medium mb-2">3. Column Mapping</h4>
+                <CSVAutoMapper
+                  csvHeaders={csvHeaders}
+                  csvPreview={csvPreview}
+                  onMappingConfirmed={handleMappingConfirmed}
+                  onCancel={() => setUploadStage({ stage: 'upload', progress: 0, message: 'Select a CSV file to begin' })}
+                  savedMappings={getSavedMappings()}
+                />
+              </div>
             </div>
           )}
 
@@ -421,14 +667,59 @@ const EnhancedCSVUploader = ({ open, onOpenChange, onUploadComplete }: EnhancedC
               <Alert variant="destructive">
                 <AlertCircle className="h-4 w-4" />
                 <AlertDescription>
-                  <strong>Error:</strong> {uploadStage.message}
+                  <div className="space-y-2">
+                    <div><strong>Error:</strong> {uploadStage.message}</div>
+                    
+                    {/* Show missing columns if any */}
+                    {uploadErrors?.missing_columns && uploadErrors.missing_columns.length > 0 && (
+                      <div className="mt-3 p-3 bg-destructive/10 rounded">
+                        <div className="font-medium">Missing Required Columns:</div>
+                        <ul className="list-disc list-inside text-sm mt-1">
+                          {uploadErrors.missing_columns.map((col) => (
+                            <li key={col}>
+                              <strong>{col}</strong> - Required for churn prediction
+                            </li>
+                          ))}
+                        </ul>
+                        <div className="text-xs text-muted-foreground mt-2">
+                          💡 Download our template for the correct format
+                        </div>
+                      </div>
+                    )}
+                    
+                    {/* Show validation errors if any */}
+                    {uploadErrors?.validation_errors && uploadErrors.validation_errors.length > 0 && (
+                      <div className="mt-3 p-3 bg-destructive/10 rounded">
+                        <div className="font-medium">Data Validation Issues:</div>
+                        <div className="max-h-32 overflow-y-auto space-y-1 mt-2">
+                          {uploadErrors.validation_errors.slice(0, 3).map((error, idx) => (
+                            <div key={idx} className="text-xs">
+                              <strong>Row {error.row}:</strong> {error.issue}
+                            </div>
+                          ))}
+                          {uploadErrors.validation_errors.length > 3 && (
+                            <div className="text-xs text-muted-foreground">
+                              +{uploadErrors.validation_errors.length - 3} more issues
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 </AlertDescription>
               </Alert>
               
+              {/* Action buttons */}
               <div className="flex justify-between pt-4">
-                <Button variant="outline" onClick={() => onOpenChange(false)}>
-                  Cancel
-                </Button>
+                <div className="flex gap-2">
+                  <Button variant="outline" onClick={() => onOpenChange(false)}>
+                    Cancel
+                  </Button>
+                  <Button variant="outline" onClick={downloadTemplate}>
+                    <Download className="h-4 w-4 mr-2" />
+                    Download Template
+                  </Button>
+                </div>
                 <Button onClick={resetUploader}>
                   Try Again
                 </Button>

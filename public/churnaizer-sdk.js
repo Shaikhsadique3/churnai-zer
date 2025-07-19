@@ -16,7 +16,7 @@
   // Utility functions
   function validateUserData(userData) {
     const requiredFields = [
-      'user_id', 'days_since_signup', 'monthly_revenue', 'subscription_plan',
+      'user_id', 'customer_name', 'customer_email', 'days_since_signup', 'monthly_revenue', 'subscription_plan',
       'number_of_logins_last30days', 'active_features_used', 'support_tickets_opened',
       'last_payment_status', 'email_opens_last30days', 'last_login_days_ago', 'billing_issue_count'
     ];
@@ -288,7 +288,7 @@
       const userData = {};
       
       // Extract data from data attributes
-      ['user-id', 'days-since-signup', 'monthly-revenue', 'subscription-plan',
+      ['user-id', 'customer-name', 'customer-email', 'days-since-signup', 'monthly-revenue', 'subscription-plan',
        'number-of-logins-last30days', 'active-features-used', 'support-tickets-opened',
        'last-payment-status', 'email-opens-last30days', 'last-login-days-ago', 'billing-issue-count'
       ].forEach(attr => {

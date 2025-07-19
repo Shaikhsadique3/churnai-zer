@@ -37,19 +37,23 @@ export const DeveloperGuide = ({ primaryApiKey, onCopyCode }: DeveloperGuideProp
 
   <!-- Trigger churn tracking -->
   <script>
-    Churnaizer.track({
-      user_id: "user_001",
-      days_since_signup: 45,
-      monthly_revenue: 49.99,
-      subscription_plan: "Pro",
-      number_of_logins_last30days: 10,
-      active_features_used: 3,
-      support_tickets_opened: 1,
-      last_payment_status: "Success",
-      email_opens_last30days: 12,
-      last_login_days_ago: 2,
-      billing_issue_count: 0
-    }, "${primaryApiKey}", function (result) {
+    const userData = {
+      user_id: getUserIdFromApp(),                 // ← from your app
+      customer_name: getUserName(),                // ← NEW
+      customer_email: getUserEmail(),              // ← NEW
+      days_since_signup: getSignupDays(),
+      monthly_revenue: getUserRevenue(),
+      subscription_plan: getUserPlan(),
+      number_of_logins_last30days: getLoginsCount(),
+      active_features_used: getFeaturesUsed(),
+      support_tickets_opened: getSupportCount(),
+      last_payment_status: getLastPaymentStatus(),
+      email_opens_last30days: getEmailOpenCount(),
+      last_login_days_ago: getDaysSinceLastLogin(),
+      billing_issue_count: getBillingIssues()
+    };
+
+    Churnaizer.track(userData, "${primaryApiKey}", function (result) {
       console.log("✅ Churn Score:", result.churn_score);
       console.log("📌 Reason:", result.churn_reason);
     });
@@ -76,16 +80,18 @@ const Dashboard = ({ user, apiKey }) => {
     script.onload = () => {
       const payload = {
         user_id: user.id,
-        days_since_signup: 60,
-        monthly_revenue: 99.99,
-        subscription_plan: "Pro",
-        number_of_logins_last30days: 15,
-        active_features_used: 5,
-        support_tickets_opened: 0,
-        last_payment_status: "Success",
-        email_opens_last30days: 9,
-        last_login_days_ago: 1,
-        billing_issue_count: 0
+        customer_name: user.name,                    // ← NEW
+        customer_email: user.email,                  // ← NEW
+        days_since_signup: getUserSignupDays(user),
+        monthly_revenue: getUserRevenue(user),
+        subscription_plan: user.plan,
+        number_of_logins_last30days: getUserLogins(user),
+        active_features_used: getUserFeatures(user),
+        support_tickets_opened: getUserTickets(user),
+        last_payment_status: user.lastPaymentStatus,
+        email_opens_last30days: getUserEmailOpens(user),
+        last_login_days_ago: getDaysSinceLastLogin(user),
+        billing_issue_count: getUserBillingIssues(user)
       };
 
       // Reuse this anywhere—after login or on specific pages
@@ -98,12 +104,22 @@ const Dashboard = ({ user, apiKey }) => {
   return <div>Welcome, {user.name}</div>;
 };`;
 
-  const batchIntegration = `// Batch Processing for Multiple Users
-const users = [
-  { user_id: "user_001", days_since_signup: 60, /* ... other fields */ },
-  { user_id: "user_002", days_since_signup: 90, /* ... other fields */ },
-  // ... more users
-];
+const batchIntegration = `// Batch Processing for Multiple Users
+const users = getUsersFromDatabase().map(user => ({
+  user_id: user.id,
+  customer_name: user.name,                      // ← NEW
+  customer_email: user.email,                    // ← NEW
+  days_since_signup: calculateSignupDays(user),
+  monthly_revenue: user.subscription.amount,
+  subscription_plan: user.subscription.plan,
+  number_of_logins_last30days: user.analytics.logins,
+  active_features_used: user.analytics.features.length,
+  support_tickets_opened: user.support.tickets,
+  last_payment_status: user.billing.lastStatus,
+  email_opens_last30days: user.email.opens,
+  last_login_days_ago: calculateLastLogin(user),
+  billing_issue_count: user.billing.issues
+}));
 
 Churnaizer.trackBatch(users, "${primaryApiKey}", function(results, error) {
   if (error) {
@@ -121,11 +137,12 @@ Churnaizer.trackBatch(users, "${primaryApiKey}", function(results, error) {
   const checklistItems = [
     "SDK script included in your app",
     "API key added securely (not in public repos)",
-    "All 10 required user data fields provided",
+    "All 12 required user data fields provided (including customer_name & customer_email)",
+    "Dynamic data functions implemented (no hardcoded values)",
     "Callback function implemented to handle results",
     "Error handling added for failed predictions",
     "UI updated to display churn risk to users",
-    "Testing completed with sample data"
+    "Testing completed with real user data"
   ];
 
   return (

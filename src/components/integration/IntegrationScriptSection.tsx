@@ -14,32 +14,33 @@ export const IntegrationScriptSection = ({
   onCopyCode,
   onRegenerateKey
 }: IntegrationScriptSectionProps) => {
-  const sdkScript = `<!-- Churnaizer SDK v1.0.0 - Production Ready -->
+  const sdkScript = `<!-- Churnaizer SDK v1.0.1 - Dynamic & Production Ready -->
 <script src="${window.location.origin}/churnaizer-sdk.js"></script>
 <script>
-  // Track user churn prediction
-  Churnaizer.track({
-    user_id: "USER123",
-    days_since_signup: 90,
-    monthly_revenue: 49.99,
-    subscription_plan: "Pro",
-    number_of_logins_last30days: 15,
-    active_features_used: 8,
-    support_tickets_opened: 2,
-    last_payment_status: "Success",
-    email_opens_last30days: 12,
-    last_login_days_ago: 2,
-    billing_issue_count: 0
-  }, "${primaryApiKey}", function(result, error) {
+  const userData = {
+    user_id: getUserIdFromApp(),                 // ← from your app
+    customer_name: getUserName(),                // ← NEW
+    customer_email: getUserEmail(),              // ← NEW
+    days_since_signup: getSignupDays(),
+    monthly_revenue: getUserRevenue(),
+    subscription_plan: getUserPlan(), 
+    number_of_logins_last30days: getLoginsCount(),
+    active_features_used: getFeaturesUsed(),
+    support_tickets_opened: getSupportCount(),
+    last_payment_status: getLastPaymentStatus(),
+    email_opens_last30days: getEmailOpenCount(),
+    last_login_days_ago: getDaysSinceLastLogin(),
+    billing_issue_count: getBillingIssues()
+  };
+
+  Churnaizer.track(userData, "${primaryApiKey}", function(result, error) {
     if (error) {
       console.error("❌ Churn prediction failed:", error);
       return;
     }
-    
+
     console.log("✅ Churn prediction:", result);
     alert("🧠 Churn Risk: " + (result.churn_score * 100).toFixed(1) + "%\\nReason: " + result.churn_reason);
-    
-    // Optional: Show badge on user element
     Churnaizer.showBadge('.user-profile', result);
   });
 </script>`;
@@ -48,17 +49,19 @@ export const IntegrationScriptSection = ({
 <script>
   (function() {
     const userInfo = {
-      user_id: "USER123",
-      days_since_signup: 90,
-      monthly_revenue: 49.99,
-      subscription_plan: "Pro",
-      number_of_logins_last30days: 15,
-      active_features_used: 8,
-      support_tickets_opened: 2,
-      last_payment_status: "Success",
-      email_opens_last30days: 12,
-      last_login_days_ago: 2,
-      billing_issue_count: 0
+      user_id: getUserIdFromApp(),
+      customer_name: getUserName(),                // ← NEW
+      customer_email: getUserEmail(),              // ← NEW
+      days_since_signup: getSignupDays(),
+      monthly_revenue: getUserRevenue(),
+      subscription_plan: getUserPlan(),
+      number_of_logins_last30days: getLoginsCount(),
+      active_features_used: getFeaturesUsed(),
+      support_tickets_opened: getSupportCount(),
+      last_payment_status: getLastPaymentStatus(),
+      email_opens_last30days: getEmailOpenCount(),
+      last_login_days_ago: getDaysSinceLastLogin(),
+      billing_issue_count: getBillingIssues()
     };
 
     fetch("${window.location.origin}/api/track", {
@@ -80,22 +83,24 @@ export const IntegrationScriptSection = ({
 
 <!-- User elements with data attributes - automatic tracking -->
 <div class="user-profile" 
-     data-churnaizer-track="USER123"
+     data-churnaizer-track="{{user_id}}"
      data-churnaizer-api-key="${primaryApiKey}"
-     data-churnaizer-user-id="USER123"
-     data-churnaizer-days-since-signup="90"
-     data-churnaizer-monthly-revenue="49.99"
-     data-churnaizer-subscription-plan="Pro"
-     data-churnaizer-number-of-logins-last30days="15"
-     data-churnaizer-active-features-used="8"
-     data-churnaizer-support-tickets-opened="2"
-     data-churnaizer-last-payment-status="Success"
-     data-churnaizer-email-opens-last30days="12"
-     data-churnaizer-last-login-days-ago="2"
-     data-churnaizer-billing-issue-count="0">
+     data-churnaizer-user-id="{{user_id}}"
+     data-churnaizer-customer-name="{{user_name}}"
+     data-churnaizer-customer-email="{{user_email}}"
+     data-churnaizer-days-since-signup="{{signup_days}}"
+     data-churnaizer-monthly-revenue="{{revenue}}"
+     data-churnaizer-subscription-plan="{{plan}}"
+     data-churnaizer-number-of-logins-last30days="{{logins}}"
+     data-churnaizer-active-features-used="{{features}}"
+     data-churnaizer-support-tickets-opened="{{tickets}}"
+     data-churnaizer-last-payment-status="{{payment_status}}"
+     data-churnaizer-email-opens-last30days="{{email_opens}}"
+     data-churnaizer-last-login-days-ago="{{last_login}}"
+     data-churnaizer-billing-issue-count="{{billing_issues}}">
   <!-- Churn badge will automatically appear -->
-  <h3>John Doe</h3>
-  <p>Premium User</p>
+  <h3>{{user_name}}</h3>
+  <p>{{plan}} User</p>
 </div>`;
 
   return (
@@ -105,8 +110,8 @@ export const IntegrationScriptSection = ({
           🔧 Integration Script
         </CardTitle>
         <CardDescription>
-          Track churn with AI model v5 using 10 key features. Paste this script before closing &lt;/body&gt; tag. 
-          <strong>Required:</strong> days_since_signup, monthly_revenue, subscription_plan, number_of_logins_last30days, active_features_used, support_tickets_opened, last_payment_status, email_opens_last30days, last_login_days_ago, billing_issue_count
+          Track churn with AI model v5 using dynamic real-time data. Paste this script before closing &lt;/body&gt; tag. 
+          <strong>Required:</strong> customer_name, customer_email, days_since_signup, monthly_revenue, subscription_plan, number_of_logins_last30days, active_features_used, support_tickets_opened, last_payment_status, email_opens_last30days, last_login_days_ago, billing_issue_count
         </CardDescription>
       </CardHeader>
       <CardContent>

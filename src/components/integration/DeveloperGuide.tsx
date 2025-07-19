@@ -32,71 +32,62 @@ export const DeveloperGuide = ({ primaryApiKey, onCopyCode }: DeveloperGuideProp
 <body>
   <h1>Welcome, User!</h1>
 
-  <!-- SDK script goes here -->
-  <script src="${window.location.origin}/churnaizer-sdk.js"></script>
-
-  <!-- Trigger churn tracking -->
+  <!-- Official Churnaizer SDK v1.0.0 -->
+  <script src="https://churnaizer.com/churnaizer-sdk.js"></script>
   <script>
-    const userData = {
-      user_id: getUserIdFromApp(),                 // ← from your app
-      customer_name: getUserName(),                // ← NEW
-      customer_email: getUserEmail(),              // ← NEW
-      days_since_signup: getSignupDays(),
-      monthly_revenue: getUserRevenue(),
-      subscription_plan: getUserPlan(),
-      number_of_logins_last30days: getLoginsCount(),
-      active_features_used: getFeaturesUsed(),
-      support_tickets_opened: getSupportCount(),
-      last_payment_status: getLastPaymentStatus(),
-      email_opens_last30days: getEmailOpenCount(),
-      last_login_days_ago: getDaysSinceLastLogin(),
-      billing_issue_count: getBillingIssues()
-    };
-
-    Churnaizer.track(userData, "${primaryApiKey}", function (result) {
-      console.log("✅ Churn Score:", result.churn_score);
-      console.log("📌 Reason:", result.churn_reason);
+    Churnaizer.track({
+      user_id: "{{user_id}}",
+      customer_name: "{{customer_name}}",
+      customer_email: "{{customer_email}}",
+      days_since_signup: {{days_since_signup}},
+      monthly_revenue: {{monthly_revenue}},
+      subscription_plan: "{{subscription_plan}}",
+      number_of_logins_last30days: {{login_count}},
+      active_features_used: {{feature_count}},
+      support_tickets_opened: {{ticket_count}},
+      last_payment_status: "{{payment_status}}",
+      email_opens_last30days: {{email_opens}},
+      last_login_days_ago: {{last_login}},
+      billing_issue_count: {{billing_issue_count}}
+    }, "${primaryApiKey}", function(result, error) {
+      if (error) return console.error("❌ Churn prediction failed:", error);
+      console.log("✅ Churn prediction:", result);
+      Churnaizer.showBadge('.user-profile', result);
     });
   </script>
 </body>
 </html>`;
 
-  const reactIntegration = `// React/Next.js Integration with Helper Function
+  const reactIntegration = `// React/Next.js Integration
 import { useEffect } from 'react';
-
-// Helper function for reusability
-export const sendChurnTracking = (user, apiKey, callback) => {
-  window.Churnaizer?.track(user, apiKey, callback);
-};
 
 const Dashboard = ({ user, apiKey }) => {
   useEffect(() => {
-    // Load SDK dynamically
+    // Load official SDK
     const script = document.createElement('script');
-    script.src = '${window.location.origin}/churnaizer-sdk.js';
+    script.src = 'https://churnaizer.com/churnaizer-sdk.js';
     script.async = true;
     document.body.appendChild(script);
 
     script.onload = () => {
-      const payload = {
+      window.Churnaizer.track({
         user_id: user.id,
-        customer_name: user.name,                    // ← NEW
-        customer_email: user.email,                  // ← NEW
-        days_since_signup: getUserSignupDays(user),
-        monthly_revenue: getUserRevenue(user),
+        customer_name: user.name,
+        customer_email: user.email,
+        days_since_signup: getDaysSinceSignup(user),
+        monthly_revenue: getMonthlyRevenue(user),
         subscription_plan: user.plan,
-        number_of_logins_last30days: getUserLogins(user),
-        active_features_used: getUserFeatures(user),
-        support_tickets_opened: getUserTickets(user),
+        number_of_logins_last30days: getLoginCount(user),
+        active_features_used: getFeatureCount(user),
+        support_tickets_opened: getTicketCount(user),
         last_payment_status: user.lastPaymentStatus,
-        email_opens_last30days: getUserEmailOpens(user),
+        email_opens_last30days: getEmailOpens(user),
         last_login_days_ago: getDaysSinceLastLogin(user),
-        billing_issue_count: getUserBillingIssues(user)
-      };
-
-      // Reuse this anywhere—after login or on specific pages
-      sendChurnTracking(payload, "${primaryApiKey}", (result) => {
-        console.log("📊 Churn Risk:", result);
+        billing_issue_count: getBillingIssues(user)
+      }, "${primaryApiKey}", function(result, error) {
+        if (error) return console.error("❌ Churn prediction failed:", error);
+        console.log("✅ Churn prediction:", result);
+        window.Churnaizer.showBadge('.user-profile', result);
       });
     };
   }, [user, apiKey]);
@@ -105,10 +96,10 @@ const Dashboard = ({ user, apiKey }) => {
 };`;
 
 const batchIntegration = `// Batch Processing for Multiple Users
-const users = getUsersFromDatabase().map(user => ({
+const usersData = getUsersFromDatabase().map(user => ({
   user_id: user.id,
-  customer_name: user.name,                      // ← NEW
-  customer_email: user.email,                    // ← NEW
+  customer_name: user.name,
+  customer_email: user.email,
   days_since_signup: calculateSignupDays(user),
   monthly_revenue: user.subscription.amount,
   subscription_plan: user.subscription.plan,
@@ -121,28 +112,25 @@ const users = getUsersFromDatabase().map(user => ({
   billing_issue_count: user.billing.issues
 }));
 
-Churnaizer.trackBatch(users, "${primaryApiKey}", function(results, error) {
-  if (error) {
-    console.error("❌ Batch tracking failed:", error);
-    return;
-  }
+window.Churnaizer.trackBatch(usersData, "${primaryApiKey}", function(results, error) {
+  if (error) return console.error("❌ Batch tracking failed:", error);
   
   results.forEach(result => {
     if (result.status === 'ok') {
-      console.log(\`✅ User \${result.user_id}: \${result.churn_score}\`);
+      console.log(\`✅ User \${result.user_id}: \${result.churn_score}%\`);
     }
   });
 });`;
 
   const checklistItems = [
-    "SDK script included in your app",
-    "API key added securely (not in public repos)",
-    "All 12 required user data fields provided (including customer_name & customer_email)",
-    "Dynamic data functions implemented (no hardcoded values)",
-    "Callback function implemented to handle results",
-    "Error handling added for failed predictions",
-    "UI updated to display churn risk to users",
-    "Testing completed with real user data"
+    "Official Churnaizer SDK v1.0.0 loaded from https://churnaizer.com/churnaizer-sdk.js",
+    "API key added securely to SDK calls",
+    "All 13 required user data fields provided (including customer_name & customer_email)",
+    "Real user data used (no hardcoded sample values)",
+    "Churnaizer.track() function called with proper callback",
+    "Badge placement configured with proper CSS selector",
+    "Error handling implemented for failed predictions",
+    "Testing completed with real user scenarios"
   ];
 
   return (

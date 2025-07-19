@@ -1,5 +1,5 @@
-// Churnaizer SDK v1.0.0 - AI-Powered Churn Prediction
-// Author: Churnaizer Team | https://churnaizer.com
+// Churnaizer SDK v1.0.0 - Official Production Release
+// Load from: https://churnaizer.com/churnaizer-sdk.js
 
 (function (window) {
   'use strict';
@@ -11,7 +11,7 @@
 
   // SDK Configuration
   const SDK_VERSION = '1.0.0';
-  const DEFAULT_ENDPOINT = 'https://ntbkydpgjaswmwruegyl.supabase.co/functions/v1/track';
+  const DEFAULT_ENDPOINT = 'https://churnaizer.com/api/track';
   
   // Utility functions
   function validateUserData(userData) {

@@ -21,16 +21,8 @@ import { DashboardLayout } from "./components/layout/DashboardLayout";
 import { DashboardOverviewPage } from "./pages/dashboard/DashboardOverviewPage";
 import { CSVUploadPage } from "./pages/dashboard/CSVUploadPage";
 import { UploadedUsersPage } from "./pages/dashboard/UploadedUsersPage";
-import { UserDetailPage } from "./pages/dashboard/UserDetailPage";
-import { ChurnReportsPage } from "./pages/dashboard/ChurnReportsPage";
-import { ChurnPredictionPage } from "./pages/dashboard/ChurnPredictionPage";
 import { AutomationsPage } from "./pages/dashboard/AutomationsPage";
 import { PlaybooksBuilderPage } from "./pages/dashboard/PlaybooksBuilderPage";
-import { EnhancedEmailSystemPage } from "./pages/dashboard/EnhancedEmailSystemPage";
-import { EmailLogsPage } from "./pages/dashboard/EmailLogsPage";
-import { IntegrationsPage } from "./pages/dashboard/IntegrationsPage";
-import { EmailProviderVerificationPage } from "./pages/dashboard/EmailProviderVerificationPage";
-import { SettingsPage } from "./pages/dashboard/SettingsPage";
 
 const queryClient = new QueryClient();
 
@@ -62,18 +54,8 @@ const App = () => (
               <Route index element={<DashboardOverviewPage />} />
               <Route path="csv-upload" element={<CSVUploadPage />} />
               <Route path="users" element={<UploadedUsersPage />} />
-              <Route path="users/:userId" element={<UserDetailPage />} />
-              <Route path="reports" element={<ChurnReportsPage />} />
-              <Route path="churn" element={<ChurnPredictionPage />} />
               <Route path="automations" element={<AutomationsPage />} />
-              <Route path="automations/playbooks" element={<AutomationsPage />} />
               <Route path="automations/playbooks-builder" element={<PlaybooksBuilderPage />} />
-              <Route path="automations/emails" element={<AutomationsPage />} />
-              <Route path="email-templates" element={<EnhancedEmailSystemPage />} />
-              <Route path="email-logs" element={<EmailLogsPage />} />
-              <Route path="integrations" element={<IntegrationsPage />} />
-              <Route path="integrations/email-verification" element={<EmailProviderVerificationPage />} />
-              <Route path="settings" element={<SettingsPage />} />
             </Route>
             <Route 
               path="/integration" 

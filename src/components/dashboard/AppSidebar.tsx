@@ -40,65 +40,34 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 
 const navigationItems = [
   {
-    title: "Dashboard Overview",
+    title: "Churn Analytics Dashboard", 
     url: "/dashboard",
     icon: Home,
     isExact: true
   },
   {
-    title: "CSV Upload & Analysis",
-    url: "/dashboard/csv-upload",
+    title: "CSV Upload & Processing",
+    url: "/dashboard/csv-upload", 
     icon: Upload
   },
   {
-    title: "Uploaded Users",
+    title: "Customer Data",
     url: "/dashboard/users",
     icon: Users
   },
   {
-    title: "Churn Reports",
-    url: "/dashboard/reports",
-    icon: BarChart3
-  },
-  {
-    title: "Churn Prediction",
-    url: "/dashboard/churn",
-    icon: BarChart3
-  },
-  {
-    title: "Email Templates",
-    url: "/dashboard/email-templates",
-    icon: Mail
-  },
-  {
-    title: "Email Logs",
-    url: "/dashboard/email-logs",
-    icon: BarChart3
-  },
-  {
-    title: "Automations",
+    title: "Smart Retention Playbooks",
     url: "/dashboard/automations",
     icon: Workflow,
     subItems: [
-      { title: "Playbooks", url: "/dashboard/automations/playbooks" },
-      { title: "Playbook Builder", url: "/dashboard/automations/playbooks-builder" },
-      { title: "Email Campaigns", url: "/dashboard/automations/emails" }
+      { title: "Active Playbooks", url: "/dashboard/automations" },
+      { title: "Create Playbook", url: "/dashboard/automations/playbooks-builder" }
     ]
   },
   {
-    title: "CRM & Email Integration",
-    url: "/dashboard/integrations",
-    icon: Puzzle
-  },
-  {
-    title: "Website Integration",
+    title: "Churn Prediction SDK",
     url: "/integration",
     icon: Code
-  },
-  {
-    title: "Settings",
-    url: "/dashboard/settings",
-    icon: Settings
   }
 ];
 
@@ -136,8 +105,8 @@ export function AppSidebar() {
           <Shield className="h-6 w-6 text-primary" />
           {!collapsed && (
             <div>
-              <h2 className="text-lg font-bold text-foreground">ChurnGuard</h2>
-              <p className="text-xs text-muted-foreground">Lite Version</p>
+              <h2 className="text-lg font-bold text-foreground">Churnaizer</h2>
+              <p className="text-xs text-muted-foreground">Production Ready</p>
             </div>
           )}
         </div>

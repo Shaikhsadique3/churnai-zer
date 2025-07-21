@@ -277,10 +277,10 @@ export const DashboardOverview = () => {
                 </Link>
               </Button>
               <Button variant="outline" size="sm" className="w-full" asChild>
-                <a href="https://churnaizer.com/docs/sdk" target="_blank" rel="noopener noreferrer">
+                <Link to="/integration">
                   <ExternalLink className="h-3 w-3 mr-1" />
                   SDK Docs
-                </a>
+                </Link>
               </Button>
             </div>
           </CardContent>

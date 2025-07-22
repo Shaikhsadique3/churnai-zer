@@ -1,5 +1,5 @@
 
-import { ArrowLeft, Copy } from "lucide-react";
+import { ArrowLeft, Copy, Code, Shield, CheckCircle } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -146,239 +146,151 @@ const Integration = () => {
         onLogout={handleLogout}
       />
 
-      <main className="container mx-auto px-2 sm:px-4 py-4 sm:py-8">
-        <div className="mb-4 sm:mb-6">
-          <Link to="/dashboard" className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground mb-4 transition-colors">
-            <ArrowLeft className="h-4 w-4 mr-1" />
+      <main className="container mx-auto px-4 py-8 max-w-6xl">
+        {/* Header with clean navigation */}
+        <div className="mb-8">
+          <Link to="/dashboard" className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground mb-6 group transition-colors">
+            <ArrowLeft className="h-4 w-4 mr-2 group-hover:-translate-x-1 transition-transform" />
             Back to Dashboard
           </Link>
-          <h1 className="text-2xl sm:text-3xl font-bold text-foreground">🔗 Website Integration</h1>
-          <p className="text-muted-foreground mt-2 text-sm sm:text-base">
-            Connect ChurnGuard to your website via SDK and API
-          </p>
-          <div className="flex items-center gap-2 mt-3">
-            <div className="flex items-center gap-2 text-sm">
-              <div className={`w-2 h-2 rounded-full ${apiKeys && apiKeys.length > 0 ? 'bg-green-500' : 'bg-yellow-500'}`}></div>
-              <span className="text-muted-foreground">
-                {apiKeys && apiKeys.length > 0 ? 'Connected' : 'Setup Required'}
-              </span>
+          
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-3xl font-bold text-foreground mb-2">SDK Integration</h1>
+              <p className="text-muted-foreground text-lg">
+                Integrate Churnaizer with your SaaS in 3 simple steps
+              </p>
             </div>
-            <Button variant="outline" size="sm" asChild>
-              <a href="https://churnaizer-sdk.netlify.app/test.html" target="_blank" rel="noopener noreferrer">
-                🧪 Test SDK
-              </a>
-            </Button>
+            <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2 text-sm bg-secondary/50 px-3 py-1.5 rounded-full">
+                <div className={`w-2 h-2 rounded-full ${apiKeys && apiKeys.length > 0 ? 'bg-green-500' : 'bg-yellow-500'}`}></div>
+                <span>{apiKeys && apiKeys.length > 0 ? 'Connected' : 'Setup Required'}</span>
+              </div>
+              <Button variant="outline" asChild>
+                <a href="https://churnaizer-sdk.netlify.app/test.html" target="_blank" rel="noopener noreferrer">
+                  Test SDK
+                </a>
+              </Button>
+            </div>
           </div>
         </div>
 
-        <div className="space-y-8">
-          {/* SDK Documentation Header */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center text-2xl">
-                📦 Churnaizer SDK Integration Guide
-              </CardTitle>
-              <CardDescription className="text-lg">
-                🎯 Predict and prevent churn in your SaaS by just adding a few lines of code.
-              </CardDescription>
-            </CardHeader>
-          </Card>
+        {/* Progress Steps */}
+        <div className="flex items-center gap-4 mb-8">
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 bg-primary text-primary-foreground rounded-full flex items-center justify-center text-sm font-medium">1</div>
+            <span className="text-sm font-medium">Install SDK</span>
+          </div>
+          <div className="flex-1 h-px bg-border"></div>
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 bg-primary text-primary-foreground rounded-full flex items-center justify-center text-sm font-medium">2</div>
+            <span className="text-sm font-medium">Track Users</span>
+          </div>
+          <div className="flex-1 h-px bg-border"></div>
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 bg-primary text-primary-foreground rounded-full flex items-center justify-center text-sm font-medium">3</div>
+            <span className="text-sm font-medium">View Dashboard</span>
+          </div>
+        </div>
 
-          {/* Step 1: Install SDK */}
-          <Card>
-            <CardHeader>
-              <CardTitle>✅ 1. Install or Add the SDK</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div>
-                <h4 className="font-semibold mb-2">Option A: Include via &lt;script&gt; (Recommended for simplicity)</h4>
-                <div className="relative">
-                  <pre className="bg-gray-900 text-gray-100 p-4 rounded-lg overflow-x-auto text-sm">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          {/* Main Content */}
+          <div className="lg:col-span-2 space-y-8">
+            
+            {/* Step 1: Install SDK */}
+            <Card className="border-l-4 border-l-primary">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-3">
+                  <Code className="h-5 w-5 text-primary" />
+                  Step 1: Install SDK
+                </CardTitle>
+                <CardDescription>Add one line to your website</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="relative group">
+                  <pre className="bg-muted/50 text-foreground p-4 rounded-lg overflow-x-auto text-sm border">
                     <code>{`<script src="https://churnaizer.com/churnaizer-sdk.js"></script>`}</code>
                   </pre>
                   <Button
                     variant="outline"
                     size="sm"
-                    className="absolute top-2 right-2"
+                    className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity"
                     onClick={() => copyToClipboard(`<script src="https://churnaizer.com/churnaizer-sdk.js"></script>`)}
                   >
                     <Copy className="h-4 w-4" />
                   </Button>
                 </div>
-              </div>
-              <div>
-                <h4 className="font-semibold mb-2">Option B: npm (Coming soon)</h4>
-                <div className="relative">
-                  <pre className="bg-gray-900 text-gray-100 p-4 rounded-lg overflow-x-auto text-sm">
-                    <code>npm install churnaizer-sdk</code>
-                  </pre>
+                <div className="text-sm text-muted-foreground bg-secondary/50 p-3 rounded-lg">
+                  <strong>npm install</strong> coming soon
                 </div>
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
 
-          {/* Step 2: Track Users */}
-          <Card>
-            <CardHeader>
-              <CardTitle>🧠 2. Call Churnaizer.track() with Your User Data</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="relative">
-                <pre className="bg-gray-900 text-gray-100 p-4 rounded-lg overflow-x-auto text-sm">
-                  <code>{`window.Churnaizer.track({
+            {/* Step 2: Track Users */}
+            <Card className="border-l-4 border-l-primary">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-3">
+                  <CheckCircle className="h-5 w-5 text-primary" />
+                  Step 2: Track Your Users
+                </CardTitle>
+                <CardDescription>Call this function when users perform key actions</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="relative group">
+                  <pre className="bg-muted/50 text-foreground p-4 rounded-lg overflow-x-auto text-sm border">
+                    <code>{`// Track user activity
+window.Churnaizer.track({
   user_id: "user_123",
-  name: "Jane Doe",
   email: "jane@example.com",
   plan: "Pro",
   signup_date: "2024-12-01",
-  usage_last_30_days: 12,
-  support_tickets_last_month: 3
+  usage_last_30_days: 12
 }, "${primaryApiKey}", function(result, error) {
-  if (error) {
-    console.error("❌ Churnaizer failed:", error);
-  } else {
-    console.log("✅ Churn Risk:", result.churn_score);
-    console.log("📌 Reason:", result.churn_reason);
-    console.log("💡 Insight:", result.insight);
+  if (result) {
+    console.log("Churn Risk:", result.churn_score);
   }
 });`}</code>
-                </pre>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="absolute top-2 right-2"
-                  onClick={() => copyToClipboard(`window.Churnaizer.track({
+                  </pre>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity"
+                    onClick={() => copyToClipboard(`window.Churnaizer.track({
   user_id: "user_123",
-  name: "Jane Doe",
   email: "jane@example.com",
   plan: "Pro",
   signup_date: "2024-12-01",
-  usage_last_30_days: 12,
-  support_tickets_last_month: 3
+  usage_last_30_days: 12
 }, "${primaryApiKey}", function(result, error) {
-  if (error) {
-    console.error("❌ Churnaizer failed:", error);
-  } else {
-    console.log("✅ Churn Risk:", result.churn_score);
-    console.log("📌 Reason:", result.churn_reason);
-    console.log("💡 Insight:", result.insight);
+  if (result) {
+    console.log("Churn Risk:", result.churn_score);
   }
 });`)}
-                >
-                  <Copy className="h-4 w-4" />
-                </Button>
-              </div>
-              <div className="bg-blue-50 border border-blue-200 rounded p-3">
-                <p className="text-blue-800 text-sm">
-                  🧩 You can call this function right after a user logs in, finishes onboarding, or performs any key activity.
-                </p>
-              </div>
-            </CardContent>
-          </Card>
+                  >
+                    <Copy className="h-4 w-4" />
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
 
-          {/* Step 3: Live Demo */}
-          <Card>
-            <CardHeader>
-              <CardTitle>🎬 3. Live Demo: What Happens When You Track a User</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <div className="flex items-center space-x-2">
-                    <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                    <span className="text-sm">Sends real-time user data to AI model</span>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                    <span className="text-sm">Gets churn score & insights instantly</span>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                    <span className="text-sm">Automatically logs data to your dashboard</span>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                    <span className="text-sm">Enables playbook automation if user is at risk</span>
-                  </div>
-                </div>
-                <div className="bg-gray-100 rounded-lg p-4 text-center">
-                  <p className="text-gray-600 text-sm">🎬 SDK Demo GIF</p>
-                  <p className="text-xs text-gray-500 mt-2">Visual demonstration coming soon</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Step 4: Dashboard */}
-          <Card>
-            <CardHeader>
-              <CardTitle>📊 4. See It in Your Dashboard</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-muted-foreground mb-4">Once users are tracked:</p>
-              <div className="space-y-2">
-                <div className="flex items-center space-x-2">
-                  <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                  <span className="text-sm">Go to Dashboard → User Insights</span>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                  <span className="text-sm">See risk level (Low / Medium / High)</span>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                  <span className="text-sm">Review reasons & recommended actions</span>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                  <span className="text-sm">Trigger retention playbooks automatically</span>
-                </div>
-              </div>
-              <Button className="mt-4" asChild>
-                <Link to="/dashboard">View Dashboard</Link>
-              </Button>
-            </CardContent>
-          </Card>
-
-          {/* Step 5: Security */}
-          <Card>
-            <CardHeader>
-              <CardTitle>🛡 5. Security Notes</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-2">
-                <div className="flex items-center space-x-2">
-                  <div className="w-2 h-2 bg-yellow-500 rounded-full"></div>
-                  <span className="text-sm">Your API key is unique per project</span>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <div className="w-2 h-2 bg-yellow-500 rounded-full"></div>
-                  <span className="text-sm">Limit usage per domain (ask us if you need help)</span>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <div className="w-2 h-2 bg-yellow-500 rounded-full"></div>
-                  <span className="text-sm">Use server-side proxy if you need more security</span>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Step 6: Full Example */}
-          <Card>
-            <CardHeader>
-              <CardTitle>📄 6. Full Example Code in HTML</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="relative">
-                <pre className="bg-gray-900 text-gray-100 p-4 rounded-lg overflow-x-auto text-sm">
-                  <code>{`<!DOCTYPE html>
+            {/* Complete Example */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Complete HTML Example</CardTitle>
+                <CardDescription>Ready-to-use implementation</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="relative group">
+                  <pre className="bg-muted/50 text-foreground p-4 rounded-lg overflow-x-auto text-sm border max-h-64">
+                    <code>{`<!DOCTYPE html>
 <html>
 <head>
-  <title>Churnaizer SDK Test</title>
+  <title>Churnaizer Integration</title>
   <script src="https://churnaizer.com/churnaizer-sdk.js"></script>
 </head>
 <body>
-  <button onclick="trackUser()">Track User</button>
+  <button onclick="trackUser()">Track User Activity</button>
+  
   <script>
     function trackUser() {
       window.Churnaizer.track({
@@ -388,26 +300,31 @@ const Integration = () => {
         signup_date: "2024-12-01",
         usage_last_30_days: 12
       }, "${primaryApiKey}", function(result, error) {
-        if (error) alert("❌ Tracking failed!");
-        else alert("✅ Churn Risk: " + result.churn_score);
+        if (error) {
+          console.error("Tracking failed:", error);
+        } else {
+          console.log("Churn Risk:", result.churn_score);
+          console.log("Risk Level:", result.risk_level);
+        }
       });
     }
   </script>
 </body>
 </html>`}</code>
-                </pre>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="absolute top-2 right-2"
-                  onClick={() => copyToClipboard(`<!DOCTYPE html>
+                  </pre>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity"
+                    onClick={() => copyToClipboard(`<!DOCTYPE html>
 <html>
 <head>
-  <title>Churnaizer SDK Test</title>
+  <title>Churnaizer Integration</title>
   <script src="https://churnaizer.com/churnaizer-sdk.js"></script>
 </head>
 <body>
-  <button onclick="trackUser()">Track User</button>
+  <button onclick="trackUser()">Track User Activity</button>
+  
   <script>
     function trackUser() {
       window.Churnaizer.track({
@@ -417,29 +334,90 @@ const Integration = () => {
         signup_date: "2024-12-01",
         usage_last_30_days: 12
       }, "${primaryApiKey}", function(result, error) {
-        if (error) alert("❌ Tracking failed!");
-        else alert("✅ Churn Risk: " + result.churn_score);
+        if (error) {
+          console.error("Tracking failed:", error);
+        } else {
+          console.log("Churn Risk:", result.churn_score);
+          console.log("Risk Level:", result.risk_level);
+        }
       });
     }
   </script>
 </body>
 </html>`)}
-                >
-                  <Copy className="h-4 w-4" />
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
+                  >
+                    <Copy className="h-4 w-4" />
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
 
-          <APIKeysSection
-            apiKeys={apiKeys}
-            isLoading={isLoading}
-            newKeyName={newKeyName}
-            setNewKeyName={setNewKeyName}
-            onCreateKey={(name) => createKeyMutation.mutate(name)}
-            onCopyKey={copyToClipboard}
-            isCreating={createKeyMutation.isPending}
-          />
+          {/* Sidebar */}
+          <div className="space-y-6">
+            {/* API Key Section */}
+            <APIKeysSection
+              apiKeys={apiKeys}
+              isLoading={isLoading}
+              newKeyName={newKeyName}
+              setNewKeyName={setNewKeyName}
+              onCreateKey={(name) => createKeyMutation.mutate(name)}
+              onCopyKey={copyToClipboard}
+              isCreating={createKeyMutation.isPending}
+            />
+
+            {/* Security Notes */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-lg">
+                  <Shield className="h-5 w-5 text-amber-500" />
+                  Security
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3 text-sm">
+                <div className="flex items-start gap-2">
+                  <div className="w-1.5 h-1.5 bg-amber-500 rounded-full mt-2 flex-shrink-0"></div>
+                  <span className="text-muted-foreground">API keys are unique per project</span>
+                </div>
+                <div className="flex items-start gap-2">
+                  <div className="w-1.5 h-1.5 bg-amber-500 rounded-full mt-2 flex-shrink-0"></div>
+                  <span className="text-muted-foreground">Use server-side proxy for enhanced security</span>
+                </div>
+                <div className="flex items-start gap-2">
+                  <div className="w-1.5 h-1.5 bg-amber-500 rounded-full mt-2 flex-shrink-0"></div>
+                  <span className="text-muted-foreground">Rate limiting automatically applied</span>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* What happens next */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg">What happens next?</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3 text-sm">
+                <div className="flex items-center gap-2">
+                  <CheckCircle className="h-4 w-4 text-green-500" />
+                  <span>Real-time churn prediction</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <CheckCircle className="h-4 w-4 text-green-500" />
+                  <span>Automatic risk scoring</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <CheckCircle className="h-4 w-4 text-green-500" />
+                  <span>Dashboard insights</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <CheckCircle className="h-4 w-4 text-green-500" />
+                  <span>Automated playbook triggers</span>
+                </div>
+                <Button className="w-full mt-4" asChild>
+                  <Link to="/dashboard">View Dashboard</Link>
+                </Button>
+              </CardContent>
+            </Card>
+          </div>
         </div>
       </main>
     </div>

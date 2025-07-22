@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ArrowLeft } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
@@ -270,61 +271,128 @@ export const PlaybooksBuilderPage = () => {
   };
 
   return (
-    <div className="space-y-6">
-      {/* Page Header */}
-      <div className="border-b pb-4">
-        <div className="flex items-center gap-4 mb-2">
-          <Link to="/dashboard/automations">
-            <Button variant="ghost" size="sm">
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Back to Automations
-            </Button>
-          </Link>
+    <div className="container mx-auto px-4 py-8 max-w-6xl">
+      {/* Header */}
+      <div className="mb-8">
+        <Link to="/dashboard/automations" className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground mb-6 group transition-colors">
+          <ArrowLeft className="h-4 w-4 mr-2 group-hover:-translate-x-1 transition-transform" />
+          Back to Automations
+        </Link>
+        
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold text-foreground mb-2">Smart Playbook Builder</h1>
+            <p className="text-muted-foreground text-lg">Create automated retention campaigns for at-risk customers</p>
+          </div>
+          <div className="text-right">
+            <div className="text-sm text-muted-foreground">Active Playbooks</div>
+            <div className="text-2xl font-bold text-primary">{savedPlaybooks.filter(p => p.is_active).length}</div>
+          </div>
         </div>
-        <h1 className="text-2xl font-bold text-foreground">🔧 Playbook Builder</h1>
-        <p className="text-muted-foreground">Create automated rules to save at-risk customers</p>
       </div>
 
-      {/* Playbook Builder Tabs */}
-      <Tabs defaultValue="legacy" className="w-full">
-        <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="legacy">Legacy Builder</TabsTrigger>
-          <TabsTrigger value="json">JSON Builder</TabsTrigger>
-        </TabsList>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        {/* Main Builder */}
+        <div className="lg:col-span-2 space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Create New Playbook</CardTitle>
+              <CardDescription>Define triggers and actions to automatically engage at-risk users</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Tabs defaultValue="legacy" className="w-full">
+                <TabsList className="grid w-full grid-cols-2">
+                  <TabsTrigger value="legacy">Simple Builder</TabsTrigger>
+                  <TabsTrigger value="json">Advanced JSON</TabsTrigger>
+                </TabsList>
 
-        <TabsContent value="legacy">
-          <PlaybookForm
-            playbookName={playbookName}
-            description={description}
-            conditions={conditions}
-            actions={actions}
-            onPlaybookNameChange={setPlaybookName}
-            onDescriptionChange={setDescription}
-            onConditionsChange={setConditions}
-            onActionsChange={setActions}
-            onSave={handleSave}
-            onTestLogic={handleTestLogic}
-          />
-        </TabsContent>
+                <TabsContent value="legacy" className="mt-6">
+                  <PlaybookForm
+                    playbookName={playbookName}
+                    description={description}
+                    conditions={conditions}
+                    actions={actions}
+                    onPlaybookNameChange={setPlaybookName}
+                    onDescriptionChange={setDescription}
+                    onConditionsChange={setConditions}
+                    onActionsChange={setActions}
+                    onSave={handleSave}
+                    onTestLogic={handleTestLogic}
+                  />
+                </TabsContent>
 
-        <TabsContent value="json">
-          <JsonPlaybookBuilder
-            onSave={handleJsonSave}
-            testUsers={testUsers}
-          />
-        </TabsContent>
-      </Tabs>
+                <TabsContent value="json" className="mt-6">
+                  <JsonPlaybookBuilder
+                    onSave={handleJsonSave}
+                    testUsers={testUsers}
+                  />
+                </TabsContent>
+              </Tabs>
+            </CardContent>
+          </Card>
 
-      {/* Automation Status Banner */}
-      <AutomationBanner />
+          {/* Saved Playbooks */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Your Playbooks</CardTitle>
+              <CardDescription>Manage and monitor your automated retention campaigns</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <EnhancedPlaybooksList
+                playbooks={savedPlaybooks}
+                isLoading={isLoading}
+                onToggleStatus={togglePlaybookStatus}
+                onReload={loadPlaybooks}
+              />
+            </CardContent>
+          </Card>
+        </div>
 
-      {/* Enhanced Playbooks List */}
-      <EnhancedPlaybooksList
-        playbooks={savedPlaybooks}
-        isLoading={isLoading}
-        onToggleStatus={togglePlaybookStatus}
-        onReload={loadPlaybooks}
-      />
+        {/* Sidebar */}
+        <div className="space-y-6">
+          {/* Quick Stats */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">Playbook Stats</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-muted-foreground">Total Playbooks</span>
+                <span className="font-semibold">{savedPlaybooks.length}</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-muted-foreground">Active</span>
+                <span className="font-semibold text-green-600">{savedPlaybooks.filter(p => p.is_active).length}</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-muted-foreground">Paused</span>
+                <span className="font-semibold text-amber-600">{savedPlaybooks.filter(p => !p.is_active).length}</span>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Tips */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">💡 Tips</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3 text-sm">
+              <div className="bg-blue-50 border border-blue-200 rounded p-3">
+                <strong>High Risk:</strong> Target users with churn_score &gt; 0.7
+              </div>
+              <div className="bg-amber-50 border border-amber-200 rounded p-3">
+                <strong>Email Action:</strong> Use notify@churnaizer.com as sender
+              </div>
+              <div className="bg-green-50 border border-green-200 rounded p-3">
+                <strong>Webhook:</strong> Perfect for CRM or Slack notifications
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Automation Status */}
+          <AutomationBanner />
+        </div>
+      </div>
     </div>
   );
 };

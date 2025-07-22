@@ -18,7 +18,8 @@ import Pricing from "./pages/Pricing";
 import Contact from "./pages/Contact";
 import NotFound from "./pages/NotFound";
 import { DashboardLayout } from "./components/layout/DashboardLayout";
-import { DashboardOverviewPage } from "./pages/dashboard/DashboardOverviewPage";
+// Core dashboard pages - MVP only
+import Dashboard from "./pages/Dashboard";
 import { CSVUploadPage } from "./pages/dashboard/CSVUploadPage";
 import { UploadedUsersPage } from "./pages/dashboard/UploadedUsersPage";
 import { AutomationsPage } from "./pages/dashboard/AutomationsPage";
@@ -51,7 +52,7 @@ const App = () => (
                 </ProtectedRoute>
               }
             >
-              <Route index element={<DashboardOverviewPage />} />
+              <Route index element={<Dashboard />} />
               <Route path="csv-upload" element={<CSVUploadPage />} />
               <Route path="users" element={<UploadedUsersPage />} />
               <Route path="automations" element={<AutomationsPage />} />

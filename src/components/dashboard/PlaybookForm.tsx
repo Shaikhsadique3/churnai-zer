@@ -6,8 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Trash2, Save, TestTube, Eye } from "lucide-react";
-import { EmailPreviewModal } from "./EmailPreviewModal";
+import { Plus, Trash2, Save, TestTube } from "lucide-react";
 
 interface Condition {
   id: string;
@@ -81,8 +80,6 @@ export const PlaybookForm: React.FC<PlaybookFormProps> = ({
   onSave,
   onTestLogic
 }) => {
-  const [emailPreviewOpen, setEmailPreviewOpen] = useState(false);
-  const [previewEmailTemplate, setPreviewEmailTemplate] = useState("");
 
   const addCondition = () => {
     const newCondition: Condition = {
@@ -278,19 +275,6 @@ export const PlaybookForm: React.FC<PlaybookFormProps> = ({
                         ))}
                       </SelectContent>
                     </Select>
-                    {action.value && (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => {
-                          setPreviewEmailTemplate(action.value);
-                          setEmailPreviewOpen(true);
-                        }}
-                      >
-                        <Eye className="h-3 w-3 mr-1" />
-                        Preview
-                      </Button>
-                    )}
                   </div>
                 ) : (
                   <Input
@@ -333,14 +317,6 @@ export const PlaybookForm: React.FC<PlaybookFormProps> = ({
           Test Logic
         </Button>
       </div>
-
-      {/* Email Preview Modal */}
-      <EmailPreviewModal
-        isOpen={emailPreviewOpen}
-        onClose={() => setEmailPreviewOpen(false)}
-        emailTemplate={previewEmailTemplate}
-        targetUserData={{ user_id: "Sample Customer" }}
-      />
     </>
   );
 };

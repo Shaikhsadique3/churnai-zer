@@ -38,6 +38,7 @@ import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 
+// MVP: Only 3 core features remain
 const navigationItems = [
   {
     title: "Churn Analytics Dashboard", 

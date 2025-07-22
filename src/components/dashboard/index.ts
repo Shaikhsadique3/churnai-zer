@@ -6,4 +6,3 @@ export { default as DataExportOptions } from './DataExportOptions';
 export { PlaybookForm } from './PlaybookForm';
 export { AutomationBanner } from './AutomationBanner';
 export { EnhancedPlaybooksList } from './EnhancedPlaybooksList';
-export { EmailPreviewModal } from './EmailPreviewModal';

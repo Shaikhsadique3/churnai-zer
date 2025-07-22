@@ -71,24 +71,34 @@ export const useEmailService = () => {
     }
   };
 
-  // DISABLED: Template email functionality - fallback to basic sendEmail
+  // SIMPLIFIED: Basic retention email only - no templates for MVP
   const sendTemplateEmail = async (
     to: string, 
     templateId: string, 
     variables: Record<string, any> = {}
   ) => {
-    // Template system disabled for MVP - fallback to basic test email
-    console.warn('Template email system disabled. Using fallback test email.');
+    // MVP: Use simple retention email instead of templates
+    console.log('MVP: Using simplified retention email system');
     
     return await sendEmail({
       to,
-      subject: '🔔 Test Email from Churnaizer',
+      subject: '🚨 Account Alert - Action Needed',
       html: `
-        <h2>Hello 👋</h2>
-        <p>This is a test email from <strong>Churnaizer</strong> to verify that your email system works correctly.</p>
-        <p>✅ If you received this, your backend email function is working fine.</p>
-        <hr>
-        <small>Churnaizer MVP Test</small>
+        <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+          <h2 style="color: #ef4444;">🚨 Churn Risk Alert</h2>
+          <p>Hi there,</p>
+          <p>Our AI has detected that your account may be at risk of churning. We'd love to help you get more value from Churnaizer!</p>
+          <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; margin: 20px 0;">
+            <p><strong>💡 Quick Actions:</strong></p>
+            <ul>
+              <li>Review your usage patterns</li>
+              <li>Explore unused features</li>
+              <li>Contact our support team</li>
+            </ul>
+          </div>
+          <p>Questions? Just reply to this email.</p>
+          <p>Best regards,<br>The Churnaizer Team</p>
+        </div>
       `
     });
   };

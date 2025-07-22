@@ -43,12 +43,10 @@ const ACTION_OPTIONS = [
   { value: "wait", label: "Wait (days)" }
 ];
 
+// MVP: Simplified EMAIL_TEMPLATES for production
 const EMAIL_TEMPLATES = [
-  { value: "warn_user_template", label: "High-Risk Warning" },
-  { value: "discount_20_pro", label: "20% Discount - Pro Plan" },
-  { value: "feature_guide", label: "Feature Guide & Tips" },
-  { value: "retention_call", label: "Retention Call Invite" },
-  { value: "win_back_offer", label: "Win-Back Special Offer" }
+  { value: "churn_alert", label: "High-Risk Alert" },
+  { value: "retention_offer", label: "Win-Back Offer" }
 ];
 
 export const JsonPlaybookBuilder: React.FC<JsonPlaybookBuilderProps> = ({ onSave, testUsers = [] }) => {

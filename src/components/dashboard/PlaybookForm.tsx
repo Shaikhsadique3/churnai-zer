@@ -6,7 +6,8 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Trash2, Save, TestTube } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
+import { Plus, Trash2, Save, TestTube, Webhook, ExternalLink } from "lucide-react";
 
 interface Condition {
   id: string;
@@ -24,10 +25,18 @@ interface Action {
 interface PlaybookFormProps {
   playbookName: string;
   description: string;
+  webhook_enabled: boolean;
+  webhook_url: string;
+  webhook_trigger_conditions: {
+    churn_score_threshold: number;
+  };
   conditions: Condition[];
   actions: Action[];
   onPlaybookNameChange: (value: string) => void;
   onDescriptionChange: (value: string) => void;
+  onWebhookEnabledChange: (enabled: boolean) => void;
+  onWebhookUrlChange: (url: string) => void;
+  onWebhookTriggerConditionsChange: (conditions: { churn_score_threshold: number }) => void;
   onConditionsChange: (conditions: Condition[]) => void;
   onActionsChange: (actions: Action[]) => void;
   onSave: () => void;
@@ -71,6 +80,9 @@ const EMAIL_TEMPLATES = [
 export const PlaybookForm: React.FC<PlaybookFormProps> = ({
   playbookName,
   description,
+  webhook_enabled,
+  webhook_url,
+  webhook_trigger_conditions,
   conditions,
   actions,
   onPlaybookNameChange,
@@ -78,7 +90,10 @@ export const PlaybookForm: React.FC<PlaybookFormProps> = ({
   onConditionsChange,
   onActionsChange,
   onSave,
-  onTestLogic
+  onTestLogic,
+  onWebhookEnabledChange,
+  onWebhookUrlChange,
+  onWebhookTriggerConditionsChange
 }) => {
 
   const addCondition = () => {
@@ -303,6 +318,105 @@ export const PlaybookForm: React.FC<PlaybookFormProps> = ({
               </div>
             ))}
           </div>
+        </CardContent>
+      </Card>
+
+      {/* Webhook Configuration */}
+      <Card>
+        <CardHeader>
+          <div className="flex items-center gap-2">
+            <Webhook className="h-5 w-5" />
+            <div>
+              <CardTitle>🔗 Webhook Integration</CardTitle>
+              <CardDescription>Send churn data to external tools (CRM, Slack, etc.)</CardDescription>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <Label htmlFor="webhook-toggle">Auto-send churn insights via webhook</Label>
+              <p className="text-sm text-muted-foreground">
+                Automatically notify your CRM, Slack, or other tools when churn risk is detected
+              </p>
+            </div>
+            <Switch
+              id="webhook-toggle"
+              checked={webhook_enabled}
+              onCheckedChange={onWebhookEnabledChange}
+            />
+          </div>
+
+          {webhook_enabled && (
+            <div className="space-y-4 pt-4 border-t">
+              <div>
+                <Label htmlFor="webhook-url">Webhook URL *</Label>
+                <Input
+                  id="webhook-url"
+                  placeholder="https://hooks.zapier.com/hooks/catch/... or your custom webhook URL"
+                  value={webhook_url}
+                  onChange={(e) => onWebhookUrlChange(e.target.value)}
+                />
+                <p className="text-sm text-muted-foreground mt-1">
+                  Use Zapier, Make, or your own endpoint to receive churn data
+                </p>
+              </div>
+
+              <div>
+                <Label htmlFor="churn-threshold">Churn Score Threshold</Label>
+                <div className="flex items-center gap-2">
+                  <Input
+                    id="churn-threshold"
+                    type="number"
+                    min="0"
+                    max="1"
+                    step="0.1"
+                    value={webhook_trigger_conditions.churn_score_threshold}
+                    onChange={(e) => onWebhookTriggerConditionsChange({
+                      churn_score_threshold: parseFloat(e.target.value) || 0.75
+                    })}
+                    className="w-24"
+                  />
+                  <span className="text-sm text-muted-foreground">
+                    Trigger webhook when churn score ≥ {webhook_trigger_conditions.churn_score_threshold}
+                  </span>
+                </div>
+              </div>
+
+              <div className="bg-muted/50 p-4 rounded-lg">
+                <h4 className="font-medium mb-2 flex items-center gap-2">
+                  <ExternalLink className="h-4 w-4" />
+                  Example Webhook Payload
+                </h4>
+                <pre className="text-xs bg-background p-3 rounded border overflow-x-auto">
+{`{
+  "user_id": "user_123",
+  "email": "jane@example.com",
+  "customer_name": "Jane Smith",
+  "churn_score": 0.84,
+  "churn_reason": "Low feature usage",
+  "insight": "User hasn't used key features in last 30 days",
+  "risk_level": "high",
+  "subscription_plan": "Pro",
+  "monthly_revenue": 49.99,
+  "triggered_at": "2025-07-23T12:00:00Z",
+  "playbook_id": "uuid",
+  "playbook_name": "Rescue Pro Plan Users"
+}`}
+                </pre>
+              </div>
+
+              <div className="text-sm text-muted-foreground space-y-1">
+                <p><strong>Popular integrations:</strong></p>
+                <ul className="list-disc pl-6 space-y-1">
+                  <li>Zapier → Send to Slack, Gmail, HubSpot, Salesforce, etc.</li>
+                  <li>Make.com → Connect to 1000+ apps and services</li>
+                  <li>Your custom API → Update your CRM or notification system</li>
+                  <li>Notion → Add churn alerts to your database</li>
+                </ul>
+              </div>
+            </div>
+          )}
         </CardContent>
       </Card>
 

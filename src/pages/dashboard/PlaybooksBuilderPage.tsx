@@ -43,6 +43,11 @@ export const PlaybooksBuilderPage = () => {
   const { toast } = useToast();
   const [playbookName, setPlaybookName] = useState("");
   const [description, setDescription] = useState("");
+  const [webhookEnabled, setWebhookEnabled] = useState(false);
+  const [webhookUrl, setWebhookUrl] = useState("");
+  const [webhookTriggerConditions, setWebhookTriggerConditions] = useState({
+    churn_score_threshold: 0.75
+  });
   const [savedPlaybooks, setSavedPlaybooks] = useState<Playbook[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [conditions, setConditions] = useState<Condition[]>([
@@ -140,6 +145,16 @@ export const PlaybooksBuilderPage = () => {
       return;
     }
 
+    // Validate webhook if enabled
+    if (webhookEnabled && !webhookUrl) {
+      toast({
+        title: "Error",
+        description: "Please enter a webhook URL or disable webhook integration",
+        variant: "destructive",
+      });
+      return;
+    }
+
     const validConditions = conditions.filter(c => c.field && c.operator && c.value);
     const validActions = actions.filter(a => a.type && a.value);
 
@@ -164,6 +179,9 @@ export const PlaybooksBuilderPage = () => {
     const playbook = {
       name: playbookName,
       description,
+      webhook_enabled: webhookEnabled,
+      webhook_url: webhookUrl,
+      webhook_trigger_conditions: webhookTriggerConditions,
       conditions: validConditions.map(c => ({
         field: c.field,
         operator: c.operator,
@@ -183,6 +201,9 @@ export const PlaybooksBuilderPage = () => {
         id: Date.now().toString(),
         name: playbook.name,
         description: playbook.description,
+        webhook_enabled: playbook.webhook_enabled,
+        webhook_url: playbook.webhook_url,
+        webhook_trigger_conditions: playbook.webhook_trigger_conditions,
         conditions: playbook.conditions,
         actions: playbook.actions,
         is_active: true,
@@ -207,6 +228,9 @@ export const PlaybooksBuilderPage = () => {
       // Reset form and reload playbooks
       setPlaybookName("");
       setDescription("");
+      setWebhookEnabled(false);
+      setWebhookUrl("");
+      setWebhookTriggerConditions({ churn_score_threshold: 0.75 });
       setConditions([{ id: "1", field: "", operator: "", value: "" }]);
       setActions([{ id: "1", type: "", value: "" }]);
       
@@ -310,10 +334,16 @@ export const PlaybooksBuilderPage = () => {
                   <PlaybookForm
                     playbookName={playbookName}
                     description={description}
+                    webhook_enabled={webhookEnabled}
+                    webhook_url={webhookUrl}
+                    webhook_trigger_conditions={webhookTriggerConditions}
                     conditions={conditions}
                     actions={actions}
                     onPlaybookNameChange={setPlaybookName}
                     onDescriptionChange={setDescription}
+                    onWebhookEnabledChange={setWebhookEnabled}
+                    onWebhookUrlChange={setWebhookUrl}
+                    onWebhookTriggerConditionsChange={setWebhookTriggerConditions}
                     onConditionsChange={setConditions}
                     onActionsChange={setActions}
                     onSave={handleSave}
@@ -384,7 +414,7 @@ export const PlaybooksBuilderPage = () => {
                 <strong>Email Action:</strong> Use notify@churnaizer.com as sender
               </div>
               <div className="bg-green-50 border border-green-200 rounded p-3">
-                <strong>Webhook:</strong> Perfect for CRM or Slack notifications
+                <strong>Webhook:</strong> Send churn data to Zapier, CRM, Slack automatically
               </div>
             </CardContent>
           </Card>

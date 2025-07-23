@@ -547,6 +547,9 @@ export type Database = {
           name: string
           updated_at: string
           user_id: string
+          webhook_enabled: boolean | null
+          webhook_trigger_conditions: Json | null
+          webhook_url: string | null
         }
         Insert: {
           actions?: Json
@@ -558,6 +561,9 @@ export type Database = {
           name: string
           updated_at?: string
           user_id: string
+          webhook_enabled?: boolean | null
+          webhook_trigger_conditions?: Json | null
+          webhook_url?: string | null
         }
         Update: {
           actions?: Json
@@ -569,6 +575,9 @@ export type Database = {
           name?: string
           updated_at?: string
           user_id?: string
+          webhook_enabled?: boolean | null
+          webhook_trigger_conditions?: Json | null
+          webhook_url?: string | null
         }
         Relationships: []
       }
@@ -780,6 +789,56 @@ export type Database = {
           user_stage?: string | null
         }
         Relationships: []
+      }
+      webhook_logs: {
+        Row: {
+          error_message: string | null
+          id: string
+          payload: Json
+          playbook_id: string | null
+          response_body: string | null
+          response_status: number | null
+          success: boolean | null
+          target_user_id: string
+          triggered_at: string
+          user_id: string
+          webhook_url: string
+        }
+        Insert: {
+          error_message?: string | null
+          id?: string
+          payload: Json
+          playbook_id?: string | null
+          response_body?: string | null
+          response_status?: number | null
+          success?: boolean | null
+          target_user_id: string
+          triggered_at?: string
+          user_id: string
+          webhook_url: string
+        }
+        Update: {
+          error_message?: string | null
+          id?: string
+          payload?: Json
+          playbook_id?: string | null
+          response_body?: string | null
+          response_status?: number | null
+          success?: boolean | null
+          target_user_id?: string
+          triggered_at?: string
+          user_id?: string
+          webhook_url?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "webhook_logs_playbook_id_fkey"
+            columns: ["playbook_id"]
+            isOneToOne: false
+            referencedRelation: "playbooks"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       weekly_reports: {
         Row: {

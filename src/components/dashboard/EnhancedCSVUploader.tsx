@@ -2,6 +2,7 @@ import { useState, useRef, useCallback } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
+import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Upload, FileText, CheckCircle, AlertCircle, Download } from "lucide-react";
@@ -386,23 +387,25 @@ const EnhancedCSVUploader = ({ open, onOpenChange, onUploadComplete }: EnhancedC
             message: `Processing ${row.customer_name || `User ${index + 1}`} (${index + 1}/${totalRows})`
           });
 
-          // Send individual prediction request
-          const predictionResponse = await fetch('https://api.churnaizer.com/predict', {
+          // Send individual prediction request to correct API
+          const predictionResponse = await fetch('https://ai-model-rumc.onrender.com/predict', {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
-              'X-API-Key': 'your-api-key', // This should come from user settings
+              'Authorization': `Bearer ${localStorage.getItem('churnaizer_api_key') || 'demo-key'}`,
             },
             body: JSON.stringify({
-              days_since_signup: row.days_since_signup,
-              monthly_revenue: row.monthly_revenue || 0,
-              plan: row.plan,
-              last_login_days_ago: row.last_login_days_ago,
-              number_of_logins_last30days: row.number_of_logins_last30days || 10,
-              active_features_used: row.active_features_used || 1,
-              support_tickets_opened: row.support_tickets_opened || 0,
-              billing_status: row.billing_status,
-              email_opens_last30days: row.email_opens_last30days || 5
+              customer_name: row.customer_name || row.user_id || `Customer ${index + 1}`,
+              customer_email: row.customer_email || row.email || `user${index}@example.com`,
+              signup_date: row.signup_date,
+              last_active_date: row.last_login_date || row.last_active_date,
+              plan: row.subscription_plan || row.plan || 'Free',
+              billing_status: row.payment_status || row.billing_status || 'Active',
+              monthly_revenue: parseFloat(row.monthly_revenue) || 0,
+              active_features_used: parseInt(row.active_features_used) || 1,
+              support_tickets_opened: parseInt(row.support_tickets_opened) || 0,
+              email_opens_last30days: parseInt(row.email_opens_last30days) || 5,
+              number_of_logins_last30days: parseInt(row.number_of_logins_last30days) || 10
             })
           });
 
@@ -610,6 +613,24 @@ const EnhancedCSVUploader = ({ open, onOpenChange, onUploadComplete }: EnhancedC
                   <Download className="h-4 w-4 mr-2" />
                   Download Template
                 </Button>
+              </div>
+
+              {/* API Key Input */}
+              <div className="p-4 bg-muted/30 rounded-lg space-y-2">
+                <Label htmlFor="api-key">API Key (Required for predictions)</Label>
+                <input
+                  id="api-key"
+                  type="password"
+                  placeholder="Enter your AI model API key..."
+                  className="w-full p-2 border rounded-md"
+                  defaultValue={localStorage.getItem('churnaizer_api_key') || ''}
+                  onChange={(e) => {
+                    localStorage.setItem('churnaizer_api_key', e.target.value);
+                  }}
+                />
+                <p className="text-xs text-muted-foreground">
+                  🔒 Stored locally for this session. Get your API key from the AI model provider.
+                </p>
               </div>
               
               {/* Drag & Drop Area */}

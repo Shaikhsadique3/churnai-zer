@@ -11,7 +11,7 @@
 
   // SDK Configuration
   const SDK_VERSION = '1.0.0';
-  const AI_MODEL_ENDPOINT = 'https://ai-model-rumc.onrender.com/api/v1/predict';
+  const AI_MODEL_ENDPOINT = 'https://ai-model-rumc.onrender.com/predict';
   const SYNC_ENDPOINT = 'https://churnaizer.com/api/sync';
   
   // Utility functions

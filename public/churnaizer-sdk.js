@@ -11,7 +11,7 @@
 
   // SDK Configuration
   const SDK_VERSION = '1.0.0';
-  const DEFAULT_ENDPOINT = 'https://churnaizer.com/api/track';
+  const DEFAULT_ENDPOINT = 'https://ntbkydpgjaswmwruegyl.supabase.co/functions/v1/track';
   
   // Utility functions
   function validateUserData(userData) {

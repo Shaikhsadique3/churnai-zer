@@ -11,7 +11,8 @@
 
   // SDK Configuration
   const SDK_VERSION = '1.0.0';
-  const DEFAULT_ENDPOINT = 'https://ntbkydpgjaswmwruegyl.supabase.co/functions/v1/track';
+  const AI_MODEL_ENDPOINT = 'https://ai-model-rumc.onrender.com/api/v1/predict';
+  const SYNC_ENDPOINT = 'https://churnaizer.com/api/sync';
   
   // Utility functions
   function validateUserData(userData) {
@@ -85,10 +86,17 @@
      * @param {Function} callback - Optional callback function
      * @param {Object} options - Optional configuration
      */
-    track: function (userData, apiKey, callback, options) {
-      // Input validation
+    track: async function (userData, apiKey, callback, options) {
+      // Enhanced input validation
       if (!userData || typeof userData !== 'object') {
         const error = new Error('🛑 Churnaizer SDK: Invalid user data provided');
+        console.error(error.message);
+        if (typeof callback === 'function') callback(null, error);
+        return Promise.reject(error);
+      }
+
+      if (!userData.user_id || typeof userData.user_id !== 'string') {
+        const error = new Error('🛑 Churnaizer SDK: user_id is required and must be a string');
         console.error(error.message);
         if (typeof callback === 'function') callback(null, error);
         return Promise.reject(error);
@@ -103,9 +111,9 @@
 
       // Options with defaults
       const config = {
-        endpoint: DEFAULT_ENDPOINT,
         logging: true,
-        timeout: 30000,
+        timeout: 5000,
+        retries: 2,
         ...options
       };
 
@@ -122,64 +130,123 @@
         console.log('🔁 Churnaizer: Sending prediction request for user:', userData.user_id);
       }
 
-      // Create the request
-      const requestOptions = {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im50Ymt5ZHBnamFzd213cnVlZ3lsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDQyODg1MTEsImV4cCI6MjA1OTg2NDUxMX0.09ZDj0fLWEEh3oi0Bwcen_xr2Gyw2aAyCerGfMsHNfE',
-          'X-API-Key': apiKey,
-          'X-SDK-Version': SDK_VERSION,
-          'User-Agent': `Churnaizer-SDK/${SDK_VERSION}`
-        },
-        body: JSON.stringify(userData)
-      };
+      // Retry function with exponential backoff
+      async function retryFetch(url, options, retries = config.retries) {
+        for (let i = 0; i <= retries; i++) {
+          try {
+            const controller = new AbortController();
+            const timeout = setTimeout(() => controller.abort(), config.timeout);
+            
+            const response = await fetch(url, {
+              ...options,
+              signal: controller.signal
+            });
+            
+            clearTimeout(timeout);
 
-      // Add timeout support
-      const timeoutPromise = new Promise((_, reject) => {
-        setTimeout(() => reject(new Error('Request timeout')), config.timeout);
-      });
-
-      const fetchPromise = fetch(config.endpoint, requestOptions)
-        .then(response => {
-          if (!response.ok) {
-            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-          }
-          return response.json();
-        })
-        .then(data => {
-          if (config.logging) {
-            console.log('✅ Churnaizer: Prediction received for user:', userData.user_id);
-          }
-
-          // Handle batch response (array) or single response
-          if (Array.isArray(data.results)) {
-            // Batch response - find the result for this user
-            const userResult = data.results.find(r => r.user_id === userData.user_id);
-            if (userResult && userResult.status === 'ok') {
-              const result = createResult(userResult);
-              const analyzedResult = analyzeUserLifecycle(userData, result);
-              if (typeof callback === 'function') callback(analyzedResult, null);
-              return analyzedResult;
-            } else {
-              throw new Error(userResult ? userResult.error : 'User not found in batch response');
+            // Check content type to prevent HTML parsing errors
+            const contentType = response.headers.get('content-type');
+            if (!contentType || !contentType.includes('application/json')) {
+              throw new Error(`Invalid response type: ${contentType}. Expected JSON but received HTML or other format.`);
             }
-          } else {
-            // Single response
-            const result = createResult(data);
-            const analyzedResult = analyzeUserLifecycle(userData, result);
-            if (typeof callback === 'function') callback(analyzedResult, null);
-            return analyzedResult;
+
+            if (!response.ok) {
+              throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            }
+
+            const data = await response.json();
+            return data;
+          } catch (error) {
+            if (i === retries) throw error;
+            
+            // Exponential backoff
+            const delay = Math.pow(2, i) * 1000;
+            if (config.logging) {
+              console.warn(`⚠️ Churnaizer: Retry ${i + 1}/${retries + 1} in ${delay}ms. Error:`, error.message);
+            }
+            await new Promise(resolve => setTimeout(resolve, delay));
           }
-        })
-        .catch(error => {
-          const errorMsg = `❌ Churnaizer SDK Error: ${error.message}`;
-          console.error(errorMsg);
-          if (typeof callback === 'function') callback(null, error);
-          throw error;
+        }
+      }
+
+      try {
+        // Step 1: Send data to AI model to get churn prediction
+        const aiData = await retryFetch(AI_MODEL_ENDPOINT, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-API-Key': apiKey,
+            'X-SDK-Version': SDK_VERSION,
+            'User-Agent': `Churnaizer-SDK/${SDK_VERSION}`
+          },
+          body: JSON.stringify(userData)
         });
 
-      return Promise.race([fetchPromise, timeoutPromise]);
+        if (config.logging) {
+          console.log('✅ Churnaizer: AI prediction received for user:', userData.user_id);
+        }
+
+        // Extract data from AI response (handle different response formats)
+        const churn_score = aiData.churn_probability || aiData.churn_score || 0;
+        const churn_reason = aiData.reason || aiData.churn_reason || 'No reason provided';
+        const insight = aiData.message || aiData.insight || '';
+        const understanding_score = aiData.understanding_score || 0;
+
+        const result = {
+          churn_score,
+          churn_reason,
+          insight,
+          understanding_score,
+          user_id: userData.user_id,
+          risk_level: churn_score >= 0.7 ? 'high' : churn_score >= 0.4 ? 'medium' : 'low',
+          sdk_version: SDK_VERSION,
+          timestamp: new Date().toISOString()
+        };
+
+        // Step 2: Sync this data with Churnaizer backend (fire and forget)
+        try {
+          fetch(SYNC_ENDPOINT, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'X-API-Key': apiKey,
+              'X-SDK-Version': SDK_VERSION
+            },
+            body: JSON.stringify({
+              ...userData,
+              ...result
+            })
+          }).catch(syncError => {
+            if (config.logging) {
+              console.warn('⚠️ Churnaizer: Sync to dashboard failed (non-critical):', syncError.message);
+            }
+          });
+        } catch (syncError) {
+          // Sync failure is non-critical, don't block the main response
+          if (config.logging) {
+            console.warn('⚠️ Churnaizer: Sync to dashboard failed (non-critical):', syncError.message);
+          }
+        }
+
+        // Step 3: Analyze and return result
+        const analyzedResult = analyzeUserLifecycle(userData, result);
+        
+        if (typeof callback === 'function') {
+          callback(analyzedResult, null);
+        }
+        
+        return analyzedResult;
+
+      } catch (error) {
+        const errorMsg = `❌ Churnaizer SDK Error: ${error.message}`;
+        console.error(errorMsg);
+        
+        if (typeof callback === 'function') {
+          callback(null, error);
+        }
+        
+        throw error;
+      }
     },
 
     /**

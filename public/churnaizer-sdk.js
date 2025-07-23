@@ -127,7 +127,9 @@
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im50Ymt5ZHBnamFzd213cnVlZ3lsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDQyODg1MTEsImV4cCI6MjA1OTg2NDUxMX0.09ZDj0fLWEEh3oi0Bwcen_xr2Gyw2aAyCerGfMsHNfE',
           'X-API-Key': apiKey,
+          'X-SDK-Version': SDK_VERSION,
           'User-Agent': `Churnaizer-SDK/${SDK_VERSION}`
         },
         body: JSON.stringify(userData)

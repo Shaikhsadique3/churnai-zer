@@ -353,7 +353,24 @@ const EnhancedCSVUploader = ({ open, onOpenChange, onUploadComplete }: EnhancedC
         transformedRow.number_of_logins_last30days = 10; // Default assumption
       }
 
-      return transformedRow;
+      // Transform field names to match API expectations
+      const apiFormattedRow = {
+        user_id: transformedRow.customer_name || transformedRow.customer_email || `user_${Date.now()}_${Math.random()}`,
+        email: transformedRow.customer_email || transformedRow.email,
+        support_tickets: transformedRow.support_tickets_opened || transformedRow.support_tickets || 0,
+        usage_score: transformedRow.active_features_used || transformedRow.usage_score || 0,
+        monthly_revenue: transformedRow.monthly_revenue || 0,
+        signup_date: transformedRow.signup_date,
+        last_active_date: transformedRow.last_active_date || transformedRow.last_login_date,
+        plan: transformedRow.plan,
+        billing_status: transformedRow.billing_status,
+        email_opens_last30days: transformedRow.email_opens_last30days || 0,
+        number_of_logins_last30days: transformedRow.number_of_logins_last30days || 10,
+        days_since_signup: transformedRow.days_since_signup,
+        last_login_days_ago: transformedRow.last_login_days_ago
+      };
+
+      return apiFormattedRow;
     });
   };
 
@@ -379,17 +396,17 @@ const EnhancedCSVUploader = ({ open, onOpenChange, onUploadComplete }: EnhancedC
 
       // Process batch with the secure API
       try {
-        // Prepare all customer data for batch processing
+        // Use the API-formatted data directly since transformedData already contains the correct field names
         const customersData: CustomerData[] = transformedData.map((row, index) => ({
-          customer_name: row.customer_name || row.user_id || `Customer ${index + 1}`,
-          customer_email: row.customer_email || row.email || `user${index}@example.com`,
+          customer_name: row.user_id || `Customer ${index + 1}`,
+          customer_email: row.email || `user${index}@example.com`,
           signup_date: row.signup_date,
-          last_active_date: row.last_login_date || row.last_active_date,
-          plan: row.subscription_plan || row.plan || 'Free',
-          billing_status: row.payment_status || row.billing_status || 'Active',
+          last_active_date: row.last_active_date,
+          plan: row.plan || 'Free',
+          billing_status: row.billing_status || 'Active',
           monthly_revenue: parseFloat(row.monthly_revenue) || 0,
-          active_features_used: parseInt(row.active_features_used) || 1,
-          support_tickets_opened: parseInt(row.support_tickets_opened) || 0,
+          active_features_used: parseInt(row.usage_score) || 1,
+          support_tickets_opened: parseInt(row.support_tickets) || 0,
           email_opens_last30days: parseInt(row.email_opens_last30days) || 5,
           number_of_logins_last30days: parseInt(row.number_of_logins_last30days) || 10
         }));

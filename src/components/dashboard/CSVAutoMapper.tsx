@@ -111,24 +111,24 @@ const CSVAutoMapper = ({ csvHeaders, csvPreview, onMappingConfirmed, onCancel, s
     });
 
     setMapping(prev => ({ ...prev, ...suggestions }));
-    toast({
-      title: "Auto-mapping applied",
-      description: `Suggested ${Object.keys(suggestions).length} field mappings based on column names.`,
-    });
+    // Only show toast when manually triggered
+    if (Object.keys(suggestions).length > 0) {
+      toast({
+        title: "Smart mapping applied",
+        description: `Mapped ${Object.keys(suggestions).length} fields automatically.`,
+      });
+    }
   };
 
-  // Load saved mappings on mount
+  // Load saved mappings on mount (only once)
   useEffect(() => {
     if (savedMappings) {
       setMapping(savedMappings);
-      toast({
-        title: "Previous mappings loaded",
-        description: "Using your last saved column mappings.",
-      });
+      // Show subtle indicator instead of disruptive toast
     } else {
       autoSuggestMapping();
     }
-  }, [csvHeaders, savedMappings]);
+  }, []); // Remove dependencies to prevent repeated execution
 
   // Validate mapping
   useEffect(() => {
@@ -163,9 +163,14 @@ const CSVAutoMapper = ({ csvHeaders, csvPreview, onMappingConfirmed, onCancel, s
           <CardTitle className="flex items-center gap-2">
             <RefreshCw className="h-5 w-5" />
             Map Your CSV Columns
+            {savedMappings && (
+              <Badge variant="outline" className="ml-2 text-xs bg-green-50 text-green-700 border-green-200">
+                Previous mappings loaded
+              </Badge>
+            )}
           </CardTitle>
           <p className="text-sm text-muted-foreground">
-            Match your CSV columns to the required fields. We've auto-suggested mappings based on your column names.
+            Match your CSV columns to the required fields. Smart mapping has been applied automatically.
           </p>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -176,8 +181,11 @@ const CSVAutoMapper = ({ csvHeaders, csvPreview, onMappingConfirmed, onCancel, s
               onClick={autoSuggestMapping}
             >
               <RefreshCw className="h-4 w-4 mr-2" />
-              Auto-Suggest Again
+              Re-map Columns
             </Button>
+            <div className="text-xs text-muted-foreground flex items-center">
+              {Object.values(mapping).filter(v => v).length} of {REQUIRED_FIELDS.length + OPTIONAL_FIELDS.length} fields mapped
+            </div>
           </div>
 
           {/* Required Fields */}

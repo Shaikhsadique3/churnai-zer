@@ -556,21 +556,49 @@ const EnhancedCSVUploader = ({ open, onOpenChange, onUploadComplete }: EnhancedC
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <FileText className="h-5 w-5 text-primary" />
-            Smart CSV Upload & Auto-Mapping
+            {uploadStage.stage === 'upload' && 'CSV Upload & Processing'}
+            {uploadStage.stage === 'mapping' && 'Column Mapping & Validation'}
+            {uploadStage.stage === 'processing' && 'Processing Your Data'}
+            {uploadStage.stage === 'success' && 'Upload Complete'}
+            {uploadStage.stage === 'error' && 'Upload Failed'}
           </DialogTitle>
           <DialogDescription>
-            Upload any CSV format and we'll help you map it to the right fields for churn analysis.
+            {uploadStage.stage === 'upload' && 'Upload any CSV format and we\'ll help you map it to the right fields for churn analysis.'}
+            {uploadStage.stage === 'mapping' && 'Smart mapping detected your columns. Verify the mappings below.'}
+            {uploadStage.stage === 'processing' && 'Analyzing your data and generating churn predictions...'}
+            {uploadStage.stage === 'success' && 'Your data has been processed successfully. View the results below.'}
+            {uploadStage.stage === 'error' && 'There was an issue processing your data. Please review the details below.'}
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-6">
           {/* Progress indicator */}
-          <div className="space-y-2">
+          <div className="space-y-3">
             <div className="flex justify-between text-sm">
-              <span>{uploadStage.message}</span>
-              <span>{uploadStage.progress}%</span>
+              <span className="font-medium">{uploadStage.message}</span>
+              <span className="text-muted-foreground">{uploadStage.progress}%</span>
             </div>
-            <Progress value={uploadStage.progress} className="w-full" />
+            <Progress value={uploadStage.progress} className="w-full h-2" />
+            
+            {/* Stage indicators */}
+            <div className="flex items-center justify-between text-xs">
+              <div className={`flex items-center gap-1 ${uploadStage.stage === 'upload' ? 'text-primary font-medium' : 'text-muted-foreground'}`}>
+                <div className={`w-2 h-2 rounded-full ${uploadStage.progress >= 20 ? 'bg-primary' : 'bg-muted'}`} />
+                Upload
+              </div>
+              <div className={`flex items-center gap-1 ${uploadStage.stage === 'mapping' ? 'text-primary font-medium' : 'text-muted-foreground'}`}>
+                <div className={`w-2 h-2 rounded-full ${uploadStage.progress >= 40 ? 'bg-primary' : 'bg-muted'}`} />
+                Mapping
+              </div>
+              <div className={`flex items-center gap-1 ${uploadStage.stage === 'processing' ? 'text-primary font-medium' : 'text-muted-foreground'}`}>
+                <div className={`w-2 h-2 rounded-full ${uploadStage.progress >= 70 ? 'bg-primary' : 'bg-muted'}`} />
+                Processing
+              </div>
+              <div className={`flex items-center gap-1 ${uploadStage.stage === 'success' ? 'text-green-600 font-medium' : 'text-muted-foreground'}`}>
+                <div className={`w-2 h-2 rounded-full ${uploadStage.progress === 100 ? 'bg-green-600' : 'bg-muted'}`} />
+                Complete
+              </div>
+            </div>
           </div>
 
           {/* Stage-based content */}
@@ -606,9 +634,10 @@ const EnhancedCSVUploader = ({ open, onOpenChange, onUploadComplete }: EnhancedC
                 >
                   Choose File
                 </Button>
-                <p className="text-xs text-muted-foreground mt-4">
-                  Supports any CSV format • Maximum 5MB • Common formats: CRM exports, Stripe data, etc.
-                </p>
+                <div className="text-xs text-muted-foreground mt-4 space-y-1">
+                  <p>✓ Any CSV format • Max 5MB • Auto-detects columns</p>
+                  <p>📊 Common sources: CRM exports, Stripe data, analytics tools</p>
+                </div>
               </div>
             </div>
           )}

@@ -1,5 +1,6 @@
 import React from 'react';
 import { UploadedUsersTable } from "@/components/dashboard/UploadedUsersTable";
+import { ChurnDashboardTest } from "@/components/dashboard/ChurnDashboardTest";
 
 export const UploadedUsersPage = () => {
   return (
@@ -11,6 +12,9 @@ export const UploadedUsersPage = () => {
       </div>
 
       <UploadedUsersTable />
+      
+      {/* Backend Testing Component */}
+      <ChurnDashboardTest />
     </div>
   );
 };

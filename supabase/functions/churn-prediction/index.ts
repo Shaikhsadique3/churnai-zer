@@ -54,13 +54,28 @@ serve(async (req) => {
         try {
           console.log(`📊 Processing customer ${i + 1}/${customerData.length}: ${customer.customer_name || customer.customer_email}`);
 
+          // Transform data to match API requirements
+          const transformedData = {
+            user_id: customer.customer_name || customer.customer_email || `user_${Date.now()}_${i}`,
+            email: customer.customer_email || customer.email,
+            support_tickets: customer.support_tickets_opened || customer.support_tickets || 0,
+            usage_score: customer.active_features_used || customer.usage_score || 0,
+            monthly_revenue: customer.monthly_revenue || 0,
+            signup_date: customer.signup_date,
+            last_active_date: customer.last_active_date || customer.last_login_date,
+            plan: customer.plan,
+            billing_status: customer.billing_status,
+            email_opens_last30days: customer.email_opens_last30days || 0,
+            number_of_logins_last30days: customer.number_of_logins_last30days || 10
+          };
+
           const response = await fetch('https://ai-model-rumc.onrender.com/api/v1/predict', {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
               'Authorization': `Bearer ${churnApiKey}`,
             },
-            body: JSON.stringify(customer)
+            body: JSON.stringify(transformedData)
           });
 
           if (!response.ok) {
@@ -112,13 +127,28 @@ serve(async (req) => {
       // Handle single prediction
       console.log(`📊 Processing single prediction for: ${customerData.customer_name || customerData.customer_email}`);
 
+      // Transform data to match API requirements
+      const transformedData = {
+        user_id: customerData.customer_name || customerData.customer_email || `user_${Date.now()}`,
+        email: customerData.customer_email || customerData.email,
+        support_tickets: customerData.support_tickets_opened || customerData.support_tickets || 0,
+        usage_score: customerData.active_features_used || customerData.usage_score || 0,
+        monthly_revenue: customerData.monthly_revenue || 0,
+        signup_date: customerData.signup_date,
+        last_active_date: customerData.last_active_date || customerData.last_login_date,
+        plan: customerData.plan,
+        billing_status: customerData.billing_status,
+        email_opens_last30days: customerData.email_opens_last30days || 0,
+        number_of_logins_last30days: customerData.number_of_logins_last30days || 10
+      };
+
       const response = await fetch('https://ai-model-rumc.onrender.com/api/v1/predict', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${churnApiKey}`,
         },
-        body: JSON.stringify(customerData)
+        body: JSON.stringify(transformedData)
       });
 
       if (!response.ok) {

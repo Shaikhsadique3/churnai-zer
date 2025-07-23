@@ -94,7 +94,7 @@ export async function predictChurnBatch(customersData: CustomerData[]): Promise<
 export async function testChurnApiConnection(): Promise<{ connected: boolean; message: string }> {
   const testData: CustomerData = {
     customer_name: "Test Customer",
-    customer_email: "test@example.com",
+    customer_email: "test@example.com", 
     signup_date: "2023-01-01",
     last_active_date: "2024-01-01",
     plan: "Pro",

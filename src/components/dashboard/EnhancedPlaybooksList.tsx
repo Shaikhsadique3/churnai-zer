@@ -55,15 +55,37 @@ export const EnhancedPlaybooksList: React.FC<EnhancedPlaybooksListProps> = ({
     try {
       setLoadingLogs(true);
       
-      // Load logs from localStorage
-      const savedLogs = JSON.parse(localStorage.getItem('playbook_logs') || '[]');
-      
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return;
+
+      let query = supabase
+        .from('playbook_audit_log')
+        .select('*')
+        .eq('user_id', session.user.id)
+        .order('executed_at', { ascending: false });
+
       if (playbookId) {
-        const filteredLogs = savedLogs.filter((log: any) => log.playbook_id === playbookId);
-        setLogs(filteredLogs);
-      } else {
-        setLogs(savedLogs);
+        query = query.eq('playbook_id', playbookId);
       }
+
+      const { data, error } = await query.limit(50);
+
+      if (error) {
+        console.error('Error loading logs:', error);
+        return;
+      }
+
+      // Transform data to match the expected interface
+      const transformedLogs = data.map(log => ({
+        id: log.id,
+        playbook_id: log.playbook_id || '',
+        playbook_name: playbooks.find(p => p.id === log.playbook_id)?.name || 'Unknown',
+        action_taken: log.action_type + (log.status === 'success' ? ' - Completed' : ' - Failed'),
+        triggered_at: log.executed_at,
+        status: log.status
+      }));
+
+      setLogs(transformedLogs);
     } catch (error) {
       console.error('Error loading logs:', error);
     } finally {
@@ -79,27 +101,41 @@ export const EnhancedPlaybooksList: React.FC<EnhancedPlaybooksListProps> = ({
     try {
       setRunningPlaybooks(prev => new Set([...prev, playbookId]));
       
-      // Simulate playbook execution with local data
-      await new Promise(resolve => setTimeout(resolve, 1500)); // Simulate processing time
-      
-      // Create a log entry
-      const logEntry = {
-        id: Date.now().toString(),
-        playbook_id: playbookId,
-        playbook_name: playbooks.find(p => p.id === playbookId)?.name || 'Unknown',
-        action_taken: 'Playbook executed locally',
-        triggered_at: new Date().toISOString(),
-        status: 'success'
-      };
-      
-      // Save log to localStorage
-      const existingLogs = JSON.parse(localStorage.getItem('playbook_logs') || '[]');
-      const updatedLogs = [logEntry, ...existingLogs];
-      localStorage.setItem('playbook_logs', JSON.stringify(updatedLogs));
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        toast({
+          title: "Error",
+          description: "Please log in to run playbooks.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Call the process-playbooks edge function with specific playbook ID
+      const { data, error } = await supabase.functions.invoke('process-playbooks', {
+        body: { 
+          playbook_id: playbookId,
+          user_id: session.user.id 
+        }
+      });
+
+      if (error) {
+        console.error('Error running playbook:', error);
+        toast({
+          title: "Error",
+          description: `Failed to run playbook: ${error.message}`,
+          variant: "destructive",
+        });
+        return;
+      }
+
+      const result = data || {};
+      const matchesFound = result.matches || 0;
+      const actionsQueued = result.actions_queued || 0;
 
       toast({
         title: "Success!",
-        description: `Playbook executed successfully using local logic.`,
+        description: `Playbook executed successfully. Found ${matchesFound} matches, queued ${actionsQueued} actions.`,
       });
 
       // Reload playbooks and logs

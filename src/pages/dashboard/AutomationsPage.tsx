@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 import { Link } from "react-router-dom";
+import { WebhookLogsTable } from "@/components/dashboard/WebhookLogsTable";
 import { EnhancedPlaybooksList } from "@/components/dashboard/EnhancedPlaybooksList";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -101,6 +102,9 @@ export const AutomationsPage = () => {
         onToggleStatus={handleToggleStatus}
         onReload={fetchPlaybooks}
       />
+
+      {/* Webhook Delivery Logs */}
+      <WebhookLogsTable />
     </div>
   );
 };

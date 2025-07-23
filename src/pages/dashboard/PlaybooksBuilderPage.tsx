@@ -28,11 +28,14 @@ interface Action {
 interface Playbook {
   id: string;
   name: string;
-  description?: string;
+  description?: string | null;
   is_active: boolean;
   conditions: any[];
   actions: any[];
   created_at: string;
+  webhook_enabled?: boolean;
+  webhook_url?: string | null;
+  webhook_trigger_conditions?: any;
   stats: {
     triggers_count: number;
     last_triggered: string | null;
@@ -95,19 +98,45 @@ export const PlaybooksBuilderPage = () => {
     try {
       setIsLoading(true);
       
-      // Load playbooks from localStorage
-      const savedPlaybooksData = localStorage.getItem('saved_playbooks');
-      if (savedPlaybooksData) {
-        const playbooks = JSON.parse(savedPlaybooksData);
-        setSavedPlaybooks(playbooks);
-      } else {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
         setSavedPlaybooks([]);
+        return;
       }
+
+      const { data, error } = await supabase
+        .from('playbooks')
+        .select('*')
+        .eq('user_id', session.user.id)
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('Error loading playbooks:', error);
+        toast({
+          title: "Error",
+          description: "Failed to load playbooks from database.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Transform data to match local format
+      const transformedPlaybooks = data.map(playbook => ({
+        ...playbook,
+        conditions: Array.isArray(playbook.conditions) ? playbook.conditions : [],
+        actions: Array.isArray(playbook.actions) ? playbook.actions : [],
+        stats: {
+          triggers_count: 0,
+          last_triggered: null
+        }
+      }));
+
+      setSavedPlaybooks(transformedPlaybooks as Playbook[]);
     } catch (error) {
       console.error('Error loading playbooks:', error);
       toast({
         title: "Error",
-        description: "Failed to load playbooks from local storage.",
+        description: "Failed to load playbooks from database.",
         variant: "destructive",
       });
     } finally {
@@ -117,11 +146,24 @@ export const PlaybooksBuilderPage = () => {
 
   const togglePlaybookStatus = async (playbookId: string, newStatus: boolean) => {
     try {
-      const existingPlaybooks = JSON.parse(localStorage.getItem('saved_playbooks') || '[]');
-      const updatedPlaybooks = existingPlaybooks.map((playbook: any) => 
-        playbook.id === playbookId ? { ...playbook, is_active: newStatus } : playbook
-      );
-      localStorage.setItem('saved_playbooks', JSON.stringify(updatedPlaybooks));
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return;
+
+      const { error } = await supabase
+        .from('playbooks')
+        .update({ is_active: newStatus })
+        .eq('id', playbookId)
+        .eq('user_id', session.user.id);
+
+      if (error) {
+        console.error('Error updating playbook status:', error);
+        toast({
+          title: "Error",
+          description: "Failed to update playbook status.",
+          variant: "destructive",
+        });
+        return;
+      }
 
       // Reload playbooks to reflect changes
       loadPlaybooks();
@@ -196,30 +238,41 @@ export const PlaybooksBuilderPage = () => {
     console.log("Saving playbook:", playbook);
 
     try {
-      // Save playbook to localStorage
-      const newPlaybook = {
-        id: Date.now().toString(),
-        name: playbook.name,
-        description: playbook.description,
-        webhook_enabled: playbook.webhook_enabled,
-        webhook_url: playbook.webhook_url,
-        webhook_trigger_conditions: playbook.webhook_trigger_conditions,
-        conditions: playbook.conditions,
-        actions: playbook.actions,
-        is_active: true,
-        created_at: new Date().toISOString(),
-        stats: {
-          triggers_count: 0,
-          last_triggered: null
-        }
-      };
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        toast({
+          title: "Error",
+          description: "Please log in to save playbooks.",
+          variant: "destructive",
+        });
+        return;
+      }
 
-      const existingPlaybooks = JSON.parse(localStorage.getItem('saved_playbooks') || '[]');
-      const updatedPlaybooks = [...existingPlaybooks, newPlaybook];
-      localStorage.setItem('saved_playbooks', JSON.stringify(updatedPlaybooks));
+      // Save playbook to Supabase
+      const { error: saveError } = await supabase
+        .from('playbooks')
+        .insert({
+          user_id: session.user.id,
+          name: playbook.name,
+          description: playbook.description,
+          webhook_enabled: playbook.webhook_enabled,
+          webhook_url: playbook.webhook_url,
+          webhook_trigger_conditions: playbook.webhook_trigger_conditions as any,
+          conditions: playbook.conditions as any,
+          actions: playbook.actions as any,
+          is_active: true,
+        });
 
-      console.log('Playbook saved locally:', newPlaybook);
-      
+      if (saveError) {
+        console.error('Error saving playbook:', saveError);
+        toast({
+          title: 'Error',
+          description: 'Failed to save playbook to database.',
+          variant: 'destructive',
+        });
+        return;
+      }
+
       toast({
         title: "Success!",
         description: "Playbook saved successfully",
@@ -249,27 +302,40 @@ export const PlaybooksBuilderPage = () => {
 
   const handleJsonSave = async (jsonPlaybook: JsonPlaybook) => {
     try {
-      // Convert JsonPlaybook to local storage format
-      const newPlaybook = {
-        id: Date.now().toString(),
-        name: jsonPlaybook.title,
-        description: jsonPlaybook.description,
-        conditions: [jsonPlaybook.trigger],
-        actions: jsonPlaybook.actions.map(action => ({
-          type: action.type,
-          value: action.template_id || action.url || action.value || JSON.stringify(action.payload || {})
-        })),
-        is_active: true,
-        created_at: new Date().toISOString(),
-        stats: {
-          triggers_count: 0,
-          last_triggered: null
-        }
-      };
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        toast({
+          title: "Error",
+          description: "Please log in to save playbooks.",
+          variant: "destructive",
+        });
+        return;
+      }
 
-      const existingPlaybooks = JSON.parse(localStorage.getItem('saved_playbooks') || '[]');
-      const updatedPlaybooks = [...existingPlaybooks, newPlaybook];
-      localStorage.setItem('saved_playbooks', JSON.stringify(updatedPlaybooks));
+      // Convert JsonPlaybook to Supabase format
+      const { error: saveError } = await supabase
+        .from('playbooks')
+        .insert({
+          user_id: session.user.id,
+          name: jsonPlaybook.title,
+          description: jsonPlaybook.description,
+          conditions: [jsonPlaybook.trigger] as any,
+          actions: jsonPlaybook.actions.map(action => ({
+            type: action.type,
+            value: action.template_id || action.url || action.value || JSON.stringify(action.payload || {})
+          })) as any,
+          is_active: true,
+        });
+
+      if (saveError) {
+        console.error('Error saving JSON playbook:', saveError);
+        toast({
+          title: "Error",
+          description: "Failed to save playbook to database.",
+          variant: "destructive",
+        });
+        return;
+      }
 
       toast({
         title: "Success!",

@@ -18,11 +18,14 @@ interface PlaybookLog {
 interface Playbook {
   id: string;
   name: string;
-  description?: string;
+  description?: string | null;
   is_active: boolean;
   conditions: any[];
   actions: any[];
   created_at: string;
+  webhook_enabled?: boolean;
+  webhook_url?: string | null;
+  webhook_trigger_conditions?: any;
   stats: {
     triggers_count: number;
     last_triggered: string | null;
@@ -121,23 +124,39 @@ export const EnhancedPlaybooksList: React.FC<EnhancedPlaybooksListProps> = ({
 
   const clonePlaybook = async (playbook: Playbook) => {
     try {
-      const clonedPlaybook = {
-        id: Date.now().toString(),
-        name: `${playbook.name} (Copy)`,
-        description: playbook.description,
-        conditions: playbook.conditions,
-        actions: playbook.actions,
-        is_active: true,
-        created_at: new Date().toISOString(),
-        stats: {
-          triggers_count: 0,
-          last_triggered: null
-        }
-      };
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        toast({
+          title: "Error",
+          description: "Please log in to clone playbooks.",
+          variant: "destructive",
+        });
+        return;
+      }
 
-      const existingPlaybooks = JSON.parse(localStorage.getItem('saved_playbooks') || '[]');
-      const updatedPlaybooks = [...existingPlaybooks, clonedPlaybook];
-      localStorage.setItem('saved_playbooks', JSON.stringify(updatedPlaybooks));
+      const { error } = await supabase
+        .from('playbooks')
+        .insert({
+          user_id: session.user.id,
+          name: `${playbook.name} (Copy)`,
+          description: playbook.description,
+          conditions: playbook.conditions as any,
+          actions: playbook.actions as any,
+          is_active: true,
+          webhook_enabled: playbook.webhook_enabled || false,
+          webhook_url: playbook.webhook_url,
+          webhook_trigger_conditions: playbook.webhook_trigger_conditions as any,
+        });
+
+      if (error) {
+        console.error('Error cloning playbook:', error);
+        toast({
+          title: "Error",
+          description: "Failed to clone playbook to database.",
+          variant: "destructive",
+        });
+        return;
+      }
 
       toast({
         title: "Success!",
@@ -157,14 +176,31 @@ export const EnhancedPlaybooksList: React.FC<EnhancedPlaybooksListProps> = ({
 
   const deletePlaybook = async (playbookId: string) => {
     try {
-      const existingPlaybooks = JSON.parse(localStorage.getItem('saved_playbooks') || '[]');
-      const updatedPlaybooks = existingPlaybooks.filter((playbook: any) => playbook.id !== playbookId);
-      localStorage.setItem('saved_playbooks', JSON.stringify(updatedPlaybooks));
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        toast({
+          title: "Error",
+          description: "Please log in to delete playbooks.",
+          variant: "destructive",
+        });
+        return;
+      }
 
-      // Also delete related logs
-      const existingLogs = JSON.parse(localStorage.getItem('playbook_logs') || '[]');
-      const updatedLogs = existingLogs.filter((log: any) => log.playbook_id !== playbookId);
-      localStorage.setItem('playbook_logs', JSON.stringify(updatedLogs));
+      const { error } = await supabase
+        .from('playbooks')
+        .delete()
+        .eq('id', playbookId)
+        .eq('user_id', session.user.id);
+
+      if (error) {
+        console.error('Error deleting playbook:', error);
+        toast({
+          title: "Error",
+          description: "Failed to delete playbook from database.",
+          variant: "destructive",
+        });
+        return;
+      }
 
       toast({
         title: "Success!",
@@ -174,6 +210,11 @@ export const EnhancedPlaybooksList: React.FC<EnhancedPlaybooksListProps> = ({
       onReload();
     } catch (error) {
       console.error('Error deleting playbook:', error);
+      toast({
+        title: "Error",
+        description: "Failed to delete playbook.",
+        variant: "destructive",
+      });
     }
   };
 

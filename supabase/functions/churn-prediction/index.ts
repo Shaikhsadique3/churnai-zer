@@ -54,7 +54,7 @@ serve(async (req) => {
         try {
           console.log(`📊 Processing customer ${i + 1}/${customerData.length}: ${customer.customer_name || customer.customer_email}`);
 
-          const response = await fetch('https://ai-model-rumc.onrender.com/api/predict', {
+          const response = await fetch('https://ai-model-rumc.onrender.com/api/v1/predict', {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
@@ -112,7 +112,7 @@ serve(async (req) => {
       // Handle single prediction
       console.log(`📊 Processing single prediction for: ${customerData.customer_name || customerData.customer_email}`);
 
-      const response = await fetch('https://ai-model-rumc.onrender.com/api/predict', {
+      const response = await fetch('https://ai-model-rumc.onrender.com/api/v1/predict', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

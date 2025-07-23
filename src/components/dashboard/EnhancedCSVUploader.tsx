@@ -9,6 +9,7 @@ import { Upload, FileText, CheckCircle, AlertCircle, Download } from "lucide-rea
 import Papa from "papaparse";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import CSVAutoMapper, { ColumnMapping } from "./CSVAutoMapper";
+import { predictChurnBatch, type CustomerData } from "@/lib/churnApi";
 
 interface EnhancedCSVUploaderProps {
   open: boolean;
@@ -376,77 +377,93 @@ const EnhancedCSVUploader = ({ open, onOpenChange, onUploadComplete }: EnhancedC
         throw new Error('Not authenticated');
       }
 
-      // Process each row with individual prediction calls
-      for (const [index, row] of transformedData.entries()) {
-        try {
-          const progress = Math.floor(10 + (index / totalRows) * 80);
-          
-          setUploadStage({
-            stage: 'processing',
-            progress,
-            message: `Processing ${row.customer_name || `User ${index + 1}`} (${index + 1}/${totalRows})`
-          });
+      // Process batch with the secure API
+      try {
+        // Prepare all customer data for batch processing
+        const customersData: CustomerData[] = transformedData.map((row, index) => ({
+          customer_name: row.customer_name || row.user_id || `Customer ${index + 1}`,
+          customer_email: row.customer_email || row.email || `user${index}@example.com`,
+          signup_date: row.signup_date,
+          last_active_date: row.last_login_date || row.last_active_date,
+          plan: row.subscription_plan || row.plan || 'Free',
+          billing_status: row.payment_status || row.billing_status || 'Active',
+          monthly_revenue: parseFloat(row.monthly_revenue) || 0,
+          active_features_used: parseInt(row.active_features_used) || 1,
+          support_tickets_opened: parseInt(row.support_tickets_opened) || 0,
+          email_opens_last30days: parseInt(row.email_opens_last30days) || 5,
+          number_of_logins_last30days: parseInt(row.number_of_logins_last30days) || 10
+        }));
 
-          // Send individual prediction request to correct API
-          const predictionResponse = await fetch('https://ai-model-rumc.onrender.com/predict', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${localStorage.getItem('churnaizer_api_key') || 'demo-key'}`,
-            },
-            body: JSON.stringify({
-              customer_name: row.customer_name || row.user_id || `Customer ${index + 1}`,
-              customer_email: row.customer_email || row.email || `user${index}@example.com`,
-              signup_date: row.signup_date,
-              last_active_date: row.last_login_date || row.last_active_date,
-              plan: row.subscription_plan || row.plan || 'Free',
-              billing_status: row.payment_status || row.billing_status || 'Active',
-              monthly_revenue: parseFloat(row.monthly_revenue) || 0,
-              active_features_used: parseInt(row.active_features_used) || 1,
-              support_tickets_opened: parseInt(row.support_tickets_opened) || 0,
-              email_opens_last30days: parseInt(row.email_opens_last30days) || 5,
-              number_of_logins_last30days: parseInt(row.number_of_logins_last30days) || 10
-            })
-          });
+        setUploadStage({
+          stage: 'processing',
+          progress: 30,
+          message: `Sending batch prediction request for ${customersData.length} customers...`
+        });
 
-          let predictionResult;
-          if (predictionResponse.ok) {
-            predictionResult = await predictionResponse.json();
-          } else {
-            // Fallback prediction if API fails
-            predictionResult = {
-              churn_probability: Math.random() * 0.5 + 0.2, // Random between 0.2-0.7
-              reason: 'Fallback prediction - API unavailable',
-              risk_level: 'medium'
+        // Call the batch prediction API
+        const batchResult = await predictChurnBatch(customersData);
+
+        setUploadStage({
+          stage: 'processing',
+          progress: 70,
+          message: `Processing prediction results...`
+        });
+
+        if (batchResult.success && batchResult.results) {
+          // Process successful predictions
+          for (const [index, result] of batchResult.results.entries()) {
+            const customerData = customersData[index];
+            
+            const enrichedRow = {
+              user_id: customerData.customer_email,
+              customer_name: customerData.customer_name,
+              customer_email: customerData.customer_email,
+              signup_date: customerData.signup_date,
+              last_active_date: customerData.last_active_date,
+              subscription_plan: customerData.plan,
+              monthly_revenue: customerData.monthly_revenue,
+              active_features_used: customerData.active_features_used,
+              support_tickets_opened: customerData.support_tickets_opened,
+              payment_status: customerData.billing_status,
+              email_opens_last30days: customerData.email_opens_last30days,
+              billing_issue_count: 0,
+              number_of_logins_last30days: customerData.number_of_logins_last30days,
+              churn_score: result.churn_score,
+              churn_reason: result.churn_reason,
+              risk_level: result.risk_level,
+              insight: result.insight,
+              owner_id: session.user.id,
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString()
             };
+
+            try {
+              const { error: insertError } = await supabase
+                .from('user_data')
+                .upsert(enrichedRow, { onConflict: 'owner_id,user_id' });
+
+              if (insertError) {
+                console.error('Supabase insert error:', insertError);
+                failedCount++;
+              } else {
+                processedUsers.push(enrichedRow);
+                processedCount++;
+              }
+            } catch (dbError) {
+              console.error(`Database error for customer ${index + 1}:`, dbError);
+              failedCount++;
+            }
           }
 
-          // Store prediction in Supabase
-          const enrichedRow = {
-            ...row,
-            user_id: row.user_id || row.customer_email,
-            churn_score: predictionResult.churn_probability || 0.3,
-            churn_reason: predictionResult.reason || 'Behavioral pattern analysis',
-            risk_level: predictionResult.risk_level || 'medium',
-            owner_id: session.user.id
-          };
-
-          const { error: insertError } = await supabase
-            .from('user_data')
-            .upsert(enrichedRow, { onConflict: 'owner_id,user_id' });
-
-          if (insertError) {
-            console.error('Supabase insert error:', insertError);
-            failedCount++;
-          } else {
-            processedUsers.push(enrichedRow);
-            processedCount++;
+          // Handle any API errors
+          if (batchResult.errors && batchResult.errors.length > 0) {
+            failedCount += batchResult.errors.length;
+            console.error('API prediction errors:', batchResult.errors);
           }
-
-        } catch (rowError) {
-          console.error(`Error processing row ${index + 1}:`, rowError);
-          failedCount++;
         }
+      } catch (batchError) {
+        console.error('Batch processing error:', batchError);
+        throw batchError;
       }
 
       // Update upload record
@@ -613,24 +630,6 @@ const EnhancedCSVUploader = ({ open, onOpenChange, onUploadComplete }: EnhancedC
                   <Download className="h-4 w-4 mr-2" />
                   Download Template
                 </Button>
-              </div>
-
-              {/* API Key Input */}
-              <div className="p-4 bg-muted/30 rounded-lg space-y-2">
-                <Label htmlFor="api-key">API Key (Required for predictions)</Label>
-                <input
-                  id="api-key"
-                  type="password"
-                  placeholder="Enter your AI model API key..."
-                  className="w-full p-2 border rounded-md"
-                  defaultValue={localStorage.getItem('churnaizer_api_key') || ''}
-                  onChange={(e) => {
-                    localStorage.setItem('churnaizer_api_key', e.target.value);
-                  }}
-                />
-                <p className="text-xs text-muted-foreground">
-                  🔒 Stored locally for this session. Get your API key from the AI model provider.
-                </p>
               </div>
               
               {/* Drag & Drop Area */}

@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import DashboardHeader from "@/components/dashboard/DashboardHeader";
 import { APIKeysSection } from "@/components/integration/APIKeysSection";
+import { ApiTestComponent } from "@/components/dashboard/ApiTestComponent";
 
 const Integration = () => {
   const { user, signOut } = useAuth();
@@ -355,6 +356,9 @@ window.Churnaizer.track({
 
           {/* Sidebar */}
           <div className="space-y-6">
+            {/* API Test Component */}
+            <ApiTestComponent />
+
             {/* API Key Section */}
             <APIKeysSection
               apiKeys={apiKeys}

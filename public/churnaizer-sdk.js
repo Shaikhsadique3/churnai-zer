@@ -170,35 +170,39 @@
       }
 
       try {
-        // Step 1: Send data to AI model to get churn prediction
-        const aiData = await retryFetch(AI_MODEL_ENDPOINT, {
+        // Step 1: Send data to secure Supabase edge function
+        const aiData = await retryFetch(`${window.location.origin}/functions/v1/churn-prediction`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'X-API-Key': apiKey,
+            'Authorization': `Bearer ${apiKey}`, // This should be the user's Supabase token
             'X-SDK-Version': SDK_VERSION,
             'User-Agent': `Churnaizer-SDK/${SDK_VERSION}`
           },
-          body: JSON.stringify(userData)
+          body: JSON.stringify({
+            customerData: userData,
+            isBatch: false
+          })
         });
 
         if (config.logging) {
-          console.log('✅ Churnaizer: AI prediction received for user:', userData.user_id);
+          console.log('✅ Churnaizer: AI prediction received for user:', userData.user_id || userData.customer_email);
         }
 
-        // Extract data from AI response (handle different response formats)
-        const churn_score = aiData.churn_probability || aiData.churn_score || 0;
-        const churn_reason = aiData.reason || aiData.churn_reason || 'No reason provided';
-        const insight = aiData.message || aiData.insight || '';
-        const understanding_score = aiData.understanding_score || 0;
+        // Extract data from secure edge function response
+        const predictionData = aiData.result || aiData;
+        const churn_score = predictionData.churn_score || 0;
+        const churn_reason = predictionData.churn_reason || 'No reason provided';
+        const insight = predictionData.insight || '';
+        const understanding_score = predictionData.understanding_score || 0;
 
         const result = {
           churn_score,
           churn_reason,
           insight,
           understanding_score,
-          user_id: userData.user_id,
-          risk_level: churn_score >= 0.7 ? 'high' : churn_score >= 0.4 ? 'medium' : 'low',
+          user_id: userData.user_id || userData.customer_email,
+          risk_level: predictionData.risk_level || (churn_score >= 0.7 ? 'high' : churn_score >= 0.4 ? 'medium' : 'low'),
           sdk_version: SDK_VERSION,
           timestamp: new Date().toISOString()
         };

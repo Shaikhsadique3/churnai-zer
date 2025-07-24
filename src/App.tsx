@@ -22,6 +22,7 @@ import { DashboardLayout } from "./components/layout/DashboardLayout";
 import Dashboard from "./pages/Dashboard";
 import { CSVUploadPage } from "./pages/dashboard/CSVUploadPage";
 import { UploadedUsersPage } from "./pages/dashboard/UploadedUsersPage";
+import { UserDetailPage } from "./pages/dashboard/UserDetailPage";
 import { AutomationsPage } from "./pages/dashboard/AutomationsPage";
 import { PlaybooksBuilderPage } from "./pages/dashboard/PlaybooksBuilderPage";
 
@@ -55,6 +56,7 @@ const App = () => (
               <Route index element={<Dashboard />} />
               <Route path="csv-upload" element={<CSVUploadPage />} />
               <Route path="users" element={<UploadedUsersPage />} />
+              <Route path="users/:userId" element={<UserDetailPage />} />
               <Route path="automations" element={<AutomationsPage />} />
               <Route path="automations/playbooks-builder" element={<PlaybooksBuilderPage />} />
             </Route>

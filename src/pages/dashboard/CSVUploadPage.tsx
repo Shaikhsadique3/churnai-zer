@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Upload, FileText, Clock, CheckCircle } from "lucide-react";
-import EnhancedCSVUploader from "@/components/dashboard/EnhancedCSVUploader";
+import { SimpleCSVUploader } from "@/components/dashboard/SimpleCSVUploader";
 import UploadHistorySection from "@/components/dashboard/UploadHistorySection";
 import { ApiTestComponent } from "@/components/dashboard/ApiTestComponent";
 import { useQuery } from "@tanstack/react-query";
@@ -80,79 +80,14 @@ export const CSVUploadPage = () => {
         </Card>
       </div>
 
-      {/* Upload Section and API Test */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Upload className="h-5 w-5" />
-                Upload New CSV File
-              </CardTitle>
-              <CardDescription>
-                Import your customer data for churn analysis using your secure API connection.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div className="border-2 border-dashed border-muted rounded-lg p-8 text-center">
-                  <Upload className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                  <h3 className="text-lg font-medium mb-2">Smart CSV Upload with Real AI Predictions</h3>
-                  <p className="text-muted-foreground mb-4">
-                    Upload any CSV format and get real churn predictions using your AI model API.
-                  </p>
-                  <Button onClick={() => setUploadModalOpen(true)} size="lg">
-                    <Upload className="h-4 w-4 mr-2" />
-                    Choose CSV File
-                  </Button>
-                </div>
-                
-                <div className="text-sm text-muted-foreground">
-                  <p className="font-medium mb-2">🚀 Secure AI Integration:</p>
-                  <ul className="text-xs space-y-1">
-                    <li>🔒 <strong>Secure API calls:</strong> Your API key is stored safely in Supabase</li>
-                    <li>📊 <strong>Batch processing:</strong> Faster predictions for large datasets</li>
-                    <li>🤖 <strong>Real predictions:</strong> Uses https://ai-model-rumc.onrender.com/</li>
-                    <li>📈 <strong>Auto-mapping:</strong> Works with any CSV format</li>
-                  </ul>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-        
-        <div className="space-y-4">
-          <ApiTestComponent />
-          
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-sm">Required CSV Columns</CardTitle>
-            </CardHeader>
-            <CardContent className="text-xs space-y-1">
-              <p>• customer_name</p>
-              <p>• customer_email</p>
-              <p>• signup_date</p>
-              <p>• last_active_date</p>
-              <p>• plan</p>
-              <p>• billing_status</p>
-              <p>• monthly_revenue</p>
-              <p>• active_features_used</p>
-              <p>• support_tickets_opened</p>
-              <p>• email_opens_last30days</p>
-              <p>• number_of_logins_last30days</p>
-            </CardContent>
-          </Card>
-        </div>
-      </div>
+      {/* Simple CSV Uploader */}
+      <SimpleCSVUploader onUploadComplete={() => {
+        // Refresh page to update stats
+        window.location.reload();
+      }} />
 
       {/* Upload History */}
       <UploadHistorySection />
-
-      <EnhancedCSVUploader 
-        open={uploadModalOpen}
-        onOpenChange={setUploadModalOpen}
-        onUploadComplete={() => setUploadModalOpen(false)}
-      />
     </div>
   );
 };

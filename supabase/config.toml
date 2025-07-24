@@ -5,5 +5,8 @@ project_id = "ntbkydpgjaswmwruegyl"
 enabled = true
 port = 54321
 
+[functions.churn-csv-handler]
+verify_jwt = true
+
 [functions.process-csv]
 verify_jwt = false

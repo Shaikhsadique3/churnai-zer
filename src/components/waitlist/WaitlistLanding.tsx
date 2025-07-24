@@ -93,19 +93,26 @@ const WaitlistLanding = () => {
       {/* Hero Section */}
       <section className="container mx-auto px-4 py-20 text-center">
         <div className="relative max-w-4xl mx-auto">
-          <h2 className="text-6xl font-bold text-foreground mb-6">
-            AI-Powered Churn Prevention for SaaS Founders
-          </h2>
+          <h1 className="text-6xl font-bold text-foreground mb-6">
+            Predict Churn Before It Happens
+          </h1>
           <div className="w-24 h-1 bg-primary mx-auto mb-8 rounded-full"></div>
           <p className="text-xl text-muted-foreground mb-12 max-w-3xl mx-auto">
             Stop losing customers before they leave. Get AI-driven insights, automated retention campaigns, 
             and proactive alerts to keep your SaaS growing.
           </p>
           
+          {/* Urgency Box */}
+          <div className="bg-gradient-to-r from-primary/10 to-secondary/10 border border-primary/20 rounded-lg p-4 mb-12 max-w-md mx-auto">
+            <p className="text-sm font-semibold text-primary">
+              ⚡ Only 250 early access slots available
+            </p>
+          </div>
+          
           {/* Waitlist Form */}
-          <Card className="max-w-lg mx-auto">
+          <Card className="max-w-lg mx-auto shadow-lg">
             <CardHeader>
-              <CardTitle>Join the Waitlist</CardTitle>
+              <CardTitle className="text-2xl">Join the Waitlist</CardTitle>
               <CardDescription>
                 Be the first to access Churnaizer when we launch
               </CardDescription>
@@ -113,7 +120,7 @@ const WaitlistLanding = () => {
             <CardContent>
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="name">Name</Label>
+                  <Label htmlFor="name">Name *</Label>
                   <Input
                     id="name"
                     name="name"
@@ -123,11 +130,12 @@ const WaitlistLanding = () => {
                     required
                     disabled={isSubmitting}
                     placeholder="Your full name"
+                    className="h-12"
                   />
                 </div>
                 
                 <div className="space-y-2">
-                  <Label htmlFor="email">Email</Label>
+                  <Label htmlFor="email">Email *</Label>
                   <Input
                     id="email"
                     name="email"
@@ -137,11 +145,12 @@ const WaitlistLanding = () => {
                     required
                     disabled={isSubmitting}
                     placeholder="your@email.com"
+                    className="h-12"
                   />
                 </div>
                 
                 <div className="space-y-2">
-                  <Label htmlFor="company">Company (Optional)</Label>
+                  <Label htmlFor="company">Company</Label>
                   <Input
                     id="company"
                     name="company"
@@ -150,16 +159,17 @@ const WaitlistLanding = () => {
                     onChange={handleChange}
                     disabled={isSubmitting}
                     placeholder="Your company name"
+                    className="h-12"
                   />
                 </div>
                 
                 <Button 
                   type="submit" 
-                  className="w-full" 
+                  className="w-full h-12 text-lg font-semibold" 
                   disabled={isSubmitting}
                 >
-                  {isSubmitting ? 'Joining...' : 'Join Waitlist'}
-                  <ArrowRight className="ml-2 h-4 w-4" />
+                  {isSubmitting ? 'Joining...' : 'Get Early Access'}
+                  <ArrowRight className="ml-2 h-5 w-5" />
                 </Button>
               </form>
             </CardContent>
@@ -167,19 +177,19 @@ const WaitlistLanding = () => {
         </div>
       </section>
 
-      {/* Features Section */}
+      {/* Benefits Section */}
       <section className="container mx-auto px-4 py-20">
-        <h3 className="text-4xl font-bold text-center text-foreground mb-4">
-          Why SaaS Founders Choose Churnaizer
-        </h3>
+        <h2 className="text-4xl font-bold text-center text-foreground mb-4">
+          Everything You Need to Stop Churn
+        </h2>
         <p className="text-center text-muted-foreground mb-12 text-lg">
-          Three core features that protect your customer base
+          Three powerful features that protect your customer base
         </p>
         <div className="grid md:grid-cols-3 gap-8">
           <Card className="border-2 hover:border-primary transition-colors duration-300 hover:shadow-lg">
             <CardHeader>
               <BarChart3 className="h-12 w-12 text-primary mb-4" />
-              <CardTitle className="text-foreground">AI Churn Prediction</CardTitle>
+              <CardTitle className="text-foreground">AI Predictions</CardTitle>
               <CardDescription className="text-muted-foreground">
                 Machine learning algorithms analyze user behavior patterns to predict churn risk before it happens
               </CardDescription>
@@ -187,15 +197,15 @@ const WaitlistLanding = () => {
             <CardContent>
               <ul className="space-y-2 text-sm text-muted-foreground">
                 <li className="flex items-center gap-2">
-                  <div className="w-2 h-2 bg-accent rounded-full"></div>
+                  <Shield className="w-4 h-4 text-primary" />
                   Real-time risk scoring
                 </li>
                 <li className="flex items-center gap-2">
-                  <div className="w-2 h-2 bg-accent rounded-full"></div>
+                  <Shield className="w-4 h-4 text-primary" />
                   Behavioral pattern analysis
                 </li>
                 <li className="flex items-center gap-2">
-                  <div className="w-2 h-2 bg-accent rounded-full"></div>
+                  <Shield className="w-4 h-4 text-primary" />
                   Proactive alerts
                 </li>
               </ul>
@@ -205,7 +215,7 @@ const WaitlistLanding = () => {
           <Card className="border-2 hover:border-primary transition-colors duration-300 hover:shadow-lg">
             <CardHeader>
               <Zap className="h-12 w-12 text-primary mb-4" />
-              <CardTitle className="text-foreground">Automated Retention</CardTitle>
+              <CardTitle className="text-foreground">Smart Playbooks</CardTitle>
               <CardDescription className="text-muted-foreground">
                 Psychology-driven email campaigns that automatically engage at-risk users with personalized messaging
               </CardDescription>
@@ -213,15 +223,15 @@ const WaitlistLanding = () => {
             <CardContent>
               <ul className="space-y-2 text-sm text-muted-foreground">
                 <li className="flex items-center gap-2">
-                  <div className="w-2 h-2 bg-accent rounded-full"></div>
+                  <Shield className="w-4 h-4 text-primary" />
                   AI-generated content
                 </li>
                 <li className="flex items-center gap-2">
-                  <div className="w-2 h-2 bg-accent rounded-full"></div>
+                  <Shield className="w-4 h-4 text-primary" />
                   Psychology-based messaging
                 </li>
                 <li className="flex items-center gap-2">
-                  <div className="w-2 h-2 bg-accent rounded-full"></div>
+                  <Shield className="w-4 h-4 text-primary" />
                   Automated workflows
                 </li>
               </ul>
@@ -231,7 +241,7 @@ const WaitlistLanding = () => {
           <Card className="border-2 hover:border-primary transition-colors duration-300 hover:shadow-lg">
             <CardHeader>
               <Users className="h-12 w-12 text-primary mb-4" />
-              <CardTitle className="text-foreground">User Intelligence</CardTitle>
+              <CardTitle className="text-foreground">Easy SDK</CardTitle>
               <CardDescription className="text-muted-foreground">
                 Complete customer journey tracking with actionable insights and recommendations
               </CardDescription>
@@ -239,15 +249,15 @@ const WaitlistLanding = () => {
             <CardContent>
               <ul className="space-y-2 text-sm text-muted-foreground">
                 <li className="flex items-center gap-2">
-                  <div className="w-2 h-2 bg-accent rounded-full"></div>
+                  <Shield className="w-4 h-4 text-primary" />
                   User behavior tracking
                 </li>
                 <li className="flex items-center gap-2">
-                  <div className="w-2 h-2 bg-accent rounded-full"></div>
+                  <Shield className="w-4 h-4 text-primary" />
                   Engagement analytics
                 </li>
                 <li className="flex items-center gap-2">
-                  <div className="w-2 h-2 bg-accent rounded-full"></div>
+                  <Shield className="w-4 h-4 text-primary" />
                   Action recommendations
                 </li>
               </ul>
@@ -287,7 +297,7 @@ const WaitlistLanding = () => {
               <Logo size="sm" />
               <span className="text-sm text-muted-foreground">© 2024 Churnaizer. All rights reserved.</span>
             </div>
-            <div className="flex flex-wrap justify-center md:justify-end gap-x-4 gap-y-2 text-sm">
+            <div className="flex flex-wrap justify-center md:justify-end gap-x-6 gap-y-2 text-sm">
               <a href="/privacy" className="text-muted-foreground hover:text-primary transition-colors">Privacy Policy</a>
               <a href="/terms" className="text-muted-foreground hover:text-primary transition-colors">Terms of Service</a>
               <a href="/contact" className="text-muted-foreground hover:text-primary transition-colors">Contact</a>

@@ -81,28 +81,34 @@ serve(async (req) => {
       <html>
         <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
           <div style="max-width: 600px; margin: 0 auto; padding: 20px;">
-            <h1 style="color: #2563eb; margin-bottom: 20px;">You're on the Churnaizer waitlist! 🎉</h1>
+            <h1 style="color: #0050b3; margin-bottom: 20px;">Hey ${name},</h1>
             
-            <p>Hi ${name},</p>
+            <p>Thanks for joining the Churnaizer waitlist! 👋<br>
+            You're now one step closer to eliminating churn — before it even starts.</p>
             
-            <p>Thanks for joining the Churnaizer waitlist! We're excited to have you on board.</p>
+            <p>We're building Churnaizer to help founders and SaaS teams:</p>
+            <ul style="color: #475569;">
+              <li>✅ Predict who's about to churn</li>
+              <li>✅ Understand why they're leaving</li>
+              <li>✅ Take action with smart, psychology-based playbooks</li>
+            </ul>
             
-            <div style="background-color: #f8fafc; padding: 20px; border-radius: 8px; margin: 20px 0;">
-              <h3 style="color: #1e40af; margin-top: 0;">What happens next?</h3>
+            <div style="background-color: #f8fafc; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #0050b3;">
+              <h3 style="color: #0050b3; margin-top: 0;">🚀 As part of the early access crew, you'll:</h3>
               <ul style="color: #475569;">
-                <li>We'll keep you updated on our product development</li>
-                <li>You'll be among the first to know when we launch</li>
-                <li>Early access to exclusive features and pricing</li>
+                <li>Get priority invites to the beta</li>
+                <li>Receive sneak peeks & updates before the public</li>
+                <li>Help shape the future of churn intelligence</li>
               </ul>
             </div>
             
-            <p>In the meantime, feel free to reach out if you have any questions or feedback.</p>
+            <p>We'll keep you posted with product drops, progress, and your beta invitation.</p>
             
-            <p>Best regards,<br>
-            The Churnaizer Team</p>
+            <p><strong>Welcome to the smarter side of retention.</strong><br>
+            – Team Churnaizer</p>
             
             <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #e2e8f0; color: #64748b; font-size: 14px;">
-              <p>You're receiving this email because you signed up for the Churnaizer waitlist.</p>
+              <p>✨ <strong>P.S.</strong> Got any ideas or feedback early? Just reply to this email or reach us at hello@churnaizer.com</p>
             </div>
           </div>
         </body>
@@ -110,7 +116,7 @@ serve(async (req) => {
     `;
 
     const { error: emailError } = await resend.emails.send({
-      from: 'Churnaizer <nexa@churnaizer.com>',
+      from: 'Team Churnaizer <nexa@churnaizer.com>',
       to: [email],
       subject: "You're on the Churnaizer waitlist! 🎉",
       html: emailContent,

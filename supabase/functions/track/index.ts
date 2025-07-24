@@ -44,11 +44,11 @@ serve(async (req) => {
   }
 
   try {
-    // Get API key from header (case-sensitive)
-    const apiKey = req.headers.get('X-API-Key');
+    // Get API key from header (case-insensitive)
+    const apiKey = req.headers.get('X-API-Key') || req.headers.get('x-api-key');
     if (!apiKey) {
       return new Response(
-        JSON.stringify({ error: 'Missing X-API-Key header' }),
+        JSON.stringify({ error: 'Missing authorization header' }),
         { 
           status: 401, 
           headers: { ...corsHeaders, 'Content-Type': 'application/json' } 

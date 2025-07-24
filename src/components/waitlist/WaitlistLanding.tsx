@@ -3,14 +3,14 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { ArrowRight, BarChart3, Shield, Zap, Users, CheckCircle } from "lucide-react";
+import { ArrowRight, BarChart3, Shield, Zap, Users, CheckCircle, Upload, Brain, Target, TrendingUp, Mail, Eye, Play } from "lucide-react";
 import { Logo } from "@/components/ui/logo";
 import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 
 const WaitlistLanding = () => {
   const [formData, setFormData] = useState({
-    name: '',
+    firstName: '',
     email: '',
     company: ''
   });
@@ -24,7 +24,7 @@ const WaitlistLanding = () => {
 
     try {
       const { error } = await supabase.functions.invoke('send-waitlist-email', {
-        body: formData
+        body: { name: formData.firstName, email: formData.email, company: formData.company }
       });
 
       if (error) {
@@ -60,8 +60,8 @@ const WaitlistLanding = () => {
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="max-w-md mx-auto text-center p-8">
           <CheckCircle className="h-16 w-16 text-green-500 mx-auto mb-6" />
-          <h1 className="text-3xl font-bold text-foreground mb-4">You're on the list!</h1>
-          <p className="text-muted-foreground mb-6">
+          <h1 className="text-3xl font-bold text-foreground mb-4 animate-fade-in">You're on the list!</h1>
+          <p className="text-muted-foreground mb-6 animate-fade-in">
             Thanks for joining the Churnaizer waitlist. We've sent a confirmation email to {formData.email}.
           </p>
           <p className="text-sm text-muted-foreground">
@@ -93,43 +93,37 @@ const WaitlistLanding = () => {
       {/* Hero Section */}
       <section className="container mx-auto px-4 py-20 text-center">
         <div className="relative max-w-4xl mx-auto">
-          <h1 className="text-6xl font-bold text-foreground mb-6">
-            Predict Churn Before It Happens
+          <h1 className="text-6xl font-bold text-foreground mb-6 animate-fade-in">
+            Predict and Prevent SaaS Churn with AI.
           </h1>
-          <div className="w-24 h-1 bg-primary mx-auto mb-8 rounded-full"></div>
-          <p className="text-xl text-muted-foreground mb-12 max-w-3xl mx-auto">
-            Stop losing customers before they leave. Get AI-driven insights, automated retention campaigns, 
-            and proactive alerts to keep your SaaS growing.
+          <p className="text-2xl text-primary font-semibold mb-8 animate-fade-in">
+            Stop guessing. Start retaining.
+          </p>
+          <p className="text-lg text-muted-foreground mb-12 max-w-2xl mx-auto animate-fade-in">
+            Join 100+ founders who are rethinking customer retention with Churnaizer.
           </p>
           
-          {/* Urgency Box */}
-          <div className="bg-gradient-to-r from-primary/10 to-secondary/10 border border-primary/20 rounded-lg p-4 mb-12 max-w-md mx-auto">
-            <p className="text-sm font-semibold text-primary">
-              ⚡ Only 250 early access slots available
-            </p>
-          </div>
-          
           {/* Waitlist Form */}
-          <Card className="max-w-lg mx-auto shadow-lg">
+          <Card className="max-w-lg mx-auto shadow-lg animate-scale-in">
             <CardHeader>
               <CardTitle className="text-2xl">Join the Waitlist</CardTitle>
               <CardDescription>
-                Be the first to access Churnaizer when we launch
+                Be the first to predict churn like a pro
               </CardDescription>
             </CardHeader>
             <CardContent>
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="name">Name *</Label>
+                  <Label htmlFor="firstName">First Name *</Label>
                   <Input
-                    id="name"
-                    name="name"
+                    id="firstName"
+                    name="firstName"
                     type="text"
-                    value={formData.name}
+                    value={formData.firstName}
                     onChange={handleChange}
                     required
                     disabled={isSubmitting}
-                    placeholder="Your full name"
+                    placeholder="Your first name"
                     className="h-12"
                   />
                 </div>
@@ -165,126 +159,253 @@ const WaitlistLanding = () => {
                 
                 <Button 
                   type="submit" 
-                  className="w-full h-12 text-lg font-semibold" 
+                  className="w-full h-12 text-lg font-semibold hover-scale" 
                   disabled={isSubmitting}
                 >
-                  {isSubmitting ? 'Joining...' : 'Get Early Access'}
+                  {isSubmitting ? 'Joining...' : 'Join the Waitlist'}
                   <ArrowRight className="ml-2 h-5 w-5" />
                 </Button>
               </form>
+              
+              {/* Trust Tags */}
+              <div className="mt-6 flex flex-wrap justify-center gap-4 text-sm text-muted-foreground">
+                <div className="flex items-center gap-1">
+                  <CheckCircle className="w-4 h-4 text-secondary" />
+                  Built for SaaS teams
+                </div>
+                <div className="flex items-center gap-1">
+                  <CheckCircle className="w-4 h-4 text-secondary" />
+                  Backed by AI
+                </div>
+                <div className="flex items-center gap-1">
+                  <CheckCircle className="w-4 h-4 text-secondary" />
+                  GDPR-ready & secure
+                </div>
+              </div>
             </CardContent>
           </Card>
         </div>
       </section>
 
-      {/* Benefits Section */}
+      {/* How It Works Section */}
+      <section className="container mx-auto px-4 py-20 bg-muted/30">
+        <h2 className="text-4xl font-bold text-center text-foreground mb-4 animate-fade-in">
+          How It Works
+        </h2>
+        <p className="text-center text-muted-foreground mb-16 text-lg">
+          Three simple steps to predict and prevent churn
+        </p>
+        <div className="grid md:grid-cols-3 gap-12 max-w-5xl mx-auto">
+          <div className="text-center animate-fade-in">
+            <div className="w-16 h-16 bg-primary rounded-full flex items-center justify-center mx-auto mb-6 hover-scale">
+              <Upload className="h-8 w-8 text-primary-foreground" />
+            </div>
+            <h3 className="text-xl font-semibold text-foreground mb-4">1️⃣ Upload Your Data</h3>
+            <p className="text-muted-foreground">
+              Import your user behavior via CSV or SDK
+            </p>
+          </div>
+          
+          <div className="text-center animate-fade-in">
+            <div className="w-16 h-16 bg-secondary rounded-full flex items-center justify-center mx-auto mb-6 hover-scale">
+              <Brain className="h-8 w-8 text-secondary-foreground" />
+            </div>
+            <h3 className="text-xl font-semibold text-foreground mb-4">2️⃣ AI Predicts Churn Risk</h3>
+            <p className="text-muted-foreground">
+              Instantly segment users by churn likelihood
+            </p>
+          </div>
+          
+          <div className="text-center animate-fade-in">
+            <div className="w-16 h-16 bg-accent rounded-full flex items-center justify-center mx-auto mb-6 hover-scale">
+              <Target className="h-8 w-8 text-accent-foreground" />
+            </div>
+            <h3 className="text-xl font-semibold text-foreground mb-4">3️⃣ Retain Smarter</h3>
+            <p className="text-muted-foreground">
+              Take action with psychology-based email & automation playbooks
+            </p>
+          </div>
+        </div>
+      </section>
+
+      {/* Who It's For Section */}
       <section className="container mx-auto px-4 py-20">
         <h2 className="text-4xl font-bold text-center text-foreground mb-4">
-          Everything You Need to Stop Churn
+          Who It's For
+        </h2>
+        <p className="text-center text-muted-foreground mb-12 text-lg max-w-3xl mx-auto">
+          "If churn is hurting your growth, Churnaizer gives you clarity, predictions, and automation — all in one place."
+        </p>
+        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8 max-w-6xl mx-auto">
+          {[
+            { title: "SaaS Founders", icon: Users },
+            { title: "Customer Success Teams", icon: Shield },
+            { title: "Product Managers", icon: TrendingUp },
+            { title: "Marketing Ops Teams", icon: Mail }
+          ].map((item, index) => (
+            <Card key={index} className="text-center p-6 hover:shadow-lg transition-shadow duration-300 hover-scale">
+              <item.icon className="h-12 w-12 text-primary mx-auto mb-4" />
+              <h3 className="font-semibold text-foreground">{item.title}</h3>
+            </Card>
+          ))}
+        </div>
+      </section>
+
+      {/* What You'll Get Section */}
+      <section className="container mx-auto px-4 py-20 bg-muted/30">
+        <h2 className="text-4xl font-bold text-center text-foreground mb-4">
+          What You'll Get
         </h2>
         <p className="text-center text-muted-foreground mb-12 text-lg">
-          Three powerful features that protect your customer base
+          Everything you need to predict and prevent churn
         </p>
-        <div className="grid md:grid-cols-3 gap-8">
-          <Card className="border-2 hover:border-primary transition-colors duration-300 hover:shadow-lg">
-            <CardHeader>
-              <BarChart3 className="h-12 w-12 text-primary mb-4" />
-              <CardTitle className="text-foreground">AI Predictions</CardTitle>
-              <CardDescription className="text-muted-foreground">
-                Machine learning algorithms analyze user behavior patterns to predict churn risk before it happens
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <ul className="space-y-2 text-sm text-muted-foreground">
-                <li className="flex items-center gap-2">
-                  <Shield className="w-4 h-4 text-primary" />
-                  Real-time risk scoring
-                </li>
-                <li className="flex items-center gap-2">
-                  <Shield className="w-4 h-4 text-primary" />
-                  Behavioral pattern analysis
-                </li>
-                <li className="flex items-center gap-2">
-                  <Shield className="w-4 h-4 text-primary" />
-                  Proactive alerts
-                </li>
-              </ul>
-            </CardContent>
+        <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+          <Card className="p-6 hover:shadow-lg transition-shadow duration-300 hover-scale">
+            <div className="flex items-start gap-4">
+              <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center flex-shrink-0">
+                <Brain className="h-6 w-6 text-primary" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-foreground mb-2">🚦 AI-Powered Churn Predictions</h3>
+                <p className="text-muted-foreground">See who's about to leave, before it happens</p>
+              </div>
+            </div>
           </Card>
-
-          <Card className="border-2 hover:border-primary transition-colors duration-300 hover:shadow-lg">
-            <CardHeader>
-              <Zap className="h-12 w-12 text-primary mb-4" />
-              <CardTitle className="text-foreground">Smart Playbooks</CardTitle>
-              <CardDescription className="text-muted-foreground">
-                Psychology-driven email campaigns that automatically engage at-risk users with personalized messaging
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <ul className="space-y-2 text-sm text-muted-foreground">
-                <li className="flex items-center gap-2">
-                  <Shield className="w-4 h-4 text-primary" />
-                  AI-generated content
-                </li>
-                <li className="flex items-center gap-2">
-                  <Shield className="w-4 h-4 text-primary" />
-                  Psychology-based messaging
-                </li>
-                <li className="flex items-center gap-2">
-                  <Shield className="w-4 h-4 text-primary" />
-                  Automated workflows
-                </li>
-              </ul>
-            </CardContent>
+          
+          <Card className="p-6 hover:shadow-lg transition-shadow duration-300 hover-scale">
+            <div className="flex items-start gap-4">
+              <div className="w-12 h-12 bg-secondary/10 rounded-lg flex items-center justify-center flex-shrink-0">
+                <Mail className="h-6 w-6 text-secondary" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-foreground mb-2">✉️ Smart Retention Campaigns</h3>
+                <p className="text-muted-foreground">Auto-generated emails using behavior psychology</p>
+              </div>
+            </div>
           </Card>
-
-          <Card className="border-2 hover:border-primary transition-colors duration-300 hover:shadow-lg">
-            <CardHeader>
-              <Users className="h-12 w-12 text-primary mb-4" />
-              <CardTitle className="text-foreground">Easy SDK</CardTitle>
-              <CardDescription className="text-muted-foreground">
-                Complete customer journey tracking with actionable insights and recommendations
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <ul className="space-y-2 text-sm text-muted-foreground">
-                <li className="flex items-center gap-2">
-                  <Shield className="w-4 h-4 text-primary" />
-                  User behavior tracking
-                </li>
-                <li className="flex items-center gap-2">
-                  <Shield className="w-4 h-4 text-primary" />
-                  Engagement analytics
-                </li>
-                <li className="flex items-center gap-2">
-                  <Shield className="w-4 h-4 text-primary" />
-                  Action recommendations
-                </li>
-              </ul>
-            </CardContent>
+          
+          <Card className="p-6 hover:shadow-lg transition-shadow duration-300 hover-scale">
+            <div className="flex items-start gap-4">
+              <div className="w-12 h-12 bg-accent/10 rounded-lg flex items-center justify-center flex-shrink-0">
+                <Eye className="h-6 w-6 text-accent" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-foreground mb-2">📈 Insights Dashboard</h3>
+                <p className="text-muted-foreground">Visual breakdown of risk levels, usage, support trends</p>
+              </div>
+            </div>
+          </Card>
+          
+          <Card className="p-6 hover:shadow-lg transition-shadow duration-300 hover-scale">
+            <div className="flex items-start gap-4">
+              <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center flex-shrink-0">
+                <Play className="h-6 w-6 text-primary" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-foreground mb-2">🧠 Retention Playbook Templates</h3>
+                <p className="text-muted-foreground">Proven strategies for every churn trigger</p>
+              </div>
+            </div>
           </Card>
         </div>
       </section>
 
-      {/* Testimonials/Social Proof */}
-      <section className="bg-secondary py-20">
+      {/* Trust & Social Proof Section */}
+      <section className="container mx-auto px-4 py-20">
+        <h2 className="text-4xl font-bold text-center text-foreground mb-4">
+          Why Trust Churnaizer?
+        </h2>
+        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8 max-w-6xl mx-auto mb-16">
+          <div className="text-center">
+            <Shield className="h-12 w-12 text-primary mx-auto mb-4" />
+            <h3 className="font-semibold text-foreground mb-2">🔒 Secure Infrastructure</h3>
+            <p className="text-sm text-muted-foreground">Powered by Supabase + Resend</p>
+          </div>
+          
+          <div className="text-center">
+            <Eye className="h-12 w-12 text-secondary mx-auto mb-4" />
+            <h3 className="font-semibold text-foreground mb-2">🔍 Privacy First</h3>
+            <p className="text-sm text-muted-foreground">No shady tracking — your data stays yours</p>
+          </div>
+          
+          <div className="text-center">
+            <Users className="h-12 w-12 text-accent mx-auto mb-4" />
+            <h3 className="font-semibold text-foreground mb-2">🤝 Built by Founders</h3>
+            <p className="text-sm text-muted-foreground">Real founders building in public</p>
+          </div>
+          
+          <div className="text-center">
+            <Mail className="h-12 w-12 text-primary mx-auto mb-4" />
+            <h3 className="font-semibold text-foreground mb-2">📬 Trusted Email</h3>
+            <p className="text-sm text-muted-foreground">Sent via nexa@churnaizer.com</p>
+          </div>
+        </div>
+        
+        {/* Psychology Hooks */}
+        <div className="bg-gradient-to-r from-primary/5 to-secondary/5 border border-primary/20 rounded-lg p-8 max-w-4xl mx-auto">
+          <div className="grid md:grid-cols-2 gap-8">
+            <div>
+              <h3 className="font-semibold text-foreground mb-4">Early Access Benefits:</h3>
+              <ul className="space-y-2 text-muted-foreground">
+                <li className="flex items-center gap-2">
+                  <CheckCircle className="w-4 h-4 text-secondary" />
+                  Priority beta invitations
+                </li>
+                <li className="flex items-center gap-2">
+                  <CheckCircle className="w-4 h-4 text-secondary" />
+                  Retention Playbook Library access
+                </li>
+                <li className="flex items-center gap-2">
+                  <CheckCircle className="w-4 h-4 text-secondary" />
+                  Help shape the product
+                </li>
+              </ul>
+            </div>
+            <div>
+              <h3 className="font-semibold text-foreground mb-4">Backed by Research:</h3>
+              <p className="text-muted-foreground">
+                Inspired by psychology research on loss aversion, friction, and motivation to create proven retention strategies.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Final CTA Section */}
+      <section className="bg-gradient-to-r from-primary to-secondary py-20">
         <div className="container mx-auto px-4 text-center">
-          <h3 className="text-3xl font-bold text-secondary-foreground mb-12">
-            Trusted by Forward-Thinking SaaS Founders
-          </h3>
-          <div className="grid md:grid-cols-3 gap-8 max-w-4xl mx-auto">
-            <div className="text-center">
-              <div className="text-4xl font-bold text-primary mb-2">85%</div>
-              <div className="text-secondary-foreground/80">Churn Reduction</div>
-            </div>
-            <div className="text-center">
-              <div className="text-4xl font-bold text-primary mb-2">3x</div>
-              <div className="text-secondary-foreground/80">Faster Detection</div>
-            </div>
-            <div className="text-center">
-              <div className="text-4xl font-bold text-primary mb-2">24/7</div>
-              <div className="text-secondary-foreground/80">Automated Monitoring</div>
-            </div>
+          <h2 className="text-4xl font-bold text-primary-foreground mb-4 animate-fade-in">
+            Be the first to predict churn like a pro
+          </h2>
+          <p className="text-xl text-primary-foreground/90 mb-8">
+            — before your next renewal cycle.
+          </p>
+          
+          <Card className="max-w-md mx-auto bg-white/95 backdrop-blur-sm animate-scale-in">
+            <CardContent className="p-6">
+              <div className="flex gap-2">
+                <Input 
+                  placeholder="Enter your email" 
+                  className="flex-1"
+                  type="email"
+                />
+                <Button className="hover-scale">
+                  Join Waitlist
+                </Button>
+              </div>
+              <p className="text-sm text-muted-foreground mt-3">
+                ✅ You'll receive a confirmation email from nexa@churnaizer.com
+              </p>
+            </CardContent>
+          </Card>
+          
+          <div className="mt-12 text-center">
+            <p className="text-primary-foreground/80 text-lg">
+              🔥 <span className="font-semibold">100+ SaaS leaders</span> have already signed up
+            </p>
+            <p className="text-primary-foreground/70 text-sm mt-2">
+              We're onboarding users in limited batches.
+            </p>
           </div>
         </div>
       </section>

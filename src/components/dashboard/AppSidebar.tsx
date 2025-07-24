@@ -1,21 +1,9 @@
 import React from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import {
-  Home,
-  Upload,
   Users,
-  BarChart3,
-  Settings,
-  Cog,
-  Link as LinkIcon,
-  Bot,
-  Mail,
-  Workflow,
-  Puzzle,
   LogOut,
   Shield,
-  ChevronDown,
-  ChevronRight,
   Code
 } from "lucide-react";
 import {
@@ -27,53 +15,25 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-  SidebarMenuSub,
-  SidebarMenuSubButton,
-  SidebarMenuSubItem,
   SidebarHeader,
   SidebarFooter,
   useSidebar,
 } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 
-// MVP: Core features with AI Email Campaigns
+// Simplified: Only Website Integration (SDK) feature
 const navigationItems = [
   {
-    title: "Churn Analytics Dashboard", 
-    url: "/dashboard",
-    icon: Home,
+    title: "Website Integration",
+    url: "/integration",
+    icon: Code,
     isExact: true
   },
   {
-    title: "Customer Data",
+    title: "User Data",
     url: "/dashboard/users",
     icon: Users
-  },
-  {
-    title: "AI Email Campaigns",
-    url: "/dashboard/ai-email-campaigns",
-    icon: Mail
-  },
-  {
-    title: "CSV Upload & Processing",
-    url: "/dashboard/csv-upload", 
-    icon: Upload
-  },
-  {
-    title: "Smart Retention Playbooks",
-    url: "/dashboard/automations",
-    icon: Workflow,
-    subItems: [
-      { title: "Active Playbooks", url: "/dashboard/automations" },
-      { title: "Create Playbook", url: "/dashboard/automations/playbooks-builder" }
-    ]
-  },
-  {
-    title: "Churn Prediction SDK",
-    url: "/integration",
-    icon: Code
   }
 ];
 
@@ -127,48 +87,12 @@ export function AppSidebar() {
             <SidebarMenu className="space-y-1">
               {navigationItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
-                  {item.subItems ? (
-                    <Collapsible 
-                      defaultOpen={item.subItems.some(subItem => isActive(subItem.url))}
-                    >
-                      <CollapsibleTrigger asChild>
-                        <SidebarMenuButton className={getNavClassName(item.url)}>
-                          <item.icon className="h-4 w-4" />
-                          {!collapsed && (
-                            <>
-                              <span className="flex-1 text-left">{item.title}</span>
-                              <ChevronRight className="h-3 w-3 transition-transform group-data-[state=open]:rotate-90" />
-                            </>
-                          )}
-                        </SidebarMenuButton>
-                      </CollapsibleTrigger>
-                      {!collapsed && (
-                        <CollapsibleContent>
-                          <SidebarMenuSub className="ml-4 mt-1 space-y-1">
-                            {item.subItems.map((subItem) => (
-                              <SidebarMenuSubItem key={subItem.title}>
-                                <SidebarMenuSubButton 
-                                  asChild
-                                  className={getNavClassName(subItem.url)}
-                                >
-                                  <NavLink to={subItem.url}>
-                                    {subItem.title}
-                                  </NavLink>
-                                </SidebarMenuSubButton>
-                              </SidebarMenuSubItem>
-                            ))}
-                          </SidebarMenuSub>
-                        </CollapsibleContent>
-                      )}
-                    </Collapsible>
-                  ) : (
-                    <SidebarMenuButton asChild className={getNavClassName(item.url, item.isExact)}>
-                      <NavLink to={item.url}>
-                        <item.icon className="h-4 w-4" />
-                        {!collapsed && <span>{item.title}</span>}
-                      </NavLink>
-                    </SidebarMenuButton>
-                  )}
+                  <SidebarMenuButton asChild className={getNavClassName(item.url, item.isExact)}>
+                    <NavLink to={item.url}>
+                      <item.icon className="h-4 w-4" />
+                      {!collapsed && <span>{item.title}</span>}
+                    </NavLink>
+                  </SidebarMenuButton>
                 </SidebarMenuItem>
               ))}
             </SidebarMenu>

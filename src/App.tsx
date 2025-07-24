@@ -20,14 +20,9 @@ import Pricing from "./pages/Pricing";
 import Contact from "./pages/Contact";
 import NotFound from "./pages/NotFound";
 import { DashboardLayout } from "./components/layout/DashboardLayout";
-// Core dashboard pages - MVP only
-import Dashboard from "./pages/Dashboard";
-import { CSVUploadPage } from "./pages/dashboard/CSVUploadPage";
+// Simplified: Only Integration and User Data features
 import { UploadedUsersPage } from "./pages/dashboard/UploadedUsersPage";
 import { UserDetailPage } from "./pages/dashboard/UserDetailPage";
-import { AutomationsPage } from "./pages/dashboard/AutomationsPage";
-import { PlaybooksBuilderPage } from "./pages/dashboard/PlaybooksBuilderPage";
-import AIEmailCampaignsPage from "./pages/dashboard/AIEmailCampaignsPage";
 
 const queryClient = new QueryClient();
 
@@ -73,13 +68,12 @@ const DomainRouter = () => {
           </ProtectedRoute>
         }
       >
-        <Route index element={<Dashboard />} />
-        <Route path="csv-upload" element={<CSVUploadPage />} />
+        {/* Redirect dashboard index to integration */}
+        <Route index element={<Integration />} />
         <Route path="users" element={<UploadedUsersPage />} />
         <Route path="users/:userId" element={<UserDetailPage />} />
-        <Route path="ai-email-campaigns" element={<AIEmailCampaignsPage />} />
-        <Route path="automations" element={<AutomationsPage />} />
-        <Route path="automations/playbooks-builder" element={<PlaybooksBuilderPage />} />
+        {/* Redirect all other dashboard routes to integration */}
+        <Route path="*" element={<Integration />} />
       </Route>
       <Route 
         path="/integration" 

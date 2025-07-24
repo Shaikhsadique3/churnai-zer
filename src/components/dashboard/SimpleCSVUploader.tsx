@@ -5,6 +5,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useToast } from '@/hooks/use-toast';
 import { Upload, FileSpreadsheet, CheckCircle, XCircle } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
+import { useQueryClient } from '@tanstack/react-query';
 import Papa from 'papaparse';
 
 interface SimpleCSVUploaderProps {
@@ -42,6 +43,7 @@ export function SimpleCSVUploader({ onUploadComplete }: SimpleCSVUploaderProps) 
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<any[]>([]);
   const { toast } = useToast();
+  const queryClient = useQueryClient();
 
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -145,6 +147,11 @@ export function SimpleCSVUploader({ onUploadComplete }: SimpleCSVUploaderProps) 
             setUploadResult(data);
             
             if (data.rows_success > 0) {
+              // Invalidate all dashboard queries to refresh data
+              queryClient.invalidateQueries({ queryKey: ['user-data'] });
+              queryClient.invalidateQueries({ queryKey: ['dashboard-stats'] });
+              queryClient.invalidateQueries({ queryKey: ['upload-stats'] });
+              
               toast({
                 title: "Upload successful!",
                 description: data.message || `Processed ${data.rows_success} rows successfully`,

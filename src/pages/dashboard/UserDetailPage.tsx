@@ -20,7 +20,7 @@ export const UserDetailPage = () => {
         .from('user_data')
         .select('*')
         .eq('owner_id', user?.id)
-        .eq('user_id', userId)
+        .eq('id', userId)
         .single();
       
       if (error) throw error;

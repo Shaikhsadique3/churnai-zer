@@ -242,18 +242,18 @@ export const UploadedUsersTable = () => {
           </p>
         </div>
 
-        {/* Table */}
-        <div className="border rounded-lg">
+        {/* Table - Responsive Design */}
+        <div className="border rounded-lg overflow-x-auto">
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>User ID</TableHead>
-                <TableHead>Plan</TableHead>
-                <TableHead>Churn Score</TableHead>
-                <TableHead>Risk Level</TableHead>
-                <TableHead>Last Login</TableHead>
-                <TableHead>Churn Reason</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
+                <TableHead className="min-w-[120px]">User ID</TableHead>
+                <TableHead className="min-w-[60px]">Plan</TableHead>
+                <TableHead className="min-w-[80px]">Churn Score</TableHead>
+                <TableHead className="min-w-[80px]">Risk Level</TableHead>
+                <TableHead className="min-w-[90px] hidden sm:table-cell">Last Login</TableHead>
+                <TableHead className="min-w-[150px] hidden md:table-cell">Churn Reason</TableHead>
+                <TableHead className="min-w-[80px] text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -270,7 +270,8 @@ export const UploadedUsersTable = () => {
                       <div className="flex items-center gap-2">
                         <button
                           onClick={() => window.location.href = `/dashboard/users/${userData.id}`}
-                          className="text-primary hover:underline focus:outline-none"
+                          className="text-primary hover:underline focus:outline-none text-sm truncate max-w-[100px]"
+                          title={userData.user_id}
                         >
                           {userData.user_id}
                         </button>
@@ -279,41 +280,43 @@ export const UploadedUsersTable = () => {
                         )}
                       </div>
                     </TableCell>
-                    <TableCell>{userData.plan}</TableCell>
                     <TableCell>
-                      <span className="font-medium">
+                      <Badge variant="outline" className="text-xs">
+                        {userData.plan}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      <span className={`font-medium text-sm px-2 py-1 rounded ${
+                        userData.churn_score > 0.75 ? 'bg-destructive/20 text-destructive' : 
+                        userData.churn_score > 0.4 ? 'bg-secondary/20 text-secondary-foreground' : 
+                        'bg-primary/20 text-primary'
+                      }`}>
                         {userData.churn_score ? (userData.churn_score * 100).toFixed(1) + '%' : 'N/A'}
                       </span>
                     </TableCell>
                     <TableCell>
-                      <Badge variant={getRiskBadgeColor(userData.risk_level)}>
+                      <Badge variant={getRiskBadgeColor(userData.risk_level)} className="text-xs">
                         {userData.risk_level?.toUpperCase()}
                       </Badge>
                     </TableCell>
-                    <TableCell>
+                    <TableCell className="text-sm text-muted-foreground hidden sm:table-cell">
                       {userData.last_login ? format(new Date(userData.last_login), 'MMM d, yyyy') : 'Never'}
                     </TableCell>
-                    <TableCell className="max-w-xs truncate" title={userData.churn_reason}>
-                      {userData.churn_reason || 'No reason specified'}
+                    <TableCell className="max-w-[150px] text-sm text-muted-foreground hidden md:table-cell">
+                      <span className="truncate block" title={userData.churn_reason}>
+                        {userData.churn_reason || 'No reason specified'}
+                      </span>
                     </TableCell>
                     <TableCell className="text-right">
-                      <div className="flex items-center gap-1 justify-end">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => {/* TODO: Implement details modal */}}
-                        >
-                          <Eye className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => deleteUserMutation.mutate(userData.id)}
-                          disabled={deleteUserMutation.isPending}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => deleteUserMutation.mutate(userData.id)}
+                        disabled={deleteUserMutation.isPending}
+                        className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
                     </TableCell>
                   </TableRow>
                 ))

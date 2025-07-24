@@ -131,63 +131,7 @@ const Dashboard = () => {
           {activeView === 'users' && <UploadedUsersTable />}
         </div>
 
-        {/* Action Cards */}
-        {activeView === 'overview' && (
-          <div className="mt-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            <Card className="hover:shadow-md transition-shadow">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-lg">
-                  <Code className="h-5 w-5 text-primary" />
-                  SDK Integration
-                </CardTitle>
-                <CardDescription>
-                  Connect your app with real-time churn tracking
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <Button variant="outline" className="w-full" asChild>
-                  <Link to="/integration">
-                    Setup Guide
-                  </Link>
-                </Button>
-              </CardContent>
-            </Card>
-
-            <Card className="hover:shadow-md transition-shadow">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-lg">
-                  🎯 Smart Playbooks
-                </CardTitle>
-                <CardDescription>
-                  Automate retention campaigns for at-risk users
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <Button variant="outline" className="w-full" asChild>
-                  <Link to="/dashboard/automations">
-                    Create Playbooks
-                  </Link>
-                </Button>
-              </CardContent>
-            </Card>
-
-            <Card className="hover:shadow-md transition-shadow">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-lg">
-                  📊 Analytics
-                </CardTitle>
-                <CardDescription>
-                  Deep dive into churn patterns and trends
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <Button variant="outline" className="w-full" onClick={() => setActiveView('users')}>
-                  View Analytics
-                </Button>
-              </CardContent>
-            </Card>
-          </div>
-        )}
+          {/* Removed redundant action cards - functionality is already accessible via main navigation */}
       </main>
 
       <EnhancedCSVUploader 

@@ -10,3 +10,6 @@ verify_jwt = true
 
 [functions.process-csv]
 verify_jwt = false
+
+[functions.track]
+verify_jwt = false

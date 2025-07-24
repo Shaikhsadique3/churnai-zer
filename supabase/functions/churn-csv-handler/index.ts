@@ -63,10 +63,59 @@ function generateChurnReason(data: any): string {
   }
   
   if (reasons.length === 0) {
-    return 'User showing typical engagement patterns';
+    return 'User showing healthy engagement patterns';
   }
   
   return reasons.join('; ');
+}
+
+function generateRecommendedAction(data: any): string {
+  const actions = [];
+  
+  if (data.logins_last30 < 3) {
+    actions.push('Send re-engagement email campaign');
+  }
+  
+  if (data.email_opens < 2) {
+    actions.push('Improve email subject lines and content');
+  }
+  
+  if (data.support_tickets > 3) {
+    actions.push('Prioritize customer success outreach');
+  }
+  
+  if (data.plan === 'Free' && data.monthly_revenue === 0) {
+    actions.push('Offer upgrade incentives and onboarding');
+  }
+  
+  if (data.billing_status.toLowerCase().includes('inactive')) {
+    actions.push('Resolve billing issues immediately');
+  }
+  
+  if (actions.length === 0) {
+    return 'Continue standard engagement strategy';
+  }
+  
+  return actions.join('; ');
+}
+
+function calculateUnderstandingScore(data: any): number {
+  let score = 85; // Base score
+  
+  // Reduce score for concerning behaviors
+  if (data.logins_last30 < 3) score -= 20;
+  else if (data.logins_last30 < 8) score -= 10;
+  
+  if (data.email_opens < 2) score -= 15;
+  
+  if (data.support_tickets > 3) score -= 10;
+  
+  if (data.plan === 'Free' && data.monthly_revenue === 0) score -= 5;
+  
+  if (data.billing_status.toLowerCase().includes('inactive')) score -= 15;
+  
+  // Ensure score stays within bounds
+  return Math.max(Math.min(score, 100), 30);
 }
 
 async function processCsvRow(row: CSVRow): Promise<{ success: boolean; user_id?: string; error?: string }> {
@@ -113,14 +162,16 @@ async function processCsvRow(row: CSVRow): Promise<{ success: boolean; user_id?:
     // Cap at 0.95
     baseScore = Math.min(baseScore, 0.95);
     
-    // Generate dynamic reason based on user behavior
+    // Generate dynamic insights based on user behavior
     const dynamicReason = generateChurnReason(mapped);
+    const recommendedAction = generateRecommendedAction(mapped);
+    const understandingScore = calculateUnderstandingScore(mapped);
     
     let prediction = {
       churn_probability: baseScore,
       reason: dynamicReason,
-      understanding_score: 75,
-      message: 'Risk assessment based on user behavior analysis'
+      understanding_score: understandingScore,
+      message: recommendedAction
     };
 
     if (churnApiUrl && churnApiKey) {

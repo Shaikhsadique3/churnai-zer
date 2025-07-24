@@ -83,6 +83,14 @@ const DomainRouter = () => {
           </ProtectedRoute>
         } 
       />
+      <Route 
+        path="/integration/setup" 
+        element={
+          <ProtectedRoute>
+            <Integration />
+          </ProtectedRoute>
+        } 
+      />
       <Route path="*" element={<NotFound />} />
     </Routes>
   );

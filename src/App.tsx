@@ -25,6 +25,7 @@ import { UploadedUsersPage } from "./pages/dashboard/UploadedUsersPage";
 import { UserDetailPage } from "./pages/dashboard/UserDetailPage";
 import { AutomationsPage } from "./pages/dashboard/AutomationsPage";
 import { PlaybooksBuilderPage } from "./pages/dashboard/PlaybooksBuilderPage";
+import AIEmailCampaignsPage from "./pages/dashboard/AIEmailCampaignsPage";
 
 const queryClient = new QueryClient();
 
@@ -57,6 +58,7 @@ const App = () => (
               <Route path="csv-upload" element={<CSVUploadPage />} />
               <Route path="users" element={<UploadedUsersPage />} />
               <Route path="users/:userId" element={<UserDetailPage />} />
+              <Route path="ai-email-campaigns" element={<AIEmailCampaignsPage />} />
               <Route path="automations" element={<AutomationsPage />} />
               <Route path="automations/playbooks-builder" element={<PlaybooksBuilderPage />} />
             </Route>

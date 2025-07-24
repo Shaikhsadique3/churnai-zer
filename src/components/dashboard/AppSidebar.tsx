@@ -38,7 +38,7 @@ import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 
-// MVP: Only 3 core features remain
+// MVP: Core features with AI Email Campaigns
 const navigationItems = [
   {
     title: "Churn Analytics Dashboard", 
@@ -47,14 +47,19 @@ const navigationItems = [
     isExact: true
   },
   {
-    title: "CSV Upload & Processing",
-    url: "/dashboard/csv-upload", 
-    icon: Upload
-  },
-  {
     title: "Customer Data",
     url: "/dashboard/users",
     icon: Users
+  },
+  {
+    title: "AI Email Campaigns",
+    url: "/dashboard/ai-email-campaigns",
+    icon: Mail
+  },
+  {
+    title: "CSV Upload & Processing",
+    url: "/dashboard/csv-upload", 
+    icon: Upload
   },
   {
     title: "Smart Retention Playbooks",

@@ -37,6 +37,38 @@ function normalizePlan(plan: string): 'Free' | 'Pro' | 'Enterprise' {
   return 'Free';
 }
 
+function generateChurnReason(data: any): string {
+  const reasons = [];
+  
+  if (data.logins_last30 < 3) {
+    reasons.push('Very low login activity (under 3 times)');
+  } else if (data.logins_last30 < 8) {
+    reasons.push('Below average engagement');
+  }
+  
+  if (data.email_opens < 2) {
+    reasons.push('Poor email engagement');
+  }
+  
+  if (data.support_tickets > 3) {
+    reasons.push('High support ticket volume indicates frustration');
+  }
+  
+  if (data.plan === 'Free' && data.monthly_revenue === 0) {
+    reasons.push('Free plan user with no revenue conversion');
+  }
+  
+  if (data.billing_status.toLowerCase().includes('inactive') || data.billing_status.toLowerCase().includes('failed')) {
+    reasons.push('Billing/payment issues detected');
+  }
+  
+  if (reasons.length === 0) {
+    return 'User showing typical engagement patterns';
+  }
+  
+  return reasons.join('; ');
+}
+
 async function processCsvRow(row: CSVRow): Promise<{ success: boolean; user_id?: string; error?: string }> {
   try {
     // Validate required fields
@@ -81,9 +113,12 @@ async function processCsvRow(row: CSVRow): Promise<{ success: boolean; user_id?:
     // Cap at 0.95
     baseScore = Math.min(baseScore, 0.95);
     
+    // Generate dynamic reason based on user behavior
+    const dynamicReason = generateChurnReason(mapped);
+    
     let prediction = {
       churn_probability: baseScore,
-      reason: 'Assessment based on activity patterns and engagement metrics',
+      reason: dynamicReason,
       understanding_score: 75,
       message: 'Risk assessment based on user behavior analysis'
     };

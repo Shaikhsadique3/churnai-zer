@@ -790,6 +790,33 @@ export type Database = {
         }
         Relationships: []
       }
+      waitlist: {
+        Row: {
+          company: string | null
+          created_at: string
+          email: string
+          email_sent: boolean
+          id: string
+          name: string
+        }
+        Insert: {
+          company?: string | null
+          created_at?: string
+          email: string
+          email_sent?: boolean
+          id?: string
+          name: string
+        }
+        Update: {
+          company?: string | null
+          created_at?: string
+          email?: string
+          email_sent?: boolean
+          id?: string
+          name?: string
+        }
+        Relationships: []
+      }
       webhook_logs: {
         Row: {
           error_message: string | null

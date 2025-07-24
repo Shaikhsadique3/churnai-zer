@@ -141,41 +141,77 @@ async function processCsvRow(row: CSVRow): Promise<{ success: boolean; user_id?:
         
         console.log('📤 Sending to AI model:', { email: mapped.customer_email, payload });
         
-        const apiResponse = await fetch(churnApiUrl, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'X-API-Key': churnApiKey
-          },
-          body: JSON.stringify(payload)
-        });
+        // Try different endpoints that might work
+        const endpoints = [
+          `${churnApiUrl}/api/v1/predict`,
+          `${churnApiUrl}/predict`,
+          `${churnApiUrl}/api/predict`,
+          churnApiUrl
+        ];
+        
+        let apiResponse = null;
+        let lastError = null;
+        
+        for (const endpoint of endpoints) {
+          try {
+            console.log(`🔄 Trying endpoint: ${endpoint}`);
+            apiResponse = await fetch(endpoint, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'X-API-Key': churnApiKey,
+                'Authorization': `Bearer ${churnApiKey}`
+              },
+              body: JSON.stringify(payload)
+            });
+            
+            console.log(`📥 Response from ${endpoint}:`, {
+              status: apiResponse.status,
+              ok: apiResponse.ok,
+              statusText: apiResponse.statusText
+            });
+            
+            if (apiResponse.ok) {
+              break; // Success, exit loop
+            }
+            
+            lastError = `${apiResponse.status} ${apiResponse.statusText}`;
+          } catch (fetchError) {
+            console.log(`❌ Endpoint ${endpoint} failed:`, fetchError.message);
+            lastError = fetchError.message;
+            continue;
+          }
+        }
 
-        console.log('📥 AI Model Response:', {
-          status: apiResponse.status,
-          ok: apiResponse.ok,
-          statusText: apiResponse.statusText
-        });
-
-        if (apiResponse.ok) {
+        if (apiResponse && apiResponse.ok) {
           const apiData = await apiResponse.json();
           console.log('🧠 AI Model Data:', apiData);
           
-          prediction.churn_probability = apiData.churn_score || prediction.churn_probability;
-          prediction.reason = apiData.churn_reason || prediction.reason;
-          prediction.understanding_score = apiData.understanding_score || prediction.understanding_score;
-          prediction.message = apiData.insight || prediction.message;
+          // Update prediction with AI model response
+          if (apiData.churn_score !== undefined) {
+            prediction.churn_probability = apiData.churn_score;
+          }
+          if (apiData.churn_reason) {
+            prediction.reason = apiData.churn_reason;
+          }
+          if (apiData.understanding_score !== undefined) {
+            prediction.understanding_score = apiData.understanding_score;
+          }
+          if (apiData.insight) {
+            prediction.message = apiData.insight;
+          }
           
-          console.log('✅ Final prediction:', prediction);
+          console.log('✅ Final prediction with AI data:', prediction);
         } else {
-          const errorText = await apiResponse.text();
-          console.error('❌ AI API failed:', { status: apiResponse.status, error: errorText });
+          throw new Error(`All endpoints failed. Last error: ${lastError}`);
         }
       } catch (error) {
-        console.error('❌ AI API call failed:', error);
-        // Keep the calculated base score instead of hardcoded fallback
+        console.error('❌ AI Model Request Failed:', error.message);
+        console.log('🔄 Using calculated score and dynamic reason as fallback');
+        // prediction already has the calculated base score and dynamic reason
       }
     } else {
-      console.log('⚠️ Using calculated score (no AI API configured)');
+      console.log('⚠️ Using calculated score and dynamic reason (no AI API configured)');
     }
 
     // Calculate risk level

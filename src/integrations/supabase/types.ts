@@ -885,6 +885,10 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: string
       }
+      update_existing_user_insights: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
     }
     Enums: {
       plan_type: "Free" | "Pro" | "Enterprise"

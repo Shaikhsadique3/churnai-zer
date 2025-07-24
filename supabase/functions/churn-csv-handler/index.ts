@@ -62,46 +62,85 @@ async function processCsvRow(row: CSVRow): Promise<{ success: boolean; user_id?:
     const churnApiUrl = Deno.env.get('CHURN_API_URL');
     const churnApiKey = Deno.env.get('CHURN_API_KEY');
     
+    console.log('🔍 Debug - Environment variables:', {
+      hasChurnApiUrl: !!churnApiUrl,
+      hasChurnApiKey: !!churnApiKey,
+      churnApiUrl: churnApiUrl || 'NOT SET'
+    });
+    
+    // Calculate dynamic churn probability based on actual data
+    let baseScore = 0.2;
+    
+    // Increase score based on risk factors
+    if (mapped.logins_last30 < 5) baseScore += 0.3;
+    if (mapped.email_opens < 3) baseScore += 0.2;
+    if (mapped.support_tickets > 2) baseScore += 0.2;
+    if (mapped.plan === 'Free' && mapped.monthly_revenue === 0) baseScore += 0.15;
+    if (mapped.billing_status.toLowerCase().includes('inactive')) baseScore += 0.25;
+    
+    // Cap at 0.95
+    baseScore = Math.min(baseScore, 0.95);
+    
     let prediction = {
-      churn_probability: 0.3,
-      reason: 'Basic assessment based on activity patterns',
+      churn_probability: baseScore,
+      reason: 'Assessment based on activity patterns and engagement metrics',
       understanding_score: 75,
-      message: 'Initial risk assessment complete'
+      message: 'Risk assessment based on user behavior analysis'
     };
 
     if (churnApiUrl && churnApiKey) {
       try {
+        const payload = {
+          days_since_signup: 30, // Default
+          monthly_revenue: mapped.monthly_revenue,
+          subscription_plan_Pro: mapped.plan === 'Pro' ? 1 : 0,
+          subscription_plan_FreeTrial: mapped.plan === 'Free' ? 1 : 0,
+          number_of_logins_last30days: mapped.logins_last30,
+          active_features_used: mapped.logins_last30, // Use logins as proxy
+          support_tickets_opened: mapped.support_tickets,
+          last_payment_status_Success: mapped.billing_status.toLowerCase().includes('success') ? 1 : 0,
+          email_opens_last30days: mapped.email_opens,
+          last_login_days_ago: 3, // Default
+          billing_issue_count: 0
+        };
+        
+        console.log('📤 Sending to AI model:', { email: mapped.customer_email, payload });
+        
         const apiResponse = await fetch(churnApiUrl, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
             'X-API-Key': churnApiKey
           },
-          body: JSON.stringify({
-            days_since_signup: 30, // Default
-            monthly_revenue: mapped.monthly_revenue,
-            subscription_plan_Pro: mapped.plan === 'Pro' ? 1 : 0,
-            subscription_plan_FreeTrial: mapped.plan === 'Free' ? 1 : 0,
-            number_of_logins_last30days: mapped.logins_last30,
-            active_features_used: mapped.logins_last30, // Use logins as proxy
-            support_tickets_opened: mapped.support_tickets,
-            last_payment_status_Success: mapped.billing_status.toLowerCase().includes('success') ? 1 : 0,
-            email_opens_last30days: mapped.email_opens,
-            last_login_days_ago: 3, // Default
-            billing_issue_count: 0
-          })
+          body: JSON.stringify(payload)
+        });
+
+        console.log('📥 AI Model Response:', {
+          status: apiResponse.status,
+          ok: apiResponse.ok,
+          statusText: apiResponse.statusText
         });
 
         if (apiResponse.ok) {
           const apiData = await apiResponse.json();
+          console.log('🧠 AI Model Data:', apiData);
+          
           prediction.churn_probability = apiData.churn_score || prediction.churn_probability;
           prediction.reason = apiData.churn_reason || prediction.reason;
           prediction.understanding_score = apiData.understanding_score || prediction.understanding_score;
           prediction.message = apiData.insight || prediction.message;
+          
+          console.log('✅ Final prediction:', prediction);
+        } else {
+          const errorText = await apiResponse.text();
+          console.error('❌ AI API failed:', { status: apiResponse.status, error: errorText });
         }
       } catch (error) {
-        console.warn('AI API call failed, using fallback prediction:', error);
+        console.error('❌ AI API call failed:', error);
+        // Keep the calculated base score instead of hardcoded fallback
       }
+    } else {
+      console.log('⚠️ Using calculated score (no AI API configured)');
     }
 
     // Calculate risk level

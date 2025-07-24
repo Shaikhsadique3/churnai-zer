@@ -431,24 +431,24 @@ const EnhancedCSVUploader = ({ open, onOpenChange, onUploadComplete }: EnhancedC
           for (const [index, result] of batchResult.results.entries()) {
             const customerData = customersData[index];
             
+            // Ensure plan value matches enum constraint
+            const validPlan = (['Free', 'Pro', 'Enterprise'].includes(customerData.plan)) 
+              ? customerData.plan as 'Free' | 'Pro' | 'Enterprise'
+              : 'Free';
+
             const enrichedRow = {
               user_id: customerData.customer_email,
-              customer_name: customerData.customer_name,
-              customer_email: customerData.customer_email,
-              signup_date: customerData.signup_date,
-              last_active_date: customerData.last_active_date,
-              subscription_plan: customerData.plan,
-              monthly_revenue: customerData.monthly_revenue,
-              active_features_used: customerData.active_features_used,
-              support_tickets_opened: customerData.support_tickets_opened,
-              payment_status: customerData.billing_status,
-              email_opens_last30days: customerData.email_opens_last30days,
-              billing_issue_count: 0,
-              number_of_logins_last30days: customerData.number_of_logins_last30days,
+              plan: validPlan,
+              usage: customerData.active_features_used || 0,
+              last_login: customerData.last_active_date ? new Date(customerData.last_active_date).toISOString() : null,
               churn_score: result.churn_score,
               churn_reason: result.churn_reason,
               risk_level: result.risk_level,
-              insight: result.insight,
+              user_stage: 'analyzed',
+              understanding_score: result.understanding_score || 0,
+              days_until_mature: 0,
+              action_recommended: result.insight || '',
+              is_deleted: false,
               owner_id: session.user.id,
               created_at: new Date().toISOString(),
               updated_at: new Date().toISOString()

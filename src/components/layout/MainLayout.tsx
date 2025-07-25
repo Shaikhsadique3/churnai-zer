@@ -15,10 +15,8 @@ export function MainLayout({ children }: MainLayoutProps) {
         <div className="flex-1 flex flex-col">
           {/* Mobile header with hamburger */}
           <header className="flex h-14 shrink-0 items-center gap-3 border-b border-border bg-card px-4 shadow-sm lg:hidden">
-            <SidebarTrigger asChild>
-              <Button variant="ghost" size="sm" className="p-2">
-                <Menu className="h-5 w-5" />
-              </Button>
+            <SidebarTrigger className="p-2 hover:bg-sidebar-accent rounded-md transition-colors">
+              <Menu className="h-5 w-5" />
             </SidebarTrigger>
             <h1 className="text-lg font-semibold text-foreground">Churnaizer</h1>
           </header>

@@ -6,13 +6,35 @@ import { Label } from '@/components/ui/label';
 import { Shield, Eye, EyeOff } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from '@/hooks/use-toast';
+import { APP_CONFIG } from '@/lib/config';
 
 const AdminLogin = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const { signIn } = useAuth();
+  const { signIn, user } = useAuth();
+
+  // Redirect if not on admin domain
+  React.useEffect(() => {
+    if (!APP_CONFIG.isAdminDomain()) {
+      APP_CONFIG.redirectToAdmin('/admin/login');
+      return;
+    }
+    
+    // If already authenticated and is admin, redirect to dashboard
+    if (user) {
+      const allowedAdminEmails = [
+        'shaikhsadique730@gmail.com',
+        'shaikhsadique2222@gmail.com', 
+        'shaikhumairthisside@gmail.com'
+      ];
+      
+      if (allowedAdminEmails.includes(user.email || '')) {
+        window.location.href = '/admin/dashboard';
+      }
+    }
+  }, [user]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -51,8 +73,8 @@ const AdminLogin = () => {
         description: "Welcome to the admin panel."
       });
 
-      // Redirect to admin panel
-      window.location.href = '/admin';
+      // Redirect to admin dashboard
+      window.location.href = '/admin/dashboard';
       
     } catch (error) {
       toast({
@@ -133,7 +155,7 @@ const AdminLogin = () => {
           <div className="mt-6 text-center">
             <Button 
               variant="link" 
-              onClick={() => window.location.href = 'https://auth.churnaizer.com'}
+              onClick={() => APP_CONFIG.redirectToAuth('/auth')}
               className="text-sm"
             >
               Back to Main Login

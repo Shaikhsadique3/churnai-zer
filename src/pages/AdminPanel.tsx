@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Navigate } from 'react-router-dom';
+import { APP_CONFIG } from '@/lib/config';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -78,14 +79,26 @@ const AdminPanel = () => {
   const isAdmin = user?.email && allowedAdminEmails.includes(user.email);
 
   useEffect(() => {
+    // Redirect if not on admin domain
+    if (!APP_CONFIG.isAdminDomain()) {
+      APP_CONFIG.redirectToAdmin('/admin/dashboard');
+      return;
+    }
+    
     if (isAdmin) {
       fetchAnnouncements();
       fetchBlogs();
     }
   }, [isAdmin]);
 
+  // Redirect to admin login if not authenticated, but only within admin domain
   if (!user) {
-    return <Navigate to="/auth" replace />;
+    if (APP_CONFIG.isAdminDomain()) {
+      return <Navigate to="/admin/login" replace />;
+    } else {
+      APP_CONFIG.redirectToAdmin('/admin/login');
+      return <div>Redirecting to admin panel...</div>;
+    }
   }
 
   if (!isAdmin) {
@@ -99,7 +112,10 @@ const AdminPanel = () => {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <Button onClick={() => signOut()} className="w-full" variant="outline">
+            <Button onClick={() => {
+              signOut();
+              APP_CONFIG.redirectToDashboard();
+            }} className="w-full" variant="outline">
               Back to Dashboard
             </Button>
           </CardContent>

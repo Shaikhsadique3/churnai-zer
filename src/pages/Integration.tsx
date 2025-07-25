@@ -8,7 +8,7 @@ import { toast } from "@/hooks/use-toast";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import DashboardHeader from "@/components/dashboard/DashboardHeader";
+import { MainLayout } from "@/components/layout/MainLayout";
 import { IntegrationOverview } from "@/components/integration/IntegrationOverview";
 import { SimplifiedSDKIntegration } from "@/components/integration/SimplifiedSDKIntegration";
 
@@ -107,66 +107,47 @@ const Integration = () => {
   // Show loading state
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-background">
-        <DashboardHeader 
-          userEmail={user?.email || ''}
-          onLogout={handleLogout}
-        />
-        <main className="container mx-auto px-2 sm:px-4 py-4 sm:py-8">
-          <div className="space-y-6">
-            {[...Array(4)].map((_, i) => (
-              <div key={i} className="animate-pulse bg-muted h-32 rounded-lg"></div>
-            ))}
-          </div>
-        </main>
-      </div>
+      <MainLayout>
+        <div className="space-y-6">
+          {[...Array(4)].map((_, i) => (
+            <div key={i} className="animate-pulse bg-muted h-32 rounded-lg"></div>
+          ))}
+        </div>
+      </MainLayout>
     );
   }
 
   // Show error state
   if (apiKeysError) {
     return (
-      <div className="min-h-screen bg-background">
-        <DashboardHeader 
-          userEmail={user?.email || ''}
-          onLogout={handleLogout}
-        />
-        <main className="container mx-auto px-2 sm:px-4 py-4 sm:py-8">
-          <div className="text-center py-12">
-            <h2 className="text-xl font-semibold mb-2 text-red-600">Error Loading Integration</h2>
-            <p className="text-muted-foreground mb-4">{apiKeysError.message}</p>
-            <Button onClick={() => window.location.reload()}>
-              Try Again
-            </Button>
-          </div>
-        </main>
-      </div>
+      <MainLayout>
+        <div className="text-center py-12">
+          <h2 className="text-xl font-semibold mb-2 text-red-600">Error Loading Integration</h2>
+          <p className="text-muted-foreground mb-4">{apiKeysError.message}</p>
+          <Button onClick={() => window.location.reload()}>
+            Try Again
+          </Button>
+        </div>
+      </MainLayout>
     );
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <DashboardHeader 
-        userEmail={user?.email || ''}
-        onLogout={handleLogout}
-      />
-
-      <main className="container mx-auto px-4 py-8">
-        {isSetupGuide ? (
-          <SimplifiedSDKIntegration />
-        ) : (
-          <IntegrationOverview
-            apiKeys={apiKeys || []}
-            isLoading={isLoading}
-            newKeyName={newKeyName}
-            setNewKeyName={setNewKeyName}
-            onCreateKey={(name) => createKeyMutation.mutate(name)}
-            onCopyKey={copyToClipboard}
-            isCreating={createKeyMutation.isPending}
-          />
-        )}
-      </main>
-    </div>
+    <MainLayout>
+      {isSetupGuide ? (
+        <SimplifiedSDKIntegration />
+      ) : (
+        <IntegrationOverview
+          apiKeys={apiKeys || []}
+          isLoading={isLoading}
+          newKeyName={newKeyName}
+          setNewKeyName={setNewKeyName}
+          onCreateKey={(name) => createKeyMutation.mutate(name)}
+          onCopyKey={copyToClipboard}
+          isCreating={createKeyMutation.isPending}
+        />
+      )}
+    </MainLayout>
   );
 };
 

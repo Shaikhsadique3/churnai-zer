@@ -80,38 +80,24 @@ export const SimplifiedSDKIntegration = () => {
 
   // Generate the SDK snippet
   const generateSDKSnippet = () => {
-    const sampleUserData = stats.recentUsers.length > 0 ? {
-      user_id: "{{user.id}}",
-      customer_name: "{{user.name}}",
-      customer_email: "{{user.email}}",
-      days_since_signup: "{{daysSinceSignup}}",
-      monthly_revenue: "{{user.subscription.amount}}",
-      subscription_plan: "{{user.plan}}",
-      number_of_logins_last30days: "{{user.loginCount}}",
-      active_features_used: "{{user.featureUsage}}",
-      support_tickets_opened: "{{user.supportTickets}}",
-      last_payment_status: "{{user.paymentStatus}}",
-      email_opens_last30days: "{{user.emailEngagement}}",
+    const sampleUserData = {
+      user_id: "{{currentUser.id}}",
+      customer_name: "{{currentUser.name || currentUser.email.split('@')[0]}}",
+      customer_email: "{{currentUser.email}}",
+      days_since_signup: "{{Math.floor((Date.now() - new Date(currentUser.created_at).getTime()) / (1000 * 60 * 60 * 24))}}",
+      monthly_revenue: "{{currentUser.subscription?.amount || 0}}",
+      subscription_plan: "{{currentUser.subscription?.plan || 'Free'}}",
+      number_of_logins_last30days: "{{currentUser.analytics?.loginCount30d || 1}}",
+      active_features_used: "{{currentUser.analytics?.featuresUsed || 1}}",
+      support_tickets_opened: "{{currentUser.support?.ticketCount || 0}}",
+      last_payment_status: "{{currentUser.billing?.status || 'active'}}",
+      email_opens_last30days: "{{currentUser.email?.opens30d || 0}}",
       last_login_days_ago: 0,
-      billing_issue_count: "{{user.billingIssues}}"
-    } : {
-      user_id: "user_123",
-      customer_name: "John Doe",
-      customer_email: "john@company.com",
-      days_since_signup: 30,
-      monthly_revenue: 99,
-      subscription_plan: "Pro",
-      number_of_logins_last30days: 15,
-      active_features_used: 5,
-      support_tickets_opened: 1,
-      last_payment_status: "active",
-      email_opens_last30days: 8,
-      last_login_days_ago: 0,
-      billing_issue_count: 0
+      billing_issue_count: "{{currentUser.billing?.issueCount || 0}}"
     };
 
     return `<!-- Churnaizer SDK Integration -->
-<script src="https://19bbb304-3471-4d58-96e0-3f17ce42bb31.lovableproject.com/churnaizer-sdk.js"></script>
+<script src="https://cdn.churnaizer.com/churnaizer-sdk.js"></script>
 <script>
 // Initialize Churnaizer when user logs in or performs key actions
 if (window.Churnaizer && currentUser) {
@@ -126,6 +112,11 @@ if (window.Churnaizer && currentUser) {
     if (result.risk_level === 'high') {
       // Trigger retention campaign, show special offer, etc.
       console.log('⚠️ High churn risk detected for user');
+      
+      // Example actions:
+      // showRetentionModal();
+      // triggerEmailCampaign(currentUser.id);
+      // offerDiscount(result.churn_score);
     }
   });
 }

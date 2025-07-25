@@ -177,8 +177,8 @@
       }
 
       try {
-        // Step 1: Send data to secure Supabase edge function
-        const endpointUrl = `https://ntbkydpgjaswmwruegyl.supabase.co/functions/v1/track`;
+        // Step 1: Send data to secure Churnaizer API endpoint
+        const endpointUrl = `https://api.churnaizer.com/functions/v1/track`;
         const aiData = await retryFetch(endpointUrl, {
           method: 'POST',
           headers: {

@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Upload, Code, Users, TrendingUp, AlertTriangle, Filter } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
-import DashboardHeader from "@/components/dashboard/DashboardHeader";
+import { MainLayout } from "@/components/layout/MainLayout";
 import { DashboardOverview } from "@/components/dashboard/DashboardOverview";
 import { UploadedUsersTable } from "@/components/dashboard/UploadedUsersTable";
 import EnhancedCSVUploader from "@/components/dashboard/EnhancedCSVUploader";
@@ -22,13 +22,8 @@ const Dashboard = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background">
-      <DashboardHeader 
-        userEmail={user?.email || ''}
-        onLogout={handleLogout}
-      />
-
-      <main className="container mx-auto px-4 py-8 max-w-7xl">
+    <MainLayout>
+      <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="mb-8">
           <div className="flex items-center justify-between mb-6">
@@ -131,17 +126,15 @@ const Dashboard = () => {
           {activeView === 'users' && <UploadedUsersTable />}
         </div>
 
-          {/* Removed redundant action cards - functionality is already accessible via main navigation */}
-      </main>
-
-      <EnhancedCSVUploader 
-        open={uploadModalOpen}
-        onOpenChange={setUploadModalOpen}
-        onUploadComplete={() => {
-          setUploadModalOpen(false);
-        }}
-      />
-    </div>
+        <EnhancedCSVUploader 
+          open={uploadModalOpen}
+          onOpenChange={setUploadModalOpen}
+          onUploadComplete={() => {
+            setUploadModalOpen(false);
+          }}
+        />
+      </div>
+    </MainLayout>
   );
 };
 

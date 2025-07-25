@@ -23,7 +23,7 @@ const Auth = () => {
   const [rememberMe, setRememberMe] = useState(false);
   const [passwordCopied, setPasswordCopied] = useState(false);
   const [errors, setErrors] = useState<{email?: string; password?: string}>({});
-  const { signIn, signUp, resetPassword, user } = useAuth();
+  const { signIn, signInWithGoogle, signUp, resetPassword, user } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -87,12 +87,7 @@ const Auth = () => {
   const handleGoogleSignIn = async () => {
     try {
       setLoading(true);
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider: 'google',
-        options: {
-          redirectTo: `${APP_CONFIG.getCurrentUrl()}/dashboard`
-        }
-      });
+      const { error } = await signInWithGoogle();
       
       if (error) {
         toast({

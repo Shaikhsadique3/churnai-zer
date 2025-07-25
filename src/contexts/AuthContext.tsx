@@ -31,13 +31,34 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    let timeoutId: NodeJS.Timeout;
+    
+    // Set loading timeout to prevent infinite spinner
+    const loadingTimeout = setTimeout(() => {
+      if (loading) {
+        console.log('Auth loading timeout - setting loading to false');
+        setLoading(false);
+      }
+    }, 5000); // 5 second timeout
+
     // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
         console.log('Auth state changed:', event, session?.user?.id);
         setSession(session);
         setUser(session?.user ?? null);
+        
+        // Set cross-subdomain cookie for session sharing
+        if (session?.access_token) {
+          // Set secure cookie that works across subdomains
+          document.cookie = `churnaizer_session=${session.access_token}; domain=.churnaizer.com; path=/; secure; samesite=none; max-age=86400`;
+        } else {
+          // Clear the session cookie
+          document.cookie = `churnaizer_session=; domain=.churnaizer.com; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT`;
+        }
+        
         setLoading(false);
+        clearTimeout(loadingTimeout);
       }
     );
 
@@ -45,10 +66,20 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       setUser(session?.user ?? null);
+      
+      // Set cross-subdomain cookie for initial session
+      if (session?.access_token) {
+        document.cookie = `churnaizer_session=${session.access_token}; domain=.churnaizer.com; path=/; secure; samesite=none; max-age=86400`;
+      }
+      
       setLoading(false);
+      clearTimeout(loadingTimeout);
     });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      subscription.unsubscribe();
+      clearTimeout(loadingTimeout);
+    };
   }, []);
 
   const signIn = async (email: string, password: string) => {
@@ -133,9 +164,12 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   const signOut = async () => {
     try {
+      // Clear cross-subdomain session cookie
+      document.cookie = `churnaizer_session=; domain=.churnaizer.com; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT`;
+      
       // Clear all auth-related data from localStorage
       Object.keys(localStorage).forEach((key) => {
-        if (key.startsWith('supabase.auth.') || key.includes('sb-') || key === 'rememberMe') {
+        if (key.startsWith('supabase.auth.') || key.includes('sb-') || key === 'rememberMe' || key.includes('churnaizer')) {
           localStorage.removeItem(key);
         }
       });
@@ -148,7 +182,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       setUser(null);
     } catch (error) {
       console.error('Sign out error:', error);
-      // Even if signOut fails, clear local state
+      // Even if signOut fails, clear local state and cookie
+      document.cookie = `churnaizer_session=; domain=.churnaizer.com; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT`;
       setSession(null);
       setUser(null);
     }

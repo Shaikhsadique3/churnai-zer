@@ -43,8 +43,8 @@ export const SDKSetupGuide = ({ primaryApiKey, onCopyCode }: SDKSetupGuideProps)
     
     try {
       const { data, error } = await supabase.functions.invoke('track', {
-        headers: { 'X-API-Key': primaryApiKey },
         body: {
+          api_key: primaryApiKey, // Include API key in body for testing
           user_id: testData.user_id,
           customer_name: testData.customer_name,
           customer_email: testData.customer_email,

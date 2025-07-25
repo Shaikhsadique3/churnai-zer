@@ -44,11 +44,29 @@ serve(async (req) => {
   }
 
   try {
-    // Get API key from header (case-insensitive)
-    const apiKey = req.headers.get('X-API-Key') || req.headers.get('x-api-key');
+    // Get API key from header (case-insensitive) or from request body
+    let apiKey = req.headers.get('X-API-Key') || req.headers.get('x-api-key');
+    
+    // If no API key in headers, try to get it from request body (for testing)
     if (!apiKey) {
+      try {
+        const body = await req.json();
+        apiKey = body.api_key || body.apiKey;
+        // Reset the request for later processing
+        req = new Request(req.url, {
+          method: req.method,
+          headers: req.headers,
+          body: JSON.stringify(body)
+        });
+      } catch (e) {
+        // Ignore parsing errors, we'll handle missing API key below
+      }
+    }
+    
+    if (!apiKey) {
+      console.log('No API key found in headers or body');
       return new Response(
-        JSON.stringify({ code: 401, message: 'Unauthorized' }),
+        JSON.stringify({ code: 401, message: 'API key is required. Include it in X-API-Key header or api_key field in request body.' }),
         { 
           status: 401, 
           headers: { ...corsHeaders, 'Content-Type': 'application/json' } 

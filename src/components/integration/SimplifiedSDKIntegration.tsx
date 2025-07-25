@@ -39,14 +39,10 @@ export function SimplifiedSDKIntegration() {
         .eq('is_active', true)
         .order('created_at', { ascending: false })
         .limit(1)
-        .single();
+        .maybeSingle();
 
       if (error) {
-        console.error('Supabase error code:', error.code);
-        console.error('Supabase error message:', error.message);
-        console.error('Supabase error details:', error.details);
-        console.error('Supabase error hint:', error.hint);
-        console.error('Full error object:', JSON.stringify(error, null, 2));
+        console.error('Error fetching API key:', error);
         throw error;
       }
       
@@ -59,9 +55,7 @@ export function SimplifiedSDKIntegration() {
         await createApiKey();
       }
     } catch (error) {
-      console.error('Error fetching API key - type:', typeof error);
-      console.error('Error fetching API key - stringified:', JSON.stringify(error, null, 2));
-      console.error('Error fetching API key - message:', error instanceof Error ? error.message : 'Unknown error');
+      console.error('Error fetching API key:', error instanceof Error ? error.message : 'Unknown error');
       
       toast({
         title: "Error fetching API key",

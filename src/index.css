@@ -39,10 +39,10 @@
 
     --sidebar-background: 0 0% 100%; /* Pure white sidebar */
     --sidebar-foreground: 217 23% 14%;
-    --sidebar-primary: 210 68% 31%; /* Primary blue */
+    --sidebar-primary: 210 68% 31%; /* #1C4E80 Brand color */
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 210 17% 95%; /* Very light blue */
-    --sidebar-accent-foreground: 217 23% 14%;
+    --sidebar-accent: 210 68% 95%; /* Light brand color for active state */
+    --sidebar-accent-foreground: 210 68% 31%; /* Brand color text */
     --sidebar-border: 210 17% 90%;
     --sidebar-ring: 210 68% 31%;
   }

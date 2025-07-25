@@ -40,42 +40,42 @@ export function AppSidebar() {
 
   return (
     <Sidebar
-      className={`${!open && !isMobile ? "w-16" : "w-64"} border-r border-sidebar-border bg-sidebar shadow-sm transition-all duration-300`}
+      className={`${!open && !isMobile ? "w-16" : "w-[280px]"} border-r border-sidebar-border bg-sidebar shadow-sm transition-all duration-300 h-screen`}
       collapsible="icon"
       variant={isMobile ? "sidebar" : "sidebar"}
     >
-      <SidebarHeader className="border-b border-sidebar-border p-3">
-        <div className="flex items-center space-x-3">
-          <Logo className="h-7 w-7 shrink-0" />
+      <SidebarHeader className="border-b border-sidebar-border px-6 py-4">
+        <div className="flex items-center space-x-2">
+          <Logo className="h-8 w-8 shrink-0" />
           {(open || isMobile) && (
             <div className="min-w-0 flex-1">
-              <h2 className="text-base font-semibold text-sidebar-primary truncate">Churnaizer</h2>
-              <p className="text-xs text-sidebar-foreground/70 truncate">Churn Prevention</p>
+              <h2 className="text-lg font-semibold text-sidebar-primary truncate">Churnaizer</h2>
+              <p className="text-sm text-sidebar-foreground/70 truncate">Churn Prevention</p>
             </div>
           )}
         </div>
       </SidebarHeader>
 
-      <SidebarContent className="flex-1 p-2">
+      <SidebarContent className="flex-1 px-6 py-4 overflow-y-auto">
         <SidebarGroup>
           <SidebarGroupContent>
-            <SidebarMenu className="space-y-1">
+            <SidebarMenu className="space-y-2">
               {navigationItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton asChild className="rounded-lg h-9">
+                  <SidebarMenuButton asChild className="rounded-lg h-12">
                     <NavLink 
                       to={item.url} 
                       className={({ isActive }) => 
-                        `flex items-center w-full transition-colors duration-200 px-2 py-1 ${
+                        `flex items-center w-full transition-colors duration-200 px-6 py-3 ${
                           isActive 
-                            ? "bg-sidebar-accent text-sidebar-primary font-medium" 
-                            : "text-sidebar-foreground hover:bg-sidebar-accent/60 hover:text-sidebar-primary"
+                            ? "bg-sidebar-accent text-sidebar-accent-foreground font-medium" 
+                            : "text-sidebar-foreground hover:bg-sidebar-accent/60 hover:text-sidebar-accent-foreground"
                         }`
                       }
                     >
                       <div className="flex items-center w-full">
-                        <item.icon className={`h-4 w-4 ${(!open && !isMobile) ? "" : "mr-3"}`} />
-                        {(open || isMobile) && <span className="font-medium text-sm truncate">{item.title}</span>}
+                        <item.icon className={`h-5 w-5 ${(!open && !isMobile) ? "" : "mr-2"}`} />
+                        {(open || isMobile) && <span className="font-medium text-sm truncate ml-2">{item.title}</span>}
                       </div>
                     </NavLink>
                   </SidebarMenuButton>
@@ -86,18 +86,18 @@ export function AppSidebar() {
         </SidebarGroup>
       </SidebarContent>
 
-      <SidebarFooter className="border-t border-sidebar-border p-2">
+      <SidebarFooter className="border-t border-sidebar-border px-6 py-4">
         {user && (
-          <div className={`flex items-center ${(!open && !isMobile) ? "justify-center" : "space-x-3 mb-2"}`}>
-            <Avatar className="h-7 w-7 shrink-0">
+          <div className={`flex items-center ${(!open && !isMobile) ? "justify-center" : "space-x-3 mb-3"}`}>
+            <Avatar className="h-8 w-8 shrink-0">
               <AvatarImage src={user.user_metadata?.avatar_url} />
-              <AvatarFallback className="bg-primary text-primary-foreground text-xs font-medium">
+              <AvatarFallback className="bg-primary text-primary-foreground text-sm font-medium">
                 {user.email?.charAt(0).toUpperCase()}
               </AvatarFallback>
             </Avatar>
             {(open || isMobile) && (
               <div className="flex-1 min-w-0">
-                <p className="text-xs font-medium text-sidebar-primary truncate">
+                <p className="text-sm font-medium text-sidebar-primary truncate">
                   {user.user_metadata?.full_name || user.email?.split('@')[0]}
                 </p>
                 <p className="text-xs text-sidebar-foreground/70 truncate">
@@ -113,7 +113,7 @@ export function AppSidebar() {
             variant="ghost" 
             size="sm" 
             onClick={signOut}
-            className="w-full text-xs text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-primary h-8"
+            className="w-full text-sm text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground h-10"
           >
             Sign Out
           </Button>

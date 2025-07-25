@@ -24,19 +24,74 @@ export function SimplifiedSDKIntegration() {
     if (!user) return;
     
     try {
+      console.log('Fetching API key for user:', user.id);
+      
       const { data, error } = await supabase
         .from('api_keys')
         .select('key')
         .eq('user_id', user.id)
         .eq('is_active', true)
-        .single();
+        .maybeSingle();
 
-      if (error) throw error;
-      setApiKey(data?.key || "");
+      if (error) {
+        console.error('Supabase error details:', error);
+        throw error;
+      }
+      
+      if (data) {
+        setApiKey(data.key);
+        console.log('API key fetched successfully');
+      } else {
+        console.log('No API key found, creating one...');
+        // Try to create a new API key if none exists
+        await createApiKey();
+      }
     } catch (error) {
       console.error('Error fetching API key:', error);
+      toast({
+        title: "Error fetching API key",
+        description: error instanceof Error ? error.message : "Unknown error occurred",
+        variant: "destructive",
+      });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const createApiKey = async () => {
+    if (!user) return;
+    
+    try {
+      // Use the database function to generate API key
+      const { data, error } = await supabase.rpc('generate_api_key');
+      
+      if (error) throw error;
+      
+      const generatedKey = data;
+      
+      // Insert the new API key
+      const { error: insertError } = await supabase
+        .from('api_keys')
+        .insert({
+          user_id: user.id,
+          key: generatedKey,
+          name: 'Default API Key'
+        });
+
+      if (insertError) throw insertError;
+      
+      setApiKey(generatedKey);
+      toast({
+        title: "API Key Created",
+        description: "Your API key has been generated successfully",
+      });
+    } catch (error) {
+      console.error('Error creating API key:', error);
+      toast({
+        title: "Error creating API key",
+        description: error instanceof Error ? error.message : "Unknown error occurred",
+        variant: "destructive",
+      });
     }
   };
 
@@ -52,6 +107,12 @@ export function SimplifiedSDKIntegration() {
   const testSDK = async () => {
     setTestLoading(true);
     try {
+      console.log('Testing SDK with API key:', apiKey ? 'Present' : 'Missing');
+      
+      if (!apiKey) {
+        throw new Error('API key is required for testing');
+      }
+
       // Test the SDK by calling our edge function directly
       const response = await supabase.functions.invoke('sdk-track', {
         body: {
@@ -71,7 +132,12 @@ export function SimplifiedSDKIntegration() {
         }
       });
 
-      if (response.error) throw response.error;
+      console.log('SDK test response:', response);
+
+      if (response.error) {
+        console.error('SDK test error:', response.error);
+        throw response.error;
+      }
       
       setTestResult(response.data);
       
@@ -82,13 +148,14 @@ export function SimplifiedSDKIntegration() {
       });
     } catch (error) {
       console.error('SDK test failed:', error);
+      const errorMessage = error instanceof Error ? error.message : "Unknown error";
       toast({
         title: "SDK Test Failed",
-        description: error instanceof Error ? error.message : "Unknown error",
+        description: errorMessage,
         variant: "destructive",
         duration: 5000,
       });
-      setTestResult({ error: error instanceof Error ? error.message : "Unknown error" });
+      setTestResult({ error: errorMessage });
     } finally {
       setTestLoading(false);
     }

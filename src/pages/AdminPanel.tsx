@@ -69,8 +69,13 @@ const AdminPanel = () => {
 
   const predefinedTags = ['Churn', 'Retention', 'AI', 'SaaS', 'Analytics', 'Customer Success', 'SDK'];
 
-  // Check if user is admin
-  const isAdmin = user?.email && ['sinsantv@gmail.com', 'admin@churnaizer.com'].includes(user.email);
+  // Check if user is admin - only allow specific email addresses
+  const allowedAdminEmails = [
+    'shaikhsadique730@gmail.com',
+    'shaikhsadique2222@gmail.com', 
+    'shaikhumairthisside@gmail.com'
+  ];
+  const isAdmin = user?.email && allowedAdminEmails.includes(user.email);
 
   useEffect(() => {
     if (isAdmin) {

@@ -30,14 +30,18 @@ const AdminLogin = () => {
         return;
       }
 
-      // Check if user is admin (simple check - in production use proper role management)
-      const isAdmin = email.includes('admin') || email.includes('@churnaizer.com');
+      // Check if user is admin - only allow specific email addresses
+      const allowedAdminEmails = [
+        'shaikhsadique730@gmail.com',
+        'shaikhsadique2222@gmail.com', 
+        'shaikhumairthisside@gmail.com'
+      ];
       
-      if (!isAdmin) {
+      if (!allowedAdminEmails.includes(email)) {
         toast({
           variant: "destructive",
           title: "Access Denied",
-          description: "You don't have admin permissions."
+          description: "Your email address is not authorized for admin access."
         });
         return;
       }

@@ -105,7 +105,7 @@ const AdminPanel = () => {
               signOut();
               window.location.href = '/integration';
             }} className="w-full" variant="outline">
-              Back to Dashboard
+              Back to Main Dashboard
             </Button>
           </CardContent>
         </Card>

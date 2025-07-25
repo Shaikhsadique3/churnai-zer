@@ -79,26 +79,15 @@ const AdminPanel = () => {
   const isAdmin = user?.email && allowedAdminEmails.includes(user.email);
 
   useEffect(() => {
-    // Redirect if not on admin domain
-    if (!APP_CONFIG.isAdminDomain()) {
-      APP_CONFIG.redirectToAdmin('/admin/dashboard');
-      return;
-    }
-    
     if (isAdmin) {
       fetchAnnouncements();
       fetchBlogs();
     }
   }, [isAdmin]);
 
-  // Redirect to admin login if not authenticated, but only within admin domain
+  // Redirect to admin login if not authenticated
   if (!user) {
-    if (APP_CONFIG.isAdminDomain()) {
-      return <Navigate to="/admin/login" replace />;
-    } else {
-      APP_CONFIG.redirectToAdmin('/admin/login');
-      return <div>Redirecting to admin panel...</div>;
-    }
+    return <Navigate to="/admin/login" replace />;
   }
 
   if (!isAdmin) {
@@ -114,7 +103,7 @@ const AdminPanel = () => {
           <CardContent>
             <Button onClick={() => {
               signOut();
-              APP_CONFIG.redirectToDashboard();
+              window.location.href = '/integration';
             }} className="w-full" variant="outline">
               Back to Dashboard
             </Button>
@@ -361,6 +350,13 @@ const AdminPanel = () => {
         <div className="flex items-center justify-between">
           <h1 className="text-2xl font-bold text-gray-900">Churnaizer Admin Panel</h1>
           <div className="flex items-center gap-4">
+            <Button 
+              variant="outline" 
+              onClick={() => window.location.href = '/integration'}
+              className="mr-2"
+            >
+              View Main Dashboard
+            </Button>
             <span className="text-sm text-gray-600">{user?.email}</span>
             <Button onClick={signOut} variant="outline" size="sm">
               Sign Out

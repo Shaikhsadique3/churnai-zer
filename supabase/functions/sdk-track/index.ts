@@ -30,6 +30,12 @@ Deno.serve(async (req) => {
   }
 
   try {
+    console.log('SDK track request received:', {
+      method: req.method,
+      headers: Object.fromEntries(req.headers.entries()),
+      url: req.url
+    })
+
     // Initialize Supabase client
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
@@ -50,10 +56,13 @@ Deno.serve(async (req) => {
       .select('user_id, is_active')
       .eq('key', apiKey)
       .eq('is_active', true)
+      .order('created_at', { ascending: false })
+      .limit(1)
       .single()
 
     if (apiKeyError || !apiKeyData) {
-      console.log('Invalid API key:', apiKey)
+      console.error('API key validation error:', apiKeyError)
+      console.log('Invalid API key provided:', apiKey?.substring(0, 10) + '...')
       return new Response(JSON.stringify({ error: 'Invalid API key' }), {
         status: 401,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -159,7 +168,9 @@ Deno.serve(async (req) => {
       .select('id')
       .eq('owner_id', ownerId)
       .eq('user_id', trackingData.user_id)
-      .single()
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle()
 
     let upsertResult
     if (existingUser) {
@@ -241,9 +252,15 @@ Deno.serve(async (req) => {
 
   } catch (error) {
     console.error('Error in sdk-track function:', error)
+    console.error('Error details:', {
+      name: error.name,
+      message: error.message,
+      stack: error.stack
+    })
     return new Response(JSON.stringify({ 
       error: 'Internal server error',
-      message: error.message 
+      message: error.message,
+      details: error.name 
     }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },

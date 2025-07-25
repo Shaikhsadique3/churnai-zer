@@ -28,7 +28,8 @@ const Auth = () => {
 
   useEffect(() => {
     if (user) {
-      navigate('/dashboard');
+      // Redirect to dashboard subdomain
+      window.location.href = 'https://dashboard.churnaizer.com/';
     }
   }, [user, navigate]);
 
@@ -132,7 +133,8 @@ const Auth = () => {
         title: "Welcome back!",
         description: "You have successfully signed in.",
       });
-      navigate('/dashboard');
+      // Redirect to dashboard subdomain
+      window.location.href = 'https://dashboard.churnaizer.com/';
     }
     
     setLoading(false);
@@ -167,13 +169,13 @@ const Auth = () => {
         title: `Welcome, ${user.user_metadata?.full_name || user.email}!`,
         description: "Let's get you set up with your account.",
       });
-      navigate('/onboarding'); // Navigate to onboarding for new users
+      window.location.href = 'https://dashboard.churnaizer.com/'; // Navigate to dashboard for new users
     } else {
       toast({
         title: "Welcome back!",
         description: "You have successfully signed in.",
       });
-      navigate('/dashboard');
+      window.location.href = 'https://dashboard.churnaizer.com/';
     }
   };
 

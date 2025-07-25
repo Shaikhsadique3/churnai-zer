@@ -62,8 +62,6 @@ const DomainRouter = () => {
           <Route path="/reset-password" element={<ResetPassword />} />
           <Route path="/terms" element={<Terms />} />
           <Route path="/privacy" element={<Privacy />} />
-          {/* Redirect authenticated users to dashboard */}
-          <Route path="/dashboard/*" element={<RedirectToDomain domain="dashboard" path="/dashboard" />} />
           <Route path="*" element={<Auth />} />
         </Routes>
       );

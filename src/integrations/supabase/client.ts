@@ -16,6 +16,13 @@ export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABL
     detectSessionInUrl: true,
     // Configure for cross-subdomain authentication
     storageKey: 'churnaizer-auth',
-    flowType: 'pkce'
+    flowType: 'pkce',
+    // Enable cross-subdomain session sharing
+    debug: false
+  },
+  global: {
+    headers: {
+      'X-Client-Info': 'churnaizer-app'
+    }
   }
 });

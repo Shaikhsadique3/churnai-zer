@@ -37,7 +37,9 @@ export function SimplifiedSDKIntegration() {
         .select('key')
         .eq('user_id', user.id)
         .eq('is_active', true)
-        .maybeSingle();
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .single();
 
       if (error) {
         console.error('Supabase error code:', error.code);

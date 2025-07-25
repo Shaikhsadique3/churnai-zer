@@ -20,6 +20,12 @@ export const DynamicHead = ({ title, description, ogImage, favicon }: DynamicHea
     const finalDescription = description || seoConfig.description;
     updateMetaTag('name', 'description', finalDescription);
     
+    // Add SEO keywords
+    updateMetaTag('name', 'keywords', 'SaaS Churn Prediction, AI Churn Detection, Churn Prevention Tool, Customer Retention AI, SDK for SaaS analytics');
+    
+    // Add robots meta tag
+    updateMetaTag('name', 'robots', 'index, follow');
+    
     // Update OG tags
     const finalOgImage = ogImage || seoConfig.ogImage;
     updateMetaTag('property', 'og:title', finalTitle);

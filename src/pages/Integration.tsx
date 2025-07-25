@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import DashboardHeader from "@/components/dashboard/DashboardHeader";
 import { IntegrationOverview } from "@/components/integration/IntegrationOverview";
-import { SDKSetupGuide } from "@/components/integration/SDKSetupGuide";
+import { SimplifiedSDKIntegration } from "@/components/integration/SimplifiedSDKIntegration";
 
 const Integration = () => {
   const { user, signOut } = useAuth();
@@ -153,10 +153,7 @@ const Integration = () => {
 
       <main className="container mx-auto px-4 py-8">
         {isSetupGuide ? (
-          <SDKSetupGuide
-            primaryApiKey={primaryApiKey}
-            onCopyCode={copyToClipboard}
-          />
+          <SimplifiedSDKIntegration />
         ) : (
           <IntegrationOverview
             apiKeys={apiKeys || []}

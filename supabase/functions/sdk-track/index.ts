@@ -146,21 +146,35 @@ Deno.serve(async (req) => {
     // Calculate understanding score
     const understandingScore = Math.max(30, Math.min(100, 85 - (churnScore * 50)))
 
+    // Map subscription plan to database enum values
+    let mappedPlan = 'Free' // Default
+    const planMap: Record<string, string> = {
+      'free': 'Free',
+      'pro': 'Pro', 
+      'premium': 'Pro', // Map premium to Pro
+      'enterprise': 'Enterprise'
+    }
+    if (trackingData.subscription_plan && planMap[trackingData.subscription_plan.toLowerCase()]) {
+      mappedPlan = planMap[trackingData.subscription_plan.toLowerCase()]
+    }
+
     // Prepare user data for database
     const userData = {
       owner_id: ownerId,
       user_id: trackingData.user_id,
-      plan: trackingData.subscription_plan || 'free',
+      plan: mappedPlan,
       usage: baseUsage,
       last_login: trackingData.last_login,
       churn_score: churnScore,
-      risk_level: riskLevel,
+      risk_level: riskLevel as 'low' | 'medium' | 'high',
       churn_reason: churnReason,
       action_recommended: actionRecommended,
       understanding_score: Math.round(understandingScore),
       user_stage: daysSinceLogin <= 7 ? 'active' : daysSinceLogin <= 30 ? 'at_risk' : 'inactive',
       source: 'sdk'
     }
+
+    console.log('Prepared user data for database:', userData)
 
     // Upsert user data
     const { data: existingUser } = await supabase
@@ -174,6 +188,7 @@ Deno.serve(async (req) => {
 
     let upsertResult
     if (existingUser) {
+      console.log('Updating existing user:', existingUser.id)
       upsertResult = await supabase
         .from('user_data')
         .update({
@@ -182,14 +197,27 @@ Deno.serve(async (req) => {
         })
         .eq('id', existingUser.id)
     } else {
+      console.log('Inserting new user data')
       upsertResult = await supabase
         .from('user_data')
         .insert(userData)
     }
 
+    console.log('Upsert result:', upsertResult)
+
     if (upsertResult.error) {
-      console.error('Database error:', upsertResult.error)
-      return new Response(JSON.stringify({ error: 'Failed to save user data' }), {
+      console.error('Database error details:', {
+        code: upsertResult.error.code,
+        message: upsertResult.error.message,
+        details: upsertResult.error.details,
+        hint: upsertResult.error.hint
+      })
+      console.error('Failed userData:', userData)
+      return new Response(JSON.stringify({ 
+        error: 'Failed to save user data',
+        details: upsertResult.error.message,
+        code: upsertResult.error.code
+      }), {
         status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       })

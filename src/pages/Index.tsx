@@ -27,6 +27,9 @@ const Index = () => {
               <h1 className="text-2xl font-bold text-foreground">Churnaizer</h1>
             </div>
             <div className="flex items-center space-x-4">
+              <Link to="/blog" className="hidden md:inline-block text-foreground/70 hover:text-foreground font-medium">
+                Blog
+              </Link>
               {user ? (
                 <Link to="/dashboard">
                   <Button>Dashboard</Button>

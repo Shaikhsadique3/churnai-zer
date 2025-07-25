@@ -85,33 +85,8 @@ const AdminPanel = () => {
     }
   }, [isAdmin]);
 
-  // Redirect to admin login if not authenticated
-  if (!user) {
-    return <Navigate to="/admin/login" replace />;
-  }
-
-  if (!isAdmin) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <Card className="w-full max-w-md">
-          <CardHeader>
-            <CardTitle className="text-center text-red-600">Access Denied</CardTitle>
-            <CardDescription className="text-center">
-              You don't have permission to access the admin panel.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Button onClick={() => {
-              signOut();
-              window.location.href = '/integration';
-            }} className="w-full" variant="outline">
-              Back to Main Dashboard
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
+  // This component should only be rendered when wrapped in AdminRoute
+  // AdminRoute handles all authentication and authorization logic
 
   const fetchAnnouncements = async () => {
     try {

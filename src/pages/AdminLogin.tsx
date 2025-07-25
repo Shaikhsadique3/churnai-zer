@@ -13,7 +13,7 @@ const AdminLogin = () => {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const { signIn, user } = useAuth();
+  const { signIn, signOut, user } = useAuth();
 
   // If already authenticated and is admin, redirect to dashboard
   React.useEffect(() => {
@@ -26,6 +26,9 @@ const AdminLogin = () => {
       
       if (allowedAdminEmails.includes(user.email || '')) {
         window.location.href = '/admin/dashboard';
+      } else {
+        // Redirect non-admin users to not-authorized page
+        window.location.href = '/not-authorized';
       }
     }
   }, [user]);
@@ -59,6 +62,9 @@ const AdminLogin = () => {
           title: "Access Denied",
           description: "Your email address is not authorized for admin access."
         });
+        // Sign out and redirect to not-authorized
+        await signOut();
+        window.location.href = '/not-authorized';
         return;
       }
 
@@ -149,10 +155,10 @@ const AdminLogin = () => {
           <div className="mt-6 text-center">
             <Button 
               variant="link" 
-              onClick={() => window.location.href = '/auth'}
+              onClick={() => window.location.href = '/'}
               className="text-sm"
             >
-              Back to Main Login
+              Back to Homepage
             </Button>
           </div>
         </CardContent>

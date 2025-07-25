@@ -30,6 +30,11 @@ import { UserDetailPage } from "./pages/dashboard/UserDetailPage";
 // Admin pages
 import AdminPanel from "./pages/AdminPanel";
 import AdminLogin from "./pages/AdminLogin";
+import AdminDashboard from "./pages/admin/AdminDashboard";
+import AdminAnnouncements from "./pages/admin/AdminAnnouncements";
+import AdminBlogs from "./pages/admin/AdminBlogs";
+import NotAuthorized from "./pages/NotAuthorized";
+import AdminRoute from "./components/auth/AdminRoute";
 
 const queryClient = new QueryClient();
 
@@ -57,9 +62,39 @@ const App = () => {
               <Route path="/blog/:slug" element={<BlogPost />} />
               {/* Admin routes */}
               <Route path="/admin/login" element={<AdminLogin />} />
-              <Route path="/admin" element={<AdminPanel />} />
-              <Route path="/admin/dashboard" element={<AdminPanel />} />
-              <Route path="/admin/blogs" element={<AdminPanel />} />
+              <Route 
+                path="/admin" 
+                element={
+                  <AdminRoute>
+                    <AdminDashboard />
+                  </AdminRoute>
+                } 
+              />
+              <Route 
+                path="/admin/dashboard" 
+                element={
+                  <AdminRoute>
+                    <AdminDashboard />
+                  </AdminRoute>
+                } 
+              />
+              <Route 
+                path="/admin/announcements" 
+                element={
+                  <AdminRoute>
+                    <AdminAnnouncements />
+                  </AdminRoute>
+                } 
+              />
+              <Route 
+                path="/admin/blogs" 
+                element={
+                  <AdminRoute>
+                    <AdminBlogs />
+                  </AdminRoute>
+                } 
+              />
+              <Route path="/not-authorized" element={<NotAuthorized />} />
               {/* Protected Main App Routes */}
               <Route 
                 path="/integration" 

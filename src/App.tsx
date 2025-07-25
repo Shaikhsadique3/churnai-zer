@@ -21,6 +21,9 @@ import Pricing from "./pages/Pricing";
 import Contact from "./pages/Contact";
 import NotFound from "./pages/NotFound";
 import { MainLayout } from "./components/layout/MainLayout";
+// Blog pages
+import BlogIndex from "./pages/blog/BlogIndex";
+import BlogPost from "./pages/blog/BlogPost";
 // Dashboard pages
 import { UploadedUsersPage } from "./pages/dashboard/UploadedUsersPage";
 import { UserDetailPage } from "./pages/dashboard/UserDetailPage";
@@ -48,6 +51,10 @@ const App = () => (
             <Route path="/refund-policy" element={<RefundPolicy />} />
             <Route path="/pricing" element={<Pricing />} />
             <Route path="/contact" element={<Contact />} />
+            {/* Blog routes */}
+            <Route path="/blog" element={<BlogIndex />} />
+            <Route path="/blog/:slug" element={<BlogPost />} />
+            {/* Admin routes */}
             <Route path="/admin/login" element={<AdminLogin />} />
             <Route path="/admin" element={<AdminPanel />} />
             {/* Protected Main App Routes */}

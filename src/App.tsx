@@ -48,10 +48,32 @@ const App = () => (
             <Route path="/refund-policy" element={<RefundPolicy />} />
             <Route path="/pricing" element={<Pricing />} />
             <Route path="/contact" element={<Contact />} />
+            <Route path="/admin/login" element={<AdminLogin />} />
             <Route path="/admin" element={<AdminPanel />} />
             {/* Protected Main App Routes */}
             <Route 
               path="/integration" 
+              element={
+                <ProtectedRoute>
+                  <MainLayout>
+                    <Integration />
+                  </MainLayout>
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/integration/setup" 
+              element={
+                <ProtectedRoute>
+                  <MainLayout>
+                    <Integration />
+                  </MainLayout>
+                </ProtectedRoute>
+              } 
+            />
+            {/* Integration sub-routes - catch all integration paths */}
+            <Route 
+              path="/integration/*" 
               element={
                 <ProtectedRoute>
                   <MainLayout>
@@ -83,6 +105,17 @@ const App = () => (
             {/* Redirect dashboard to integration for backwards compatibility */}
             <Route 
               path="/dashboard" 
+              element={
+                <ProtectedRoute>
+                  <MainLayout>
+                    <Integration />
+                  </MainLayout>
+                </ProtectedRoute>
+              } 
+            />
+            {/* Redirect any dashboard subroutes to integration for backwards compatibility */}
+            <Route 
+              path="/dashboard/*" 
               element={
                 <ProtectedRoute>
                   <MainLayout>

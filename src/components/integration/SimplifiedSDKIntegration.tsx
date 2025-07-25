@@ -1,304 +1,501 @@
-import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Copy, Download, Share2, ExternalLink, Zap } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/contexts/AuthContext';
-import { toast } from 'sonner';
-import { Link } from 'react-router-dom';
+import { useState, useEffect } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Copy, ExternalLink, Play, CheckCircle, AlertTriangle, Code, Shield } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
 
-interface SDKStats {
-  isConnected: boolean;
-  lastPing: string | null;
-  totalUsers: number;
-  recentUsers: any[];
-}
-
-export const SimplifiedSDKIntegration = () => {
+export function SimplifiedSDKIntegration() {
+  const { toast } = useToast();
   const { user } = useAuth();
-  const [apiKey, setApiKey] = useState<string>('');
-  const [stats, setStats] = useState<SDKStats>({
-    isConnected: false,
-    lastPing: null,
-    totalUsers: 0,
-    recentUsers: []
-  });
+  const [apiKey, setApiKey] = useState<string>("");
   const [loading, setLoading] = useState(true);
+  const [testResult, setTestResult] = useState<any>(null);
+  const [testLoading, setTestLoading] = useState(false);
 
-  // Fetch API key and stats
-  const fetchData = async () => {
+  useEffect(() => {
+    fetchApiKey();
+  }, [user]);
+
+  const fetchApiKey = async () => {
     if (!user) return;
-
+    
     try {
-      // Get API key
-      const { data: apiKeys } = await supabase
+      const { data, error } = await supabase
         .from('api_keys')
         .select('key')
         .eq('user_id', user.id)
         .eq('is_active', true)
-        .limit(1);
+        .single();
 
-      if (apiKeys && apiKeys.length > 0) {
-        setApiKey(apiKeys[0].key);
-      }
-
-      // Get SDK stats
-      const { data: sdkUsers } = await supabase
-        .from('user_data')
-        .select('user_id, created_at, source')
-        .eq('owner_id', user.id)
-        .eq('source', 'sdk')
-        .order('created_at', { ascending: false });
-
-      const { data: healthLogs } = await supabase
-        .from('sdk_health_logs')
-        .select('*')
-        .eq('user_id', user.id)
-        .gte('ping_timestamp', new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString())
-        .order('ping_timestamp', { ascending: false })
-        .limit(1);
-
-      setStats({
-        isConnected: healthLogs && healthLogs.length > 0,
-        lastPing: healthLogs && healthLogs.length > 0 ? healthLogs[0].ping_timestamp : null,
-        totalUsers: sdkUsers?.length || 0,
-        recentUsers: sdkUsers?.slice(0, 5) || []
-      });
+      if (error) throw error;
+      setApiKey(data?.key || "");
     } catch (error) {
-      console.error('Error fetching SDK data:', error);
+      console.error('Error fetching API key:', error);
     } finally {
       setLoading(false);
     }
   };
 
-  useEffect(() => {
-    fetchData();
-    const interval = setInterval(fetchData, 10000); // Refresh every 10 seconds
-    return () => clearInterval(interval);
-  }, [user]);
+  const copyToClipboard = (text: string) => {
+    navigator.clipboard.writeText(text);
+    toast({
+      title: "Copied!",
+      description: "Code copied to clipboard",
+      duration: 2000,
+    });
+  };
 
-  // Generate the SDK snippet
-  const generateSDKSnippet = () => {
-    const sampleUserData = {
-      user_id: "{{currentUser.id}}",
-      customer_name: "{{currentUser.name || currentUser.email.split('@')[0]}}",
-      customer_email: "{{currentUser.email}}",
-      days_since_signup: "{{Math.floor((Date.now() - new Date(currentUser.created_at).getTime()) / (1000 * 60 * 60 * 24))}}",
-      monthly_revenue: "{{currentUser.subscription?.amount || 0}}",
-      subscription_plan: "{{currentUser.subscription?.plan || 'Free'}}",
-      number_of_logins_last30days: "{{currentUser.analytics?.loginCount30d || 1}}",
-      active_features_used: "{{currentUser.analytics?.featuresUsed || 1}}",
-      support_tickets_opened: "{{currentUser.support?.ticketCount || 0}}",
-      last_payment_status: "{{currentUser.billing?.status || 'active'}}",
-      email_opens_last30days: "{{currentUser.email?.opens30d || 0}}",
-      last_login_days_ago: 0,
-      billing_issue_count: "{{currentUser.billing?.issueCount || 0}}"
-    };
+  const testSDK = async () => {
+    setTestLoading(true);
+    try {
+      // Test the SDK by calling our edge function directly
+      const response = await supabase.functions.invoke('sdk-track', {
+        body: {
+          user_id: "test_user_123",
+          email: "test@example.com",
+          subscription_plan: "premium",
+          usage: 15,
+          last_login: new Date().toISOString(),
+          feature_usage: {
+            dashboard: 10,
+            reports: 5,
+            analytics: 8
+          }
+        },
+        headers: {
+          'X-Churnaizer-API-Key': apiKey,
+        }
+      });
 
-    return `<!-- Churnaizer SDK Integration -->
-<script src="https://cdn.churnaizer.com/churnaizer-sdk.js"></script>
+      if (response.error) throw response.error;
+      
+      setTestResult(response.data);
+      
+      toast({
+        title: "SDK Test Successful!",
+        description: `Risk Level: ${response.data.risk_level} • Score: ${Math.round(response.data.churn_score * 100)}%`,
+        duration: 5000,
+      });
+    } catch (error) {
+      console.error('SDK test failed:', error);
+      toast({
+        title: "SDK Test Failed",
+        description: error instanceof Error ? error.message : "Unknown error",
+        variant: "destructive",
+        duration: 5000,
+      });
+      setTestResult({ error: error instanceof Error ? error.message : "Unknown error" });
+    } finally {
+      setTestLoading(false);
+    }
+  };
+
+  const sdkImplementationCode = `<!-- 1. Add Churnaizer SDK to your website -->
+<script src="${window.location.origin}/churnaizer-sdk.js"></script>
+
 <script>
-// Initialize Churnaizer when user logs in or performs key actions
-if (window.Churnaizer && currentUser) {
-  window.Churnaizer.track(${JSON.stringify(sampleUserData, null, 4)}, "${apiKey}", function(result, error) {
+// 2. Initialize retention monitoring (optional)
+window.ChurnaizerConfig = {
+  modalEnabled: true,
+  checkInterval: 5000,
+  autoTrigger: true
+};
+
+// 3. Track user activity (call this on login or page load)
+function trackUserActivity(userData) {
+  window.Churnaizer.track({
+    user_id: userData.id,
+    email: userData.email,
+    subscription_plan: userData.plan || 'free',
+    usage: userData.loginCount || 1,
+    feature_usage: {
+      dashboard: userData.dashboardViews || 0,
+      reports: userData.reportsGenerated || 0,
+      settings: userData.settingsAccessed || 0
+    }
+  }, '${apiKey}', function(error, result) {
     if (error) {
       console.error('Churnaizer tracking failed:', error);
       return;
     }
-    console.log('✅ Churn prediction:', result);
     
-    // Optional: Act on high-risk users
+    console.log('Churnaizer tracking successful:', result);
+    
+    // Handle high-risk users
     if (result.risk_level === 'high') {
-      // Trigger retention campaign, show special offer, etc.
-      console.log('⚠️ High churn risk detected for user');
-      
-      // Example actions:
-      // showRetentionModal();
-      // triggerEmailCampaign(currentUser.id);
-      // offerDiscount(result.churn_score);
+      console.log('High-risk user detected!');
+      // Modal will automatically show if enabled
+      // You can also trigger custom retention actions here
     }
   });
 }
+
+// 4. Example: Track user on login
+document.addEventListener('DOMContentLoaded', function() {
+  // Get user data from your app's state/API
+  const currentUser = getCurrentUser(); // Your function to get user data
+  
+  if (currentUser) {
+    trackUserActivity(currentUser);
+  }
+});
 </script>`;
-  };
 
-  const copySnippet = () => {
-    navigator.clipboard.writeText(generateSDKSnippet());
-    toast.success('SDK snippet copied to clipboard!');
-  };
+  const reactImplementationCode = `// React/Vue/Angular Integration Example
+import { useEffect } from 'react';
 
-  const downloadSnippet = () => {
-    const blob = new Blob([generateSDKSnippet()], { type: 'text/javascript' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'churnaizer-integration.js';
-    a.click();
-    URL.revokeObjectURL(url);
-    toast.success('SDK file downloaded!');
-  };
+function useChurnaizerTracking(user) {
+  useEffect(() => {
+    if (!user || !window.Churnaizer) return;
+    
+    const trackUserActivity = () => {
+      window.Churnaizer.track({
+        user_id: user.id,
+        email: user.email,
+        subscription_plan: user.plan || 'free',
+        usage: user.loginCount || 1,
+        feature_usage: {
+          dashboard: user.dashboardViews || 0,
+          reports: user.reportsGenerated || 0,
+          settings: user.settingsAccessed || 0
+        }
+      }, '${apiKey}', (error, result) => {
+        if (error) {
+          console.error('Churnaizer tracking failed:', error);
+          return;
+        }
+        
+        console.log('Churnaizer result:', result);
+        
+        // Handle different risk levels
+        switch(result.risk_level) {
+          case 'high':
+            // Trigger retention campaigns
+            showRetentionOffer();
+            break;
+          case 'medium':
+            // Send engagement emails
+            scheduleFollowUp();
+            break;
+          default:
+            // Continue normal flow
+            break;
+        }
+      });
+    };
 
-  const shareSnippet = () => {
-    const subject = 'Churnaizer SDK Integration Code';
-    const body = `Hi,\n\nHere's the Churnaizer SDK integration code for our app:\n\n${generateSDKSnippet()}\n\nPaste this code in your app after user authentication.\n\nBest regards`;
-    window.open(`mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`);
-  };
+    // Track immediately and then periodically
+    trackUserActivity();
+    
+    // Optional: Track on specific user actions
+    const trackOnActivity = () => trackUserActivity();
+    window.addEventListener('focus', trackOnActivity);
+    
+    return () => {
+      window.removeEventListener('focus', trackOnActivity);
+    };
+  }, [user]);
+}
+
+// Usage in your component
+function App() {
+  const user = useCurrentUser();
+  useChurnaizerTracking(user);
+  
+  return <YourAppContent />;
+}`;
+
+  const advancedConfigCode = `// Advanced Configuration Options
+window.ChurnaizerConfig = {
+  // Retention modal settings
+  modalEnabled: true,
+  checkInterval: 5000, // Check for inactivity every 5 seconds
+  autoTrigger: true,   // Automatically show retention modal for high-risk users
+  
+  // Custom retention modal callback
+  customModalCallback: function(riskData) {
+    // Your custom retention modal logic
+    showCustomRetentionModal(riskData);
+  }
+};
+
+// Initialize retention monitoring
+window.Churnaizer.initRetentionMonitoring(window.ChurnaizerConfig);
+
+// Custom retention modal example
+function showCustomRetentionModal(riskData) {
+  const modal = document.createElement('div');
+  modal.innerHTML = \`
+    <div class="custom-retention-modal">
+      <h3>We're here to help! 👋</h3>
+      <p>Risk Level: \${riskData.risk_level}</p>
+      <p>Score: \${Math.round(riskData.churn_score * 100)}%</p>
+      <button onclick="requestHelp()">Get Support</button>
+      <button onclick="dismissModal()">Continue</button>
+    </div>
+  \`;
+  document.body.appendChild(modal);
+}`;
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      <div className="space-y-6">
+        <div className="h-8 bg-muted animate-pulse rounded" />
+        <div className="h-64 bg-muted animate-pulse rounded" />
       </div>
     );
   }
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6">
+    <div className="space-y-6">
       {/* Header */}
-      <div className="text-center space-y-2">
-        <h1 className="text-3xl font-bold">SDK Integration</h1>
+      <div>
+        <h1 className="text-3xl font-bold text-foreground mb-2">Production SDK Integration</h1>
         <p className="text-muted-foreground">
-          Copy and paste this code snippet to start tracking churn in your SaaS app
+          Implement Churnaizer's production-ready SDK to track user behavior and prevent churn automatically.
         </p>
       </div>
 
-      {/* Status Card */}
+      {/* API Key Display */}
       <Card>
-        <CardContent className="pt-6">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              <Badge variant={stats.isConnected ? "default" : "secondary"}>
-                {stats.isConnected ? "Connected" : "Not Connected"}
-              </Badge>
-              <div className="text-sm text-muted-foreground">
-                {stats.lastPing ? (
-                  <>Last ping: {new Date(stats.lastPing).toLocaleString()}</>
-                ) : (
-                  'No recent activity'
-                )}
-              </div>
-            </div>
-            <div className="text-right">
-              <div className="text-2xl font-bold">{stats.totalUsers}</div>
-              <div className="text-sm text-muted-foreground">Users Tracked</div>
-            </div>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Shield className="h-5 w-5 text-primary" />
+            Your API Key
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-center gap-2">
+            <code className="flex-1 p-3 bg-muted rounded-lg font-mono text-sm">
+              {apiKey || "Loading..."}
+            </code>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => copyToClipboard(apiKey)}
+              disabled={!apiKey}
+            >
+              <Copy className="h-4 w-4" />
+            </Button>
           </div>
+          <p className="text-sm text-muted-foreground mt-2">
+            🔒 Keep this key secure. Never expose it in client-side code in production.
+          </p>
         </CardContent>
       </Card>
 
-      {/* SDK Snippet Card */}
+      {/* Test SDK */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center space-x-2">
-            <Zap className="h-5 w-5" />
-            <span>Integration Code</span>
+          <CardTitle className="flex items-center gap-2">
+            <Play className="h-5 w-5 text-primary" />
+            Test SDK Integration
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="bg-muted rounded-lg p-4 font-mono text-sm overflow-x-auto">
-            <pre>{generateSDKSnippet()}</pre>
-          </div>
+          <Button 
+            onClick={testSDK} 
+            disabled={testLoading || !apiKey}
+            className="w-full"
+          >
+            {testLoading ? "Testing..." : "Test SDK Tracking"}
+          </Button>
           
-          <div className="flex flex-wrap gap-2">
-            <Button onClick={copySnippet} className="flex-1 sm:flex-none">
-              <Copy className="h-4 w-4 mr-2" />
-              Copy Snippet
-            </Button>
-            <Button variant="outline" onClick={downloadSnippet}>
-              <Download className="h-4 w-4 mr-2" />
-              Download
-            </Button>
-            <Button variant="outline" onClick={shareSnippet}>
-              <Share2 className="h-4 w-4 mr-2" />
-              Share
-            </Button>
-          </div>
+          {testResult && (
+            <div className="p-4 bg-muted rounded-lg">
+              <div className="flex items-center gap-2 mb-2">
+                {testResult.error ? (
+                  <AlertTriangle className="h-5 w-5 text-destructive" />
+                ) : (
+                  <CheckCircle className="h-5 w-5 text-green-600" />
+                )}
+                <span className="font-medium">
+                  {testResult.error ? "Test Failed" : "Test Successful"}
+                </span>
+              </div>
+              <pre className="text-sm overflow-auto">
+                {JSON.stringify(testResult, null, 2)}
+              </pre>
+            </div>
+          )}
         </CardContent>
       </Card>
 
-      {/* Installation Guide */}
+      {/* Implementation Guide */}
       <Card>
         <CardHeader>
-          <CardTitle>Quick Installation</CardTitle>
+          <CardTitle className="flex items-center gap-2">
+            <Code className="h-5 w-5 text-primary" />
+            Implementation Guide
+          </CardTitle>
         </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="space-y-3">
-            <div className="flex items-start space-x-3">
-              <div className="bg-primary text-primary-foreground rounded-full w-6 h-6 flex items-center justify-center text-sm font-bold">1</div>
+        <CardContent>
+          <Tabs defaultValue="basic" className="w-full">
+            <TabsList className="grid w-full grid-cols-3">
+              <TabsTrigger value="basic">Basic Setup</TabsTrigger>
+              <TabsTrigger value="react">React/Vue/Angular</TabsTrigger>
+              <TabsTrigger value="advanced">Advanced Config</TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="basic" className="space-y-4">
               <div>
-                <p className="font-medium">Paste the code snippet</p>
-                <p className="text-sm text-muted-foreground">Add it to your app&apos;s HTML, ideally in the head section or before body closing tag</p>
-              </div>
-            </div>
-            <div className="flex items-start space-x-3">
-              <div className="bg-primary text-primary-foreground rounded-full w-6 h-6 flex items-center justify-center text-sm font-bold">2</div>
-              <div>
-                <p className="font-medium">Replace placeholder values</p>
-                <p className="text-sm text-muted-foreground">Update user.id, user.email, etc. with your actual user data variables</p>
-              </div>
-            </div>
-            <div className="flex items-start space-x-3">
-              <div className="bg-primary text-primary-foreground rounded-full w-6 h-6 flex items-center justify-center text-sm font-bold">3</div>
-              <div>
-                <p className="font-medium">Call after user authentication</p>
-                <p className="text-sm text-muted-foreground">Ensure the tracking runs only when users are logged in</p>
-              </div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Security Warning */}
-      <Card className="border-amber-200 bg-amber-50">
-        <CardContent className="pt-6">
-          <div className="flex items-start space-x-3">
-            <div className="text-amber-600 text-sm">⚠️</div>
-            <div>
-              <p className="font-medium text-amber-800">Security Note</p>
-              <p className="text-sm text-amber-700">
-                Your API key is visible in the code above. For production apps, consider proxying requests through your backend to keep the API key secure.
-              </p>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Recent Users */}
-      {stats.recentUsers.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Recent SDK Users</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-2">
-              {stats.recentUsers.map((user, index) => (
-                <div key={index} className="flex justify-between items-center p-2 bg-muted rounded">
-                  <span className="font-mono text-sm">{user.user_id}</span>
-                  <span className="text-xs text-muted-foreground">
-                    {new Date(user.created_at).toLocaleDateString()}
-                  </span>
+                <h3 className="text-lg font-semibold mb-2">Basic HTML/JavaScript Integration</h3>
+                <p className="text-sm text-muted-foreground mb-4">
+                  Add this code to your website to start tracking user behavior and preventing churn.
+                </p>
+                <div className="relative">
+                  <pre className="p-4 bg-muted rounded-lg text-sm overflow-auto max-h-96">
+                    <code>{sdkImplementationCode}</code>
+                  </pre>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="absolute top-2 right-2"
+                    onClick={() => copyToClipboard(sdkImplementationCode)}
+                  >
+                    <Copy className="h-4 w-4" />
+                  </Button>
                 </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      )}
+              </div>
+            </TabsContent>
+            
+            <TabsContent value="react" className="space-y-4">
+              <div>
+                <h3 className="text-lg font-semibold mb-2">Modern Framework Integration</h3>
+                <p className="text-sm text-muted-foreground mb-4">
+                  Integration example for React, Vue, Angular, and other modern frameworks.
+                </p>
+                <div className="relative">
+                  <pre className="p-4 bg-muted rounded-lg text-sm overflow-auto max-h-96">
+                    <code>{reactImplementationCode}</code>
+                  </pre>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="absolute top-2 right-2"
+                    onClick={() => copyToClipboard(reactImplementationCode)}
+                  >
+                    <Copy className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            </TabsContent>
+            
+            <TabsContent value="advanced" className="space-y-4">
+              <div>
+                <h3 className="text-lg font-semibold mb-2">Advanced Configuration</h3>
+                <p className="text-sm text-muted-foreground mb-4">
+                  Customize retention monitoring and modal behavior for your specific needs.
+                </p>
+                <div className="relative">
+                  <pre className="p-4 bg-muted rounded-lg text-sm overflow-auto max-h-96">
+                    <code>{advancedConfigCode}</code>
+                  </pre>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="absolute top-2 right-2"
+                    onClick={() => copyToClipboard(advancedConfigCode)}
+                  >
+                    <Copy className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            </TabsContent>
+          </Tabs>
+        </CardContent>
+      </Card>
 
-      {/* CTA */}
+      {/* Features Overview */}
       <Card>
-        <CardContent className="pt-6 text-center">
-          <Button asChild size="lg">
-            <Link to="/dashboard">
-              <ExternalLink className="h-4 w-4 mr-2" />
-              View Dashboard
-            </Link>
-          </Button>
-          <p className="text-sm text-muted-foreground mt-2">
-            Monitor your churn predictions and user insights
-          </p>
+        <CardHeader>
+          <CardTitle>SDK Features</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid md:grid-cols-2 gap-4">
+            <div className="space-y-3">
+              <div className="flex items-start gap-3">
+                <CheckCircle className="h-5 w-5 text-green-600 mt-0.5" />
+                <div>
+                  <h4 className="font-medium">Real-time Churn Scoring</h4>
+                  <p className="text-sm text-muted-foreground">
+                    Calculates churn risk based on user behavior patterns
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-start gap-3">
+                <CheckCircle className="h-5 w-5 text-green-600 mt-0.5" />
+                <div>
+                  <h4 className="font-medium">Automated Retention Actions</h4>
+                  <p className="text-sm text-muted-foreground">
+                    Triggers retention modals for high-risk users automatically
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-start gap-3">
+                <CheckCircle className="h-5 w-5 text-green-600 mt-0.5" />
+                <div>
+                  <h4 className="font-medium">Secure API Integration</h4>
+                  <p className="text-sm text-muted-foreground">
+                    Server-side API key validation and rate limiting
+                  </p>
+                </div>
+              </div>
+            </div>
+            <div className="space-y-3">
+              <div className="flex items-start gap-3">
+                <CheckCircle className="h-5 w-5 text-green-600 mt-0.5" />
+                <div>
+                  <h4 className="font-medium">Behavior Monitoring</h4>
+                  <p className="text-sm text-muted-foreground">
+                    Tracks user engagement patterns and activity levels
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-start gap-3">
+                <CheckCircle className="h-5 w-5 text-green-600 mt-0.5" />
+                <div>
+                  <h4 className="font-medium">Custom Retention Modals</h4>
+                  <p className="text-sm text-muted-foreground">
+                    Configurable retention modals with custom callbacks
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-start gap-3">
+                <CheckCircle className="h-5 w-5 text-green-600 mt-0.5" />
+                <div>
+                  <h4 className="font-medium">Analytics Dashboard</h4>
+                  <p className="text-sm text-muted-foreground">
+                    Real-time insights sync to your Churnaizer dashboard
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Security Notice */}
+      <Card className="border-amber-200 bg-amber-50">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-amber-800">
+            <AlertTriangle className="h-5 w-5" />
+            Production Security Notice
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="text-amber-800">
+          <div className="space-y-2 text-sm">
+            <p>🔒 <strong>Never expose API keys in client-side code in production</strong></p>
+            <p>✅ <strong>Recommended:</strong> Use a server proxy to validate requests and forward to Churnaizer API</p>
+            <p>🔐 <strong>Alternative:</strong> Implement signed tokens with short expiration times</p>
+            <p>📊 <strong>Monitoring:</strong> Enable rate limiting and monitoring for your API endpoints</p>
+          </div>
         </CardContent>
       </Card>
     </div>
   );
-};
+}

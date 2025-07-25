@@ -1,401 +1,291 @@
-// Churnaizer SDK v1.0.0 - Official Production Release
-// Load from: https://churnaizer.com/churnaizer-sdk.js
-
-(function (window) {
+(function() {
   'use strict';
-  
-  if (window.Churnaizer) {
-    console.warn('⚠️ Churnaizer SDK: Already loaded, skipping initialization');
-    return;
-  }
 
-  // SDK Configuration
-  const SDK_VERSION = '1.0.0';
-  const AI_MODEL_ENDPOINT = 'https://ai-model-rumc.onrender.com/predict';
-  const SYNC_ENDPOINT = 'https://churnaizer.com/api/sync';
-  
-  // Utility functions
-  function validateUserData(userData) {
-    const requiredFields = [
-      'user_id', 'customer_name', 'customer_email', 'days_since_signup', 'monthly_revenue', 'subscription_plan',
-      'number_of_logins_last30days', 'active_features_used', 'support_tickets_opened',
-      'last_payment_status', 'email_opens_last30days', 'last_login_days_ago', 'billing_issue_count'
-    ];
-    
-    const missingFields = requiredFields.filter(field => 
-      userData[field] === undefined || userData[field] === null
-    );
-    
-    if (missingFields.length > 0) {
-      throw new Error(`Missing required fields: ${missingFields.join(', ')}`);
-    }
-    
-    return true;
-  }
-
-  function createResult(data) {
-    return {
-      churn_score: data.churn_score || 0,
-      churn_reason: data.churn_reason || 'No reason provided',
-      risk_level: data.risk_level || 'unknown',
-      user_id: data.user_id,
-      understanding_score: data.understanding_score || 0,
-      status_tag: data.status_tag || 'unknown',
-      action_recommended: data.action_recommended || '',
-      days_until_mature: data.days_until_mature || 0,
-      sdk_version: SDK_VERSION,
-      timestamp: new Date().toISOString()
-    };
-  }
-
-  function analyzeUserLifecycle(userData, result) {
-    const { days_since_signup, churn_score } = userData;
-    
-    // Log lifecycle analysis
-    if (days_since_signup < 7) {
-      console.warn('⚠️ Churnaizer: Too early to predict churn accurately – Need at least 7 days of behavior data.');
-      console.log(`⏳ Prediction matures in ${7 - days_since_signup} days`);
-    } else if (days_since_signup < 15) {
-      console.log('🔍 Churnaizer: Prediction getting stronger. More behavior signals are now available.');
-      console.log('📊 This prediction is moderately accurate. Monitor usage daily.');
-    } else {
-      console.log('✅ Churnaizer: Mature user data - high confidence prediction available.');
-    }
-
-    // Log risk analysis
-    if (result.churn_score < 0.3) {
-      console.log('🟢 Low Risk: User shows strong engagement patterns');
-    } else if (result.churn_score >= 0.5) {
-      console.log('🔴 High Risk: Consider immediate retention action');
-      if (result.action_recommended) {
-        console.log(`💡 Recommended: ${result.action_recommended}`);
-      }
-    }
-
-    return result;
-  }
-
-  // Main SDK object
+  // Churnaizer SDK - Production Version
   window.Churnaizer = {
-    version: SDK_VERSION,
     
-    /**
-     * Track user churn prediction
-     * @param {Object} userData - User data for prediction
-     * @param {string} apiKey - Your Churnaizer API key
-     * @param {Function} callback - Optional callback function
-     * @param {Object} options - Optional configuration
-     */
-    track: async function (userData, apiKey, callback, options) {
-      // Session validation - Skip tracking if no valid user session
-      if (!userData || !userData.email || !userData.user_id) {
-        console.warn("⚠️ Churnaizer SDK skipped: no valid user session.");
-        if (typeof callback === 'function') callback(null, null);
-        return Promise.resolve(null);
-      }
-
-      // Enhanced input validation
-      if (!userData || typeof userData !== 'object') {
-        const error = new Error('🛑 Churnaizer SDK: Invalid user data provided');
-        console.error(error.message);
-        if (typeof callback === 'function') callback(null, error);
-        return Promise.reject(error);
-      }
-
-      if (!userData.user_id || typeof userData.user_id !== 'string') {
-        const error = new Error('🛑 Churnaizer SDK: user_id is required and must be a string');
-        console.error(error.message);
-        if (typeof callback === 'function') callback(null, error);
-        return Promise.reject(error);
-      }
-
-      if (!apiKey || typeof apiKey !== 'string') {
-        const error = new Error('🛑 Churnaizer SDK: Missing or invalid API key');
-        console.error(error.message);
-        if (typeof callback === 'function') callback(null, error);
-        return Promise.reject(error);
-      }
-
-      // Options with defaults
-      const config = {
-        logging: true,
-        timeout: 5000,
-        retries: 2,
-        ...options
-      };
-
-      // Validate required fields
-      try {
-        validateUserData(userData);
-      } catch (error) {
-        console.error('🛑 Churnaizer SDK:', error.message);
-        if (typeof callback === 'function') callback(null, error);
-        return Promise.reject(error);
-      }
-
-      if (config.logging) {
-        console.log('🔁 Churnaizer: Sending prediction request for user:', userData.user_id);
-      }
-
-      // Retry function with exponential backoff
-      async function retryFetch(url, options, retries = config.retries) {
-        for (let i = 0; i <= retries; i++) {
-          try {
-            const controller = new AbortController();
-            const timeout = setTimeout(() => controller.abort(), config.timeout);
-            
-            const response = await fetch(url, {
-              ...options,
-              signal: controller.signal
-            });
-            
-            clearTimeout(timeout);
-
-            // Check content type to prevent HTML parsing errors
-            const contentType = response.headers.get('content-type');
-            if (!contentType || !contentType.includes('application/json')) {
-              throw new Error(`Invalid response type: ${contentType}. Expected JSON but received HTML or other format.`);
-            }
-
-            if (!response.ok) {
-              throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-            }
-
-            const data = await response.json();
-            return data;
-          } catch (error) {
-            if (i === retries) throw error;
-            
-            // Exponential backoff
-            const delay = Math.pow(2, i) * 1000;
-            if (config.logging) {
-              console.warn(`⚠️ Churnaizer: Retry ${i + 1}/${retries + 1} in ${delay}ms. Error:`, error.message);
-            }
-            await new Promise(resolve => setTimeout(resolve, delay));
-          }
-        }
-      }
-
-      try {
-        // Step 1: Send data to secure Churnaizer API endpoint
-        const endpointUrl = `https://api.churnaizer.com/functions/v1/track`;
-        const aiData = await retryFetch(endpointUrl, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'X-API-Key': apiKey,
-            'X-SDK-Version': SDK_VERSION,
-            'User-Agent': `Churnaizer-SDK/${SDK_VERSION}`
-          },
-          body: JSON.stringify(userData)
-        });
-
-        if (config.logging) {
-          console.log('✅ Churnaizer: AI prediction received for user:', userData.user_id || userData.customer_email);
-        }
-
-        // Handle API response with error checking
-        if (aiData.code === 401) {
-          throw new Error(`Unauthorized: ${aiData.message || 'Invalid API key'}`);
-        }
-        
-        if (aiData.status !== 'ok' || !aiData.results || aiData.results.length === 0) {
-          throw new Error('No valid prediction returned from server');
-        }
-
-        // Extract data from the first result
-        const predictionData = aiData.results[0];
-        const churn_score = typeof predictionData.churn_score === 'number' ? predictionData.churn_score : 0;
-        const churn_reason = predictionData.churn_reason || 'No reason provided';
-        const insight = predictionData.insight || predictionData.action_recommended || '';
-        const understanding_score = typeof predictionData.understanding_score === 'number' ? predictionData.understanding_score : 0;
-
-        const result = {
-          churn_score,
-          churn_reason,
-          insight,
-          understanding_score,
-          user_id: userData.user_id || userData.customer_email,
-          risk_level: predictionData.risk_level || (churn_score >= 0.7 ? 'high' : churn_score >= 0.4 ? 'medium' : 'low'),
-          sdk_version: SDK_VERSION,
-          timestamp: new Date().toISOString()
-        };
-
-        // Step 2: Sync this data with Churnaizer backend (fire and forget)
-        try {
-          fetch(SYNC_ENDPOINT, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'X-API-Key': apiKey,
-              'X-SDK-Version': SDK_VERSION
-            },
-            body: JSON.stringify({
-              ...userData,
-              ...result
-            })
-          }).catch(syncError => {
-            if (config.logging) {
-              console.warn('⚠️ Churnaizer: Sync to dashboard failed (non-critical):', syncError.message);
-            }
-          });
-        } catch (syncError) {
-          // Sync failure is non-critical, don't block the main response
-          if (config.logging) {
-            console.warn('⚠️ Churnaizer: Sync to dashboard failed (non-critical):', syncError.message);
-          }
-        }
-
-        // Step 3: Analyze and return result
-        const analyzedResult = analyzeUserLifecycle(userData, result);
-        
-        if (typeof callback === 'function') {
-          callback(analyzedResult, null);
-        }
-        
-        return analyzedResult;
-
-      } catch (error) {
-        const errorMsg = `❌ Churnaizer SDK Error: ${error.message}`;
-        console.error(errorMsg);
-        
-        if (typeof callback === 'function') {
-          callback(null, error);
-        }
-        
-        throw error;
-      }
-    },
-
-    /**
-     * Track multiple users at once
-     * @param {Array} usersData - Array of user data objects
-     * @param {string} apiKey - Your Churnaizer API key
-     * @param {Function} callback - Optional callback function
-     * @param {Object} options - Optional configuration
-     */
-    trackBatch: function (usersData, apiKey, callback, options) {
-      if (!Array.isArray(usersData) || usersData.length === 0) {
-        const error = new Error('🛑 Churnaizer SDK: Invalid users data array');
-        console.error(error.message);
-        if (typeof callback === 'function') callback(null, error);
-        return Promise.reject(error);
-      }
-
-      const config = {
-        logging: true,
-        ...options
-      };
-
-      if (config.logging) {
-        console.log(`🔁 Churnaizer: Sending batch prediction for ${usersData.length} users`);
-      }
-
-      // Validate all users
-      try {
-        usersData.forEach((userData, index) => {
-          validateUserData(userData);
-        });
-      } catch (error) {
-        console.error('🛑 Churnaizer SDK Batch:', error.message);
-        if (typeof callback === 'function') callback(null, error);
-        return Promise.reject(error);
-      }
-
-      return this.track(usersData, apiKey, callback, config);
-    },
-
-    /**
-     * Show churn risk badge on element
-     * @param {string} selector - CSS selector for the element
-     * @param {Object} result - Churnaizer prediction result
-     */
-    showBadge: function (selector, result) {
-      const element = document.querySelector(selector);
-      if (!element) {
-        console.warn('🛑 Churnaizer SDK: Element not found for selector:', selector);
+    // Main tracking function
+    track: function(userData, apiKey, callback) {
+      // Validate required parameters
+      if (!userData || !userData.user_id || !userData.email) {
+        console.error('Churnaizer SDK: user_id and email are required');
+        if (callback) callback({ error: 'Missing required user data' });
         return;
       }
 
-      const riskLevel = result.risk_level || 'unknown';
-      const churnPercent = Math.round((result.churn_score || 0) * 100);
-      
-      const badgeColors = {
-        low: '#10b981',
-        medium: '#f59e0b', 
-        high: '#ef4444',
-        unknown: '#6b7280'
-      };
-
-      const badge = document.createElement('div');
-      badge.className = 'churnaizer-badge';
-      badge.style.cssText = `
-        position: absolute;
-        top: -8px;
-        right: -8px;
-        background: ${badgeColors[riskLevel]};
-        color: white;
-        border-radius: 12px;
-        padding: 2px 8px;
-        font-size: 11px;
-        font-weight: bold;
-        z-index: 1000;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-      `;
-      badge.textContent = `${churnPercent}%`;
-      badge.title = `Churn Risk: ${riskLevel.toUpperCase()} (${churnPercent}%)\nReason: ${result.churn_reason}`;
-
-      // Make parent relative if not already
-      const parentStyle = window.getComputedStyle(element);
-      if (parentStyle.position === 'static') {
-        element.style.position = 'relative';
+      if (!apiKey) {
+        console.error('Churnaizer SDK: API key is required');
+        if (callback) callback({ error: 'Missing API key' });
+        return;
       }
 
-      element.appendChild(badge);
+      // Prepare tracking data
+      const trackingData = {
+        user_id: userData.user_id,
+        email: userData.email,
+        subscription_plan: userData.subscription_plan || 'free',
+        last_login: new Date().toISOString(),
+        usage: userData.usage || 1,
+        feature_usage: userData.feature_usage || {},
+        metadata: {
+          page_url: window.location.href,
+          user_agent: navigator.userAgent,
+          timestamp: new Date().toISOString(),
+          session_id: this._generateSessionId()
+        }
+      };
+
+      // Send tracking request to Churnaizer API
+      this._sendTrackingRequest(trackingData, apiKey, callback);
     },
 
-    /**
-     * Get SDK information
-     */
-    info: function () {
-      return {
-        version: SDK_VERSION,
-        endpoint: DEFAULT_ENDPOINT,
-        loaded: true,
-        timestamp: new Date().toISOString()
+    // Initialize retention monitoring
+    initRetentionMonitoring: function(options) {
+      const config = {
+        checkInterval: options?.checkInterval || 5000, // 5 seconds
+        modalEnabled: options?.modalEnabled !== false,
+        customModalCallback: options?.customModalCallback,
+        autoTrigger: options?.autoTrigger !== false
       };
-    }
-  };
 
-  // Auto-track if data attributes are present
-  document.addEventListener('DOMContentLoaded', function () {
-    const autoTrackElements = document.querySelectorAll('[data-churnaizer-track]');
-    autoTrackElements.forEach(element => {
-      const apiKey = element.getAttribute('data-churnaizer-api-key');
-      const userData = {};
+      this._retentionConfig = config;
       
-      // Extract data from data attributes
-      ['user-id', 'customer-name', 'customer-email', 'days-since-signup', 'monthly-revenue', 'subscription-plan',
-       'number-of-logins-last30days', 'active-features-used', 'support-tickets-opened',
-       'last-payment-status', 'email-opens-last30days', 'last-login-days-ago', 'billing-issue-count'
-      ].forEach(attr => {
-        const value = element.getAttribute(`data-churnaizer-${attr}`);
-        if (value !== null) {
-          const key = attr.replace(/-/g, '_');
-          userData[key] = isNaN(value) ? value : Number(value);
+      if (config.autoTrigger) {
+        this._startRetentionMonitoring();
+      }
+    },
+
+    // Private methods
+    _generateSessionId: function() {
+      return 'session_' + Math.random().toString(36).substr(2, 9) + '_' + Date.now();
+    },
+
+    _sendTrackingRequest: function(data, apiKey, callback) {
+      const xhr = new XMLHttpRequest();
+      
+      // Use secure endpoint that validates API key server-side
+      xhr.open('POST', '/api/v1/track', true);
+      xhr.setRequestHeader('Content-Type', 'application/json');
+      xhr.setRequestHeader('X-Churnaizer-API-Key', apiKey);
+      xhr.setRequestHeader('Origin', window.location.origin);
+      
+      xhr.onreadystatechange = function() {
+        if (xhr.readyState === 4) {
+          try {
+            const response = JSON.parse(xhr.responseText);
+            
+            if (xhr.status === 200) {
+              console.log('Churnaizer: Tracking successful', response);
+              
+              // Handle high-risk users
+              if (response.risk_level === 'high' && this._retentionConfig?.modalEnabled) {
+                this._showRetentionModal(response);
+              }
+              
+              // Execute callback
+              if (callback) callback(null, response);
+            } else {
+              console.error('Churnaizer: Tracking failed', response);
+              if (callback) callback(response);
+            }
+          } catch (e) {
+            console.error('Churnaizer: Invalid response format', e);
+            if (callback) callback({ error: 'Invalid response' });
+          }
+        }
+      }.bind(this);
+
+      xhr.onerror = function() {
+        console.error('Churnaizer: Network error');
+        if (callback) callback({ error: 'Network error' });
+      };
+
+      xhr.send(JSON.stringify(data));
+    },
+
+    _startRetentionMonitoring: function() {
+      // Monitor for user behavior patterns that indicate churn risk
+      let inactivityTimer;
+      let interactionCount = 0;
+      
+      const resetInactivityTimer = () => {
+        clearTimeout(inactivityTimer);
+        inactivityTimer = setTimeout(() => {
+          if (interactionCount < 3) {
+            this._triggerRetentionCheck();
+          }
+          interactionCount = 0;
+        }, this._retentionConfig.checkInterval);
+      };
+
+      // Track user interactions
+      ['click', 'scroll', 'keypress'].forEach(event => {
+        document.addEventListener(event, () => {
+          interactionCount++;
+          resetInactivityTimer();
+        }, { passive: true });
+      });
+
+      resetInactivityTimer();
+    },
+
+    _triggerRetentionCheck: function() {
+      // This could trigger additional API calls to check current risk level
+      console.log('Churnaizer: Triggering retention check due to low engagement');
+    },
+
+    _showRetentionModal: function(riskData) {
+      // Check if custom modal callback exists
+      if (this._retentionConfig?.customModalCallback) {
+        this._retentionConfig.customModalCallback(riskData);
+        return;
+      }
+
+      // Create default retention modal
+      const modal = this._createRetentionModal(riskData);
+      document.body.appendChild(modal);
+      
+      // Show modal with animation
+      setTimeout(() => {
+        modal.style.opacity = '1';
+        modal.querySelector('.churnaizer-modal-content').style.transform = 'scale(1)';
+      }, 10);
+    },
+
+    _createRetentionModal: function(riskData) {
+      const modal = document.createElement('div');
+      modal.className = 'churnaizer-retention-modal';
+      modal.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.7);
+        z-index: 999999;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        opacity: 0;
+        transition: opacity 0.3s ease;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      `;
+
+      const modalContent = document.createElement('div');
+      modalContent.className = 'churnaizer-modal-content';
+      modalContent.style.cssText = `
+        background: white;
+        padding: 32px;
+        border-radius: 12px;
+        max-width: 480px;
+        margin: 20px;
+        text-align: center;
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+        transform: scale(0.9);
+        transition: transform 0.3s ease;
+      `;
+
+      modalContent.innerHTML = `
+        <div style="margin-bottom: 24px;">
+          <div style="width: 64px; height: 64px; background: #ff6b6b; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px;">
+            <span style="color: white; font-size: 24px;">⚠️</span>
+          </div>
+          <h2 style="margin: 0 0 8px; color: #333; font-size: 24px; font-weight: 600;">Wait! Don't go yet</h2>
+          <p style="margin: 0; color: #666; font-size: 16px; line-height: 1.5;">
+            We noticed you might be having trouble. Let us help you get the most out of your experience.
+          </p>
+        </div>
+        
+        <div style="margin-bottom: 24px;">
+          <button id="churnaizer-help-btn" style="
+            background: #1C4E80;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 500;
+            cursor: pointer;
+            margin-right: 12px;
+            transition: background 0.2s ease;
+          ">Get Help</button>
+          
+          <button id="churnaizer-dismiss-btn" style="
+            background: transparent;
+            color: #666;
+            border: 1px solid #ddd;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+          ">Maybe Later</button>
+        </div>
+        
+        <p style="margin: 0; color: #999; font-size: 12px;">
+          Risk Level: ${riskData.risk_level} • Score: ${Math.round((riskData.churn_score || 0) * 100)}%
+        </p>
+      `;
+
+      modal.appendChild(modalContent);
+
+      // Add event listeners
+      modal.querySelector('#churnaizer-help-btn').addEventListener('click', () => {
+        this._handleRetentionAction('help_requested', riskData);
+        this._closeModal(modal);
+      });
+
+      modal.querySelector('#churnaizer-dismiss-btn').addEventListener('click', () => {
+        this._handleRetentionAction('dismissed', riskData);
+        this._closeModal(modal);
+      });
+
+      // Close on backdrop click
+      modal.addEventListener('click', (e) => {
+        if (e.target === modal) {
+          this._handleRetentionAction('dismissed', riskData);
+          this._closeModal(modal);
         }
       });
 
-      if (apiKey && userData.user_id) {
-        window.Churnaizer.track(userData, apiKey, function (result) {
-          if (result) {
-            window.Churnaizer.showBadge(`[data-churnaizer-track="${userData.user_id}"]`, result);
-          }
-        });
-      }
-    });
-  });
+      return modal;
+    },
 
-  console.log(`✅ Churnaizer SDK v${SDK_VERSION} loaded successfully`);
+    _handleRetentionAction: function(action, riskData) {
+      // Log retention action
+      console.log('Churnaizer: Retention action:', action, riskData);
+      
+      // Send retention event to analytics
+      this._sendRetentionEvent(action, riskData);
+    },
 
-})(window);
+    _sendRetentionEvent: function(action, riskData) {
+      const xhr = new XMLHttpRequest();
+      xhr.open('POST', '/api/v1/retention-event', true);
+      xhr.setRequestHeader('Content-Type', 'application/json');
+      
+      xhr.send(JSON.stringify({
+        action: action,
+        risk_data: riskData,
+        timestamp: new Date().toISOString(),
+        page_url: window.location.href
+      }));
+    },
+
+    _closeModal: function(modal) {
+      modal.style.opacity = '0';
+      setTimeout(() => {
+        if (modal.parentNode) {
+          modal.parentNode.removeChild(modal);
+        }
+      }, 300);
+    }
+  };
+
+  // Auto-initialize if configured
+  if (window.ChurnaizerConfig) {
+    window.Churnaizer.initRetentionMonitoring(window.ChurnaizerConfig);
+  }
+
+  console.log('Churnaizer SDK loaded successfully');
+})();

@@ -72,10 +72,9 @@ const DomainRouter = () => {
       // Dashboard domain - Full user application
       return (
         <Routes>
-          <Route path="/" element={<ProtectedRoute><Integration /></ProtectedRoute>} />
           <Route path="/auth" element={<RedirectToDomain domain="auth" path="/auth" />} />
           <Route 
-            path="/dashboard" 
+            path="/" 
             element={
               <ProtectedRoute>
                 <DashboardLayout />
@@ -85,25 +84,8 @@ const DomainRouter = () => {
             <Route index element={<Integration />} />
             <Route path="users" element={<UploadedUsersPage />} />
             <Route path="users/:userId" element={<UserDetailPage />} />
-            <Route path="*" element={<Integration />} />
           </Route>
-          <Route 
-            path="/integration" 
-            element={
-              <ProtectedRoute>
-                <Integration />
-              </ProtectedRoute>
-            } 
-          />
-          <Route 
-            path="/integration/setup" 
-            element={
-              <ProtectedRoute>
-                <Integration />
-              </ProtectedRoute>
-            } 
-          />
-          <Route path="*" element={<ProtectedRoute><Integration /></ProtectedRoute>} />
+          <Route path="*" element={<ProtectedRoute><DashboardLayout /></ProtectedRoute>} />
         </Routes>
       );
 

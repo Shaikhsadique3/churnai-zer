@@ -6,6 +6,7 @@ import { Link } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { Logo } from "@/components/ui/logo";
 import { DynamicHead } from "@/components/common/DynamicHead";
+import AnnouncementBanner from "@/components/common/AnnouncementBanner";
 
 const Index = () => {
   const { user } = useAuth();
@@ -17,6 +18,7 @@ const Index = () => {
         description="Install our SDK to track churn risk in real time. Used by 10+ SaaS teams. GDPR-ready and developer-friendly."
       />
       <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5">
+        <AnnouncementBanner />
         {/* Sticky Navigation */}
         <nav className="sticky top-0 z-50 bg-background/80 backdrop-blur-lg border-b border-border/50">
           <div className="container mx-auto px-4 lg:px-8 py-4 flex items-center justify-between">

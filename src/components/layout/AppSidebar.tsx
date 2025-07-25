@@ -69,9 +69,20 @@ export function AppSidebar() {
               {navigationItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton asChild className="rounded-lg">
-                    <NavLink to={item.url} className={getNavCls}>
-                      <item.icon className={`h-5 w-5 ${!open ? "" : "mr-3"}`} />
-                      {open && <span className="font-medium">{item.title}</span>}
+                    <NavLink 
+                      to={item.url} 
+                      className={({ isActive }) => 
+                        `flex items-center w-full transition-colors duration-200 ${
+                          isActive 
+                            ? "bg-sidebar-accent text-sidebar-primary font-medium" 
+                            : "text-sidebar-foreground hover:bg-sidebar-accent/60 hover:text-sidebar-primary"
+                        }`
+                      }
+                    >
+                      <div className="flex items-center w-full">
+                        <item.icon className={`h-5 w-5 ${!open ? "" : "mr-3"}`} />
+                        {open && <span className="font-medium">{item.title}</span>}
+                      </div>
                     </NavLink>
                   </SidebarMenuButton>
                 </SidebarMenuItem>

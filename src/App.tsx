@@ -20,7 +20,7 @@ import RefundPolicy from "./pages/RefundPolicy";
 import Pricing from "./pages/Pricing";
 import Contact from "./pages/Contact";
 import NotFound from "./pages/NotFound";
-import { DashboardLayout } from "./components/layout/DashboardLayout";
+import { MainLayout } from "./components/layout/MainLayout";
 // Dashboard pages
 import { UploadedUsersPage } from "./pages/dashboard/UploadedUsersPage";
 import { UserDetailPage } from "./pages/dashboard/UserDetailPage";
@@ -49,32 +49,45 @@ const App = () => (
             <Route path="/pricing" element={<Pricing />} />
             <Route path="/contact" element={<Contact />} />
             <Route path="/admin" element={<AdminPanel />} />
-            <Route 
-              path="/dashboard" 
-              element={
-                <ProtectedRoute>
-                  <DashboardLayout />
-                </ProtectedRoute>
-              }
-            >
-              <Route index element={<Integration />} />
-              <Route path="users" element={<UploadedUsersPage />} />
-              <Route path="users/:userId" element={<UserDetailPage />} />
-              <Route path="*" element={<Integration />} />
-            </Route>
+            {/* Protected Main App Routes */}
             <Route 
               path="/integration" 
               element={
                 <ProtectedRoute>
-                  <Integration />
+                  <MainLayout>
+                    <Integration />
+                  </MainLayout>
                 </ProtectedRoute>
               } 
             />
             <Route 
-              path="/integration/setup" 
+              path="/users" 
               element={
                 <ProtectedRoute>
-                  <Integration />
+                  <MainLayout>
+                    <UploadedUsersPage />
+                  </MainLayout>
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/users/:userId" 
+              element={
+                <ProtectedRoute>
+                  <MainLayout>
+                    <UserDetailPage />
+                  </MainLayout>
+                </ProtectedRoute>
+              } 
+            />
+            {/* Redirect dashboard to integration for backwards compatibility */}
+            <Route 
+              path="/dashboard" 
+              element={
+                <ProtectedRoute>
+                  <MainLayout>
+                    <Integration />
+                  </MainLayout>
                 </ProtectedRoute>
               } 
             />

@@ -360,7 +360,7 @@ const EnhancedUserDataTable = ({
                 </TableCell>
                 <TableCell className="font-mono text-sm text-foreground">
                   <button
-                    onClick={() => window.location.href = `/dashboard/users/${user.id}`}
+                    onClick={() => window.location.href = `/users/${user.id}`}
                     className="text-primary hover:underline focus:outline-none"
                   >
                     {user.user_id}

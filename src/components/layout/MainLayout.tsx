@@ -1,6 +1,7 @@
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "./AppSidebar";
-import { Separator } from "@/components/ui/separator";
+import { Menu } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 interface MainLayoutProps {
   children: React.ReactNode;
@@ -9,18 +10,24 @@ interface MainLayoutProps {
 export function MainLayout({ children }: MainLayoutProps) {
   return (
     <SidebarProvider>
-      <div className="flex min-h-screen w-full">
+      <div className="flex min-h-screen w-full bg-background">
         <AppSidebar />
         <div className="flex-1 flex flex-col">
-          <header className="flex h-16 shrink-0 items-center gap-2 border-b px-4">
-            <SidebarTrigger className="-ml-1" />
-            <Separator orientation="vertical" className="mr-2 h-4" />
-            <div className="flex-1">
-              <h1 className="text-lg font-semibold">Churnaizer</h1>
-            </div>
+          {/* Mobile header with hamburger */}
+          <header className="flex h-14 shrink-0 items-center gap-3 border-b border-border bg-card px-4 shadow-sm lg:hidden">
+            <SidebarTrigger asChild>
+              <Button variant="ghost" size="sm" className="p-2">
+                <Menu className="h-5 w-5" />
+              </Button>
+            </SidebarTrigger>
+            <h1 className="text-lg font-semibold text-foreground">Churnaizer</h1>
           </header>
-          <main className="flex-1 overflow-auto p-6">
-            {children}
+          
+          {/* Main content with padding and clean background */}
+          <main className="flex-1 overflow-auto">
+            <div className="container max-w-7xl mx-auto p-6 space-y-6">
+              {children}
+            </div>
           </main>
         </div>
       </div>

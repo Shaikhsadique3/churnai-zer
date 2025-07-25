@@ -1,13 +1,8 @@
 import { 
-  BarChart3, 
   Users, 
-  Zap, 
-  Upload, 
-  PlayCircle, 
-  Mail, 
-  Shield, 
-  Home,
-  Database
+  Code,
+  Menu,
+  X
 } from "lucide-react";
 import { NavLink, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
@@ -29,19 +24,10 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Logo } from "@/components/ui/logo";
 
+// Minimal production navigation - only essential routes
 const navigationItems = [
-  { title: "Dashboard", url: "/dashboard", icon: Home },
-  { title: "Analytics", url: "/dashboard/analytics", icon: BarChart3 },
-  { title: "Users", url: "/dashboard/users", icon: Users },
-  { title: "CSV Upload", url: "/dashboard/csv-upload", icon: Upload },
-  { title: "Playbooks", url: "/dashboard/playbooks", icon: PlayCircle },
-  { title: "AI Campaigns", url: "/dashboard/campaigns", icon: Mail },
-  { title: "Automations", url: "/dashboard/automations", icon: Zap },
-];
-
-const integrationItems = [
-  { title: "SDK Setup", url: "/integration/setup", icon: Shield },
-  { title: "API Keys", url: "/integration", icon: Database },
+  { title: "Website Integration", url: "/integration", icon: Code },
+  { title: "Website Users", url: "/users", icon: Users },
 ];
 
 export function AppSidebar() {
@@ -53,54 +39,39 @@ export function AppSidebar() {
   const isActive = (path: string) => currentPath === path || (path !== "/" && currentPath.startsWith(path));
 
   const getNavCls = ({ isActive }: { isActive: boolean }) =>
-    `flex items-center w-full ${isActive ? "bg-primary text-primary-foreground font-medium" : "hover:bg-muted/50"}`;
+    `flex items-center w-full transition-colors duration-200 ${
+      isActive 
+        ? "bg-sidebar-accent text-sidebar-primary font-medium" 
+        : "text-sidebar-foreground hover:bg-sidebar-accent/60 hover:text-sidebar-primary"
+    }`;
 
   return (
     <Sidebar
-      className={`${!open ? "w-14" : "w-64"} border-r transition-all duration-200`}
+      className={`${!open ? "w-16" : "w-64"} border-r border-sidebar-border bg-sidebar shadow-sm transition-all duration-300`}
       collapsible="icon"
     >
-      <SidebarHeader className="border-b p-4">
+      <SidebarHeader className="border-b border-sidebar-border p-4">
         <div className="flex items-center space-x-3">
           <Logo className="h-8 w-8 shrink-0" />
           {open && (
             <div>
-              <h2 className="text-xl font-bold text-primary">Churnaizer</h2>
-              <p className="text-xs text-muted-foreground">AI-Powered Churn Prevention</p>
+              <h2 className="text-lg font-semibold text-sidebar-primary">Churnaizer</h2>
+              <p className="text-xs text-sidebar-foreground/70">Churn Prevention</p>
             </div>
           )}
         </div>
       </SidebarHeader>
 
-      <SidebarContent className="flex-1 overflow-y-auto">
+      <SidebarContent className="flex-1 p-3">
         <SidebarGroup>
-          <SidebarGroupLabel>Dashboard</SidebarGroupLabel>
           <SidebarGroupContent>
-            <SidebarMenu>
+            <SidebarMenu className="space-y-1">
               {navigationItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton asChild>
+                  <SidebarMenuButton asChild className="rounded-lg">
                     <NavLink to={item.url} className={getNavCls}>
-                      <item.icon className={`h-4 w-4 ${!open ? "" : "mr-3"}`} />
-                      {open && <span>{item.title}</span>}
-                    </NavLink>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
-
-        <SidebarGroup>
-          <SidebarGroupLabel>Integration</SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {integrationItems.map((item) => (
-                <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton asChild>
-                    <NavLink to={item.url} className={getNavCls}>
-                      <item.icon className={`h-4 w-4 ${!open ? "" : "mr-3"}`} />
-                      {open && <span>{item.title}</span>}
+                      <item.icon className={`h-5 w-5 ${!open ? "" : "mr-3"}`} />
+                      {open && <span className="font-medium">{item.title}</span>}
                     </NavLink>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
@@ -110,21 +81,21 @@ export function AppSidebar() {
         </SidebarGroup>
       </SidebarContent>
 
-      <SidebarFooter className="border-t p-4">
+      <SidebarFooter className="border-t border-sidebar-border p-3">
         {user && (
-          <div className={`flex items-center ${!open ? "justify-center" : "space-x-3"}`}>
+          <div className={`flex items-center ${!open ? "justify-center" : "space-x-3 mb-3"}`}>
             <Avatar className="h-8 w-8 shrink-0">
               <AvatarImage src={user.user_metadata?.avatar_url} />
-              <AvatarFallback>
+              <AvatarFallback className="bg-primary text-primary-foreground text-sm font-medium">
                 {user.email?.charAt(0).toUpperCase()}
               </AvatarFallback>
             </Avatar>
             {open && (
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium truncate">
+                <p className="text-sm font-medium text-sidebar-primary truncate">
                   {user.user_metadata?.full_name || user.email?.split('@')[0]}
                 </p>
-                <p className="text-xs text-muted-foreground truncate">
+                <p className="text-xs text-sidebar-foreground/70 truncate">
                   {user.email}
                 </p>
               </div>
@@ -137,7 +108,7 @@ export function AppSidebar() {
             variant="ghost" 
             size="sm" 
             onClick={signOut}
-            className="w-full mt-2 text-muted-foreground hover:text-foreground"
+            className="w-full text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-primary"
           >
             Sign Out
           </Button>

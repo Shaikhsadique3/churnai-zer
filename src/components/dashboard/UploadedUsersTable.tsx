@@ -269,7 +269,7 @@ export const UploadedUsersTable = () => {
                     <TableCell className="font-medium">
                       <div className="flex items-center gap-2">
                         <button
-                          onClick={() => window.location.href = `/dashboard/users/${userData.id}`}
+                          onClick={() => window.location.href = `/users/${userData.id}`}
                           className="text-primary hover:underline focus:outline-none text-sm truncate max-w-[100px]"
                           title={userData.user_id}
                         >

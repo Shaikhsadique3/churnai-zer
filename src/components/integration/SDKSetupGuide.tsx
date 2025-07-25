@@ -558,8 +558,8 @@ window.Churnaizer.track({
                 </Link>
               </Button>
               <Button variant="outline" className="w-full justify-start" asChild>
-                <Link to="/dashboard/users">
-                  View Dashboard
+                <Link to="/users">
+                  View Users
                 </Link>
               </Button>
             </CardContent>

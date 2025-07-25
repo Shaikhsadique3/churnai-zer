@@ -15,14 +15,8 @@ const AdminLogin = () => {
   const [isLoading, setIsLoading] = useState(false);
   const { signIn, user } = useAuth();
 
-  // Redirect if not on admin domain
+  // If already authenticated and is admin, redirect to dashboard
   React.useEffect(() => {
-    if (!APP_CONFIG.isAdminDomain()) {
-      APP_CONFIG.redirectToAdmin('/admin/login');
-      return;
-    }
-    
-    // If already authenticated and is admin, redirect to dashboard
     if (user) {
       const allowedAdminEmails = [
         'shaikhsadique730@gmail.com',
@@ -155,7 +149,7 @@ const AdminLogin = () => {
           <div className="mt-6 text-center">
             <Button 
               variant="link" 
-              onClick={() => APP_CONFIG.redirectToAuth('/auth')}
+              onClick={() => window.location.href = '/auth'}
               className="text-sm"
             >
               Back to Main Login

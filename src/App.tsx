@@ -31,118 +31,9 @@ import { UserDetailPage } from "./pages/dashboard/UserDetailPage";
 import AdminPanel from "./pages/AdminPanel";
 import AdminLogin from "./pages/AdminLogin";
 
-// Admin-only app component
-const AdminApp = () => (
-  <Routes>
-    <Route path="/" element={<AdminLogin />} />
-    <Route path="/admin/login" element={<AdminLogin />} />
-    <Route path="/admin" element={<AdminPanel />} />
-    <Route path="/admin/dashboard" element={<AdminPanel />} />
-    <Route path="/admin/blogs" element={<AdminPanel />} />
-    <Route path="*" element={<NotFound />} />
-  </Routes>
-);
-
-// Main app component for non-admin domains
-const MainApp = () => (
-  <Routes>
-    <Route path="/" element={<Index />} />
-    <Route path="/auth" element={<Auth />} />
-    <Route path="/forgot-password" element={<ForgotPassword />} />
-    <Route path="/reset-password" element={<ResetPassword />} />
-    <Route path="/terms" element={<Terms />} />
-    <Route path="/privacy" element={<Privacy />} />
-    <Route path="/refund-policy" element={<RefundPolicy />} />
-    <Route path="/pricing" element={<Pricing />} />
-    <Route path="/contact" element={<Contact />} />
-    {/* Blog routes */}
-    <Route path="/blog" element={<BlogIndex />} />
-    <Route path="/blog/:slug" element={<BlogPost />} />
-    {/* Protected Main App Routes */}
-    <Route 
-      path="/integration" 
-      element={
-        <ProtectedRoute>
-          <MainLayout>
-            <Integration />
-          </MainLayout>
-        </ProtectedRoute>
-      } 
-    />
-    <Route 
-      path="/integration/setup" 
-      element={
-        <ProtectedRoute>
-          <MainLayout>
-            <Integration />
-          </MainLayout>
-        </ProtectedRoute>
-      } 
-    />
-    {/* Integration sub-routes - catch all integration paths */}
-    <Route 
-      path="/integration/*" 
-      element={
-        <ProtectedRoute>
-          <MainLayout>
-            <Integration />
-          </MainLayout>
-        </ProtectedRoute>
-      } 
-    />
-    <Route 
-      path="/users" 
-      element={
-        <ProtectedRoute>
-          <MainLayout>
-            <UploadedUsersPage />
-          </MainLayout>
-        </ProtectedRoute>
-      } 
-    />
-    <Route 
-      path="/users/:userId" 
-      element={
-        <ProtectedRoute>
-          <MainLayout>
-            <UserDetailPage />
-          </MainLayout>
-        </ProtectedRoute>
-      } 
-    />
-    {/* Redirect dashboard to integration for backwards compatibility */}
-    <Route 
-      path="/dashboard" 
-      element={
-        <ProtectedRoute>
-          <MainLayout>
-            <Integration />
-          </MainLayout>
-        </ProtectedRoute>
-      } 
-    />
-    {/* Redirect any dashboard subroutes to integration for backwards compatibility */}
-    <Route 
-      path="/dashboard/*" 
-      element={
-        <ProtectedRoute>
-          <MainLayout>
-            <Integration />
-          </MainLayout>
-        </ProtectedRoute>
-      } 
-    />
-    {/* Redirect admin routes to admin subdomain */}
-    <Route path="/admin/*" element={<div>Redirecting to admin.churnaizer.com...</div>} />
-    <Route path="*" element={<NotFound />} />
-  </Routes>
-);
-
 const queryClient = new QueryClient();
 
 const App = () => {
-  const isAdminDomain = APP_CONFIG.isAdminDomain();
-  
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
@@ -151,7 +42,100 @@ const App = () => {
           <Toaster />
           <Sonner />
           <BrowserRouter>
-            {isAdminDomain ? <AdminApp /> : <MainApp />}
+            <Routes>
+              <Route path="/" element={<Index />} />
+              <Route path="/auth" element={<Auth />} />
+              <Route path="/forgot-password" element={<ForgotPassword />} />
+              <Route path="/reset-password" element={<ResetPassword />} />
+              <Route path="/terms" element={<Terms />} />
+              <Route path="/privacy" element={<Privacy />} />
+              <Route path="/refund-policy" element={<RefundPolicy />} />
+              <Route path="/pricing" element={<Pricing />} />
+              <Route path="/contact" element={<Contact />} />
+              {/* Blog routes */}
+              <Route path="/blog" element={<BlogIndex />} />
+              <Route path="/blog/:slug" element={<BlogPost />} />
+              {/* Admin routes */}
+              <Route path="/admin/login" element={<AdminLogin />} />
+              <Route path="/admin" element={<AdminPanel />} />
+              <Route path="/admin/dashboard" element={<AdminPanel />} />
+              <Route path="/admin/blogs" element={<AdminPanel />} />
+              {/* Protected Main App Routes */}
+              <Route 
+                path="/integration" 
+                element={
+                  <ProtectedRoute>
+                    <MainLayout>
+                      <Integration />
+                    </MainLayout>
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="/integration/setup" 
+                element={
+                  <ProtectedRoute>
+                    <MainLayout>
+                      <Integration />
+                    </MainLayout>
+                  </ProtectedRoute>
+                } 
+              />
+              {/* Integration sub-routes - catch all integration paths */}
+              <Route 
+                path="/integration/*" 
+                element={
+                  <ProtectedRoute>
+                    <MainLayout>
+                      <Integration />
+                    </MainLayout>
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="/users" 
+                element={
+                  <ProtectedRoute>
+                    <MainLayout>
+                      <UploadedUsersPage />
+                    </MainLayout>
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="/users/:userId" 
+                element={
+                  <ProtectedRoute>
+                    <MainLayout>
+                      <UserDetailPage />
+                    </MainLayout>
+                  </ProtectedRoute>
+                } 
+              />
+              {/* Redirect dashboard to integration for backwards compatibility */}
+              <Route 
+                path="/dashboard" 
+                element={
+                  <ProtectedRoute>
+                    <MainLayout>
+                      <Integration />
+                    </MainLayout>
+                  </ProtectedRoute>
+                } 
+              />
+              {/* Redirect any dashboard subroutes to integration for backwards compatibility */}
+              <Route 
+                path="/dashboard/*" 
+                element={
+                  <ProtectedRoute>
+                    <MainLayout>
+                      <Integration />
+                    </MainLayout>
+                  </ProtectedRoute>
+                } 
+              />
+              <Route path="*" element={<NotFound />} />
+            </Routes>
           </BrowserRouter>
         </TooltipProvider>
       </AuthProvider>

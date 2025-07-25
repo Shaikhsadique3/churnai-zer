@@ -36,10 +36,12 @@ const Integration = () => {
   const { data: apiKeys, isLoading, error: apiKeysError } = useQuery({
     queryKey: ['api-keys', user?.id],
     queryFn: async () => {
+      if (!user?.id) throw new Error('User not authenticated');
+      
       const { data, error } = await supabase
         .from('api_keys')
         .select('*')
-        .eq('user_id', user?.id)
+        .eq('user_id', user.id)
         .eq('is_active', true)
         .order('created_at', { ascending: false });
       
@@ -47,6 +49,11 @@ const Integration = () => {
       return data;
     },
     enabled: !!user?.id,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    gcTime: 10 * 60 * 1000, // 10 minutes
+    refetchOnWindowFocus: false,
+    refetchOnMount: false,
+    refetchOnReconnect: false,
   });
 
   // Create new API key

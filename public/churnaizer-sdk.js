@@ -171,30 +171,37 @@
 
       try {
         // Step 1: Send data to secure Supabase edge function
-        const aiData = await retryFetch(`${window.location.origin}/functions/v1/churn-prediction`, {
+        const endpointUrl = `https://ntbkydpgjaswmwruegyl.supabase.co/functions/v1/track`;
+        const aiData = await retryFetch(endpointUrl, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${apiKey}`, // This should be the user's Supabase token
+            'X-API-Key': apiKey,
             'X-SDK-Version': SDK_VERSION,
             'User-Agent': `Churnaizer-SDK/${SDK_VERSION}`
           },
-          body: JSON.stringify({
-            customerData: userData,
-            isBatch: false
-          })
+          body: JSON.stringify(userData)
         });
 
         if (config.logging) {
           console.log('✅ Churnaizer: AI prediction received for user:', userData.user_id || userData.customer_email);
         }
 
-        // Extract data from secure edge function response
-        const predictionData = aiData.result || aiData;
-        const churn_score = predictionData.churn_score || 0;
+        // Handle API response with error checking
+        if (aiData.code === 401) {
+          throw new Error(`Unauthorized: ${aiData.message || 'Invalid API key'}`);
+        }
+        
+        if (aiData.status !== 'ok' || !aiData.results || aiData.results.length === 0) {
+          throw new Error('No valid prediction returned from server');
+        }
+
+        // Extract data from the first result
+        const predictionData = aiData.results[0];
+        const churn_score = typeof predictionData.churn_score === 'number' ? predictionData.churn_score : 0;
         const churn_reason = predictionData.churn_reason || 'No reason provided';
-        const insight = predictionData.insight || '';
-        const understanding_score = predictionData.understanding_score || 0;
+        const insight = predictionData.insight || predictionData.action_recommended || '';
+        const understanding_score = typeof predictionData.understanding_score === 'number' ? predictionData.understanding_score : 0;
 
         const result = {
           churn_score,

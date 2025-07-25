@@ -38,6 +38,8 @@ export const SDKSetupGuide = ({ primaryApiKey, onCopyCode }: SDKSetupGuideProps)
 
   const handleTestPrediction = async () => {
     setIsLoading(true);
+    setTestResult(null);
+    
     try {
       const { data, error } = await supabase.functions.invoke('track', {
         headers: { 'X-API-Key': primaryApiKey },
@@ -57,19 +59,84 @@ export const SDKSetupGuide = ({ primaryApiKey, onCopyCode }: SDKSetupGuideProps)
           billing_issue_count: parseInt(testData.billing_issue_count)
         }
       });
-
-      if (error) throw error;
-      setTestResult(data);
-      toast({
-        title: "Test successful!",
-        description: "Churn prediction completed successfully."
-      });
+      
+      if (error) {
+        throw error;
+      }
+      
+      // Handle successful response
+      if (data && data.status === 'ok' && data.results && data.results.length > 0) {
+        const result = data.results[0];
+        setTestResult({
+          churn_score: result.churn_score ?? 0,
+          churn_reason: result.churn_reason || 'No reason provided',
+          risk_level: result.risk_level || 'unknown',
+          understanding_score: result.understanding_score ?? 0,
+          action_recommended: result.action_recommended || '',
+          user_id: result.user_id
+        });
+        toast({
+          title: "Test successful!",
+          description: "Churn prediction completed successfully."
+        });
+      } else {
+        setTestResult({
+          churn_score: 0,
+          churn_reason: 'Prediction failed silently',
+          risk_level: 'unknown',
+          understanding_score: 0,
+          error: 'No valid prediction returned'
+        });
+        toast({
+          title: "Test completed with issues",
+          description: "No valid prediction was returned.",
+          variant: "destructive"
+        });
+      }
     } catch (error: any) {
-      toast({
-        title: "Test failed",
-        description: error.message,
-        variant: "destructive"
-      });
+      console.error('Test failed:', error);
+      
+      // Handle specific error responses
+      if (error?.message?.includes('401') || error?.code === 401) {
+        setTestResult({
+          churn_score: 0,
+          churn_reason: 'Authentication failed',
+          risk_level: 'unknown',
+          understanding_score: 0,
+          error: 'Invalid API key - please check your credentials'
+        });
+        toast({
+          title: "Authentication failed",
+          description: "Invalid API key - please check your credentials",
+          variant: "destructive"
+        });
+      } else if (error?.code === 401 && error?.message === 'Unauthorized') {
+        setTestResult({
+          churn_score: 0,
+          churn_reason: 'Access denied',
+          risk_level: 'unknown',
+          understanding_score: 0,
+          error: 'API key not authorized for this request'
+        });
+        toast({
+          title: "Access denied",
+          description: "API key not authorized for this request",
+          variant: "destructive"
+        });
+      } else {
+        setTestResult({
+          churn_score: 0,
+          churn_reason: 'Service temporarily unavailable',
+          risk_level: 'unknown',
+          understanding_score: 0,
+          error: error?.message || 'An unexpected error occurred'
+        });
+        toast({
+          title: "Test failed",
+          description: error?.message || 'An unexpected error occurred',
+          variant: "destructive"
+        });
+      }
     } finally {
       setIsLoading(false);
     }
@@ -378,28 +445,57 @@ window.Churnaizer.track({
               </Button>
 
               {testResult && (
-                <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-                  <h4 className="font-medium text-green-800 mb-2">✅ Test Results</h4>
-                  <div className="space-y-2 text-sm">
-                    <div className="flex justify-between">
-                      <span>Churn Score:</span>
-                      <Badge variant={testResult.churn_score > 0.7 ? "destructive" : testResult.churn_score > 0.4 ? "default" : "secondary"}>
-                        {Math.round(testResult.churn_score * 100)}%
-                      </Badge>
-                    </div>
-                    <div className="flex justify-between">
-                      <span>Risk Level:</span>
-                      <Badge variant={testResult.risk_level === 'high' ? "destructive" : testResult.risk_level === 'medium' ? "default" : "secondary"}>
-                        {testResult.risk_level}
-                      </Badge>
-                    </div>
-                    {testResult.churn_reason && (
-                      <div className="pt-2">
-                        <span className="font-medium">Insights:</span>
-                        <p className="text-muted-foreground">{testResult.churn_reason}</p>
+                <div className={`border rounded-lg p-4 ${
+                  testResult.error 
+                    ? 'bg-red-50 border-red-200' 
+                    : 'bg-green-50 border-green-200'
+                }`}>
+                  <h4 className={`font-medium mb-2 ${
+                    testResult.error ? 'text-red-800' : 'text-green-800'
+                  }`}>
+                    {testResult.error ? '❌ Test Failed' : '✅ Test Results'}
+                  </h4>
+                  
+                  {testResult.error ? (
+                    <div className="space-y-2 text-sm">
+                      <div className="text-red-700 font-medium">{testResult.error}</div>
+                      <div className="text-red-600 text-xs">
+                        Please check your API key configuration and try again.
                       </div>
-                    )}
-                  </div>
+                    </div>
+                  ) : (
+                    <div className="space-y-2 text-sm">
+                      <div className="flex justify-between">
+                        <span>Churn Score:</span>
+                        <Badge variant={testResult.churn_score > 0.7 ? "destructive" : testResult.churn_score > 0.4 ? "default" : "secondary"}>
+                          {typeof testResult.churn_score === 'number' ? Math.round(testResult.churn_score * 100) : 0}%
+                        </Badge>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>Risk Level:</span>
+                        <Badge variant={testResult.risk_level === 'high' ? "destructive" : testResult.risk_level === 'medium' ? "default" : "secondary"}>
+                          {(testResult.risk_level || 'unknown').toUpperCase()}
+                        </Badge>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>Confidence:</span>
+                        <Badge variant="outline">
+                          {typeof testResult.understanding_score === 'number' ? testResult.understanding_score : 0}%
+                        </Badge>
+                      </div>
+                      {testResult.churn_reason && (
+                        <div className="pt-2">
+                          <span className="font-medium">Insights:</span>
+                          <p className="text-muted-foreground">{testResult.churn_reason}</p>
+                        </div>
+                      )}
+                      {testResult.action_recommended && (
+                        <div className="mt-3 p-2 bg-blue-100 border border-blue-200 rounded text-blue-800 text-xs">
+                          💡 <strong>Recommended:</strong> {testResult.action_recommended}
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
               )}
             </CardContent>

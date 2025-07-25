@@ -48,7 +48,7 @@ serve(async (req) => {
     const apiKey = req.headers.get('X-API-Key') || req.headers.get('x-api-key');
     if (!apiKey) {
       return new Response(
-        JSON.stringify({ error: 'Missing authorization header' }),
+        JSON.stringify({ code: 401, message: 'Unauthorized' }),
         { 
           status: 401, 
           headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
@@ -61,27 +61,49 @@ serve(async (req) => {
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    // Verify API key and get owner
-    const { data: keyData, error: keyError } = await supabase
-      .from('api_keys')
-      .select('user_id, is_active')
-      .eq('key', apiKey)
-      .eq('is_active', true)
-      .single();
+    // Get allowed API keys from environment (fallback to database if not set)
+    const allowedKeysEnv = Deno.env.get('ALLOWED_API_KEYS');
+    let ownerId: string;
 
-    if (keyError || !keyData) {
-      console.log('API key validation failed:', keyError);
-      return new Response(
-        JSON.stringify({ error: 'Invalid or inactive API key' }),
-        { 
-          status: 401, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-        }
-      );
+    if (allowedKeysEnv) {
+      // Validate against ENV list
+      const allowedKeys = allowedKeysEnv.split(',').map(key => key.trim());
+      if (!allowedKeys.includes(apiKey)) {
+        console.log('API key not in ENV allowlist:', apiKey);
+        return new Response(
+          JSON.stringify({ code: 401, message: 'Unauthorized' }),
+          { 
+            status: 401, 
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+          }
+        );
+      }
+      // For ENV validation, use a default owner ID or derive from API key position
+      ownerId = Deno.env.get('DEFAULT_OWNER_ID') || 'env-validated-user';
+      console.log('Valid API key from ENV:', apiKey);
+    } else {
+      // Fallback to database validation
+      const { data: keyData, error: keyError } = await supabase
+        .from('api_keys')
+        .select('user_id, is_active')
+        .eq('key', apiKey)
+        .eq('is_active', true)
+        .single();
+
+      if (keyError || !keyData) {
+        console.log('API key validation failed:', keyError);
+        return new Response(
+          JSON.stringify({ code: 401, message: 'Unauthorized' }),
+          { 
+            status: 401, 
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+          }
+        );
+      }
+
+      ownerId = keyData.user_id;
+      console.log('Valid API key for user:', ownerId);
     }
-
-    const ownerId = keyData.user_id;
-    console.log('Valid API key for user:', ownerId);
 
     // Parse request body - handle both single user and batch (array) requests
     const body = await req.json();

@@ -553,12 +553,6 @@ window.Churnaizer.track({
             </CardHeader>
             <CardContent className="space-y-3">
               <Button variant="outline" className="w-full justify-start" asChild>
-                <a href="https://churnaizer-sdk.netlify.app/test.html" target="_blank" rel="noopener noreferrer">
-                  <ExternalLink className="h-4 w-4 mr-2" />
-                  Live SDK Demo
-                </a>
-              </Button>
-              <Button variant="outline" className="w-full justify-start" asChild>
                 <Link to="/privacy">
                   Privacy Policy
                 </Link>

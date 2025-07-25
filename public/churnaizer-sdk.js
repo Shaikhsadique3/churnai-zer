@@ -87,6 +87,13 @@
      * @param {Object} options - Optional configuration
      */
     track: async function (userData, apiKey, callback, options) {
+      // Session validation - Skip tracking if no valid user session
+      if (!userData || !userData.email || !userData.user_id) {
+        console.warn("⚠️ Churnaizer SDK skipped: no valid user session.");
+        if (typeof callback === 'function') callback(null, null);
+        return Promise.resolve(null);
+      }
+
       // Enhanced input validation
       if (!userData || typeof userData !== 'object') {
         const error = new Error('🛑 Churnaizer SDK: Invalid user data provided');

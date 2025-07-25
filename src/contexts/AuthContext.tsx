@@ -31,47 +31,55 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    console.log('🔐 AuthContext: Starting auth initialization');
     let timeoutId: NodeJS.Timeout;
     
     // Set loading timeout to prevent infinite spinner
     const loadingTimeout = setTimeout(() => {
       if (loading) {
-        console.log('Auth loading timeout - setting loading to false');
+        console.log('⏰ AuthContext: Loading timeout reached - forcing loading to false');
         setLoading(false);
       }
-    }, 5000); // 5 second timeout
+    }, 3000); // Reduced to 3 seconds
 
     // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
-        console.log('Auth state changed:', event, session?.user?.id);
+        console.log('🔄 AuthContext: Auth state changed:', event, {
+          hasSession: !!session,
+          userId: session?.user?.id,
+          domain: window.location.hostname
+        });
+        
         setSession(session);
         setUser(session?.user ?? null);
-        
-        // Set cross-subdomain cookie for session sharing
-        if (session?.access_token) {
-          // Set secure cookie that works across subdomains
-          document.cookie = `churnaizer_session=${session.access_token}; domain=.churnaizer.com; path=/; secure; samesite=none; max-age=86400`;
-        } else {
-          // Clear the session cookie
-          document.cookie = `churnaizer_session=; domain=.churnaizer.com; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT`;
-        }
-        
         setLoading(false);
         clearTimeout(loadingTimeout);
+        
+        // Store session info in localStorage for cross-domain access
+        if (session?.access_token) {
+          console.log('💾 AuthContext: Storing session in localStorage');
+          localStorage.setItem('churnaizer_auth_token', session.access_token);
+          localStorage.setItem('churnaizer_auth_user', JSON.stringify(session.user));
+        } else {
+          console.log('🗑️ AuthContext: Clearing session from localStorage');
+          localStorage.removeItem('churnaizer_auth_token');
+          localStorage.removeItem('churnaizer_auth_user');
+        }
       }
     );
 
     // Get initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    supabase.auth.getSession().then(({ data: { session }, error }) => {
+      console.log('🔍 AuthContext: Initial session check:', {
+        hasSession: !!session,
+        userId: session?.user?.id,
+        error: error?.message,
+        domain: window.location.hostname
+      });
+      
       setSession(session);
       setUser(session?.user ?? null);
-      
-      // Set cross-subdomain cookie for initial session
-      if (session?.access_token) {
-        document.cookie = `churnaizer_session=${session.access_token}; domain=.churnaizer.com; path=/; secure; samesite=none; max-age=86400`;
-      }
-      
       setLoading(false);
       clearTimeout(loadingTimeout);
     });

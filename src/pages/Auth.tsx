@@ -27,9 +27,15 @@ const Auth = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
+    console.log('🔐 Auth page: User state check:', {
+      user: !!user,
+      domain: window.location.hostname
+    });
+    
     if (user) {
-      // Redirect to dashboard subdomain
-      window.location.href = 'https://dashboard.churnaizer.com/';
+      console.log('🚀 Auth page: User found, redirecting to dashboard');
+      // Use replace to avoid back button issues
+      window.location.replace('https://dashboard.churnaizer.com/');
     }
   }, [user, navigate]);
 
@@ -133,8 +139,9 @@ const Auth = () => {
         title: "Welcome back!",
         description: "You have successfully signed in.",
       });
-      // Redirect to dashboard subdomain
-      window.location.href = 'https://dashboard.churnaizer.com/';
+      console.log('✅ Auth page: Sign in successful, redirecting to dashboard');
+      // Use replace to avoid back button issues
+      window.location.replace('https://dashboard.churnaizer.com/');
     }
     
     setLoading(false);

@@ -27,15 +27,8 @@ const Auth = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    console.log('🔐 Auth page: User state check:', {
-      user: !!user,
-      domain: window.location.hostname
-    });
-    
     if (user) {
-      console.log('🚀 Auth page: User found, redirecting to dashboard');
-      // Use replace to avoid back button issues
-      window.location.replace('https://dashboard.churnaizer.com/');
+      navigate('/dashboard');
     }
   }, [user, navigate]);
 
@@ -139,9 +132,7 @@ const Auth = () => {
         title: "Welcome back!",
         description: "You have successfully signed in.",
       });
-      console.log('✅ Auth page: Sign in successful, redirecting to dashboard');
-      // Use replace to avoid back button issues
-      window.location.replace('https://dashboard.churnaizer.com/');
+      navigate('/dashboard');
     }
     
     setLoading(false);
@@ -176,13 +167,13 @@ const Auth = () => {
         title: `Welcome, ${user.user_metadata?.full_name || user.email}!`,
         description: "Let's get you set up with your account.",
       });
-      window.location.href = 'https://dashboard.churnaizer.com/'; // Navigate to dashboard for new users
+      navigate('/dashboard'); // Navigate to dashboard for new users
     } else {
       toast({
         title: "Welcome back!",
         description: "You have successfully signed in.",
       });
-      window.location.href = 'https://dashboard.churnaizer.com/';
+      navigate('/dashboard');
     }
   };
 

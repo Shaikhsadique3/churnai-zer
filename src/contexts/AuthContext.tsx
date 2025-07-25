@@ -31,63 +31,24 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    console.log('🔐 AuthContext: Starting auth initialization');
-    let timeoutId: NodeJS.Timeout;
-    
-    // Set loading timeout to prevent infinite spinner
-    const loadingTimeout = setTimeout(() => {
-      if (loading) {
-        console.log('⏰ AuthContext: Loading timeout reached - forcing loading to false');
-        setLoading(false);
-      }
-    }, 3000); // Reduced to 3 seconds
-
     // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
-        console.log('🔄 AuthContext: Auth state changed:', event, {
-          hasSession: !!session,
-          userId: session?.user?.id,
-          domain: window.location.hostname
-        });
-        
+        console.log('Auth state changed:', event, session?.user?.id);
         setSession(session);
         setUser(session?.user ?? null);
         setLoading(false);
-        clearTimeout(loadingTimeout);
-        
-        // Store session info in localStorage for cross-domain access
-        if (session?.access_token) {
-          console.log('💾 AuthContext: Storing session in localStorage');
-          localStorage.setItem('churnaizer_auth_token', session.access_token);
-          localStorage.setItem('churnaizer_auth_user', JSON.stringify(session.user));
-        } else {
-          console.log('🗑️ AuthContext: Clearing session from localStorage');
-          localStorage.removeItem('churnaizer_auth_token');
-          localStorage.removeItem('churnaizer_auth_user');
-        }
       }
     );
 
     // Get initial session
-    supabase.auth.getSession().then(({ data: { session }, error }) => {
-      console.log('🔍 AuthContext: Initial session check:', {
-        hasSession: !!session,
-        userId: session?.user?.id,
-        error: error?.message,
-        domain: window.location.hostname
-      });
-      
+    supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       setUser(session?.user ?? null);
       setLoading(false);
-      clearTimeout(loadingTimeout);
     });
 
-    return () => {
-      subscription.unsubscribe();
-      clearTimeout(loadingTimeout);
-    };
+    return () => subscription.unsubscribe();
   }, []);
 
   const signIn = async (email: string, password: string) => {
@@ -102,7 +63,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: 'https://dashboard.churnaizer.com/',
+        redirectTo: `${window.location.origin}/dashboard`,
         queryParams: {
           access_type: 'offline',
           prompt: 'consent',
@@ -120,7 +81,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         email,
         password,
         options: {
-          emailRedirectTo: 'https://dashboard.churnaizer.com/'
+          emailRedirectTo: `${window.location.origin}/dashboard`
         }
       });
       
@@ -172,12 +133,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   const signOut = async () => {
     try {
-      // Clear cross-subdomain session cookie
-      document.cookie = `churnaizer_session=; domain=.churnaizer.com; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT`;
-      
       // Clear all auth-related data from localStorage
       Object.keys(localStorage).forEach((key) => {
-        if (key.startsWith('supabase.auth.') || key.includes('sb-') || key === 'rememberMe' || key.includes('churnaizer')) {
+        if (key.startsWith('supabase.auth.') || key.includes('sb-') || key === 'rememberMe') {
           localStorage.removeItem(key);
         }
       });
@@ -190,8 +148,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       setUser(null);
     } catch (error) {
       console.error('Sign out error:', error);
-      // Even if signOut fails, clear local state and cookie
-      document.cookie = `churnaizer_session=; domain=.churnaizer.com; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT`;
+      // Even if signOut fails, clear local state
       setSession(null);
       setUser(null);
     }

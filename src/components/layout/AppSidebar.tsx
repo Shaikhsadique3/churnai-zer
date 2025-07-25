@@ -27,7 +27,7 @@ import { Logo } from "@/components/ui/logo";
 // Minimal production navigation - only essential routes
 const navigationItems = [
   { title: "Website Integration", url: "/integration", icon: Code },
-  { title: "Website Users", url: "/users", icon: Users },
+  { title: "User Predictions", url: "/users", icon: Users },
 ];
 
 export function AppSidebar() {

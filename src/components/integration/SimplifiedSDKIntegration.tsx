@@ -21,10 +21,16 @@ export function SimplifiedSDKIntegration() {
   }, [user]);
 
   const fetchApiKey = async () => {
-    if (!user) return;
+    if (!user) {
+      console.log('No user found, skipping API key fetch');
+      setLoading(false);
+      return;
+    }
     
     try {
       console.log('Fetching API key for user:', user.id);
+      console.log('User email:', user.email);
+      console.log('User object:', user);
       
       const { data, error } = await supabase
         .from('api_keys')
@@ -34,7 +40,11 @@ export function SimplifiedSDKIntegration() {
         .maybeSingle();
 
       if (error) {
-        console.error('Supabase error details:', error);
+        console.error('Supabase error code:', error.code);
+        console.error('Supabase error message:', error.message);
+        console.error('Supabase error details:', error.details);
+        console.error('Supabase error hint:', error.hint);
+        console.error('Full error object:', JSON.stringify(error, null, 2));
         throw error;
       }
       
@@ -47,7 +57,10 @@ export function SimplifiedSDKIntegration() {
         await createApiKey();
       }
     } catch (error) {
-      console.error('Error fetching API key:', error);
+      console.error('Error fetching API key - type:', typeof error);
+      console.error('Error fetching API key - stringified:', JSON.stringify(error, null, 2));
+      console.error('Error fetching API key - message:', error instanceof Error ? error.message : 'Unknown error');
+      
       toast({
         title: "Error fetching API key",
         description: error instanceof Error ? error.message : "Unknown error occurred",
@@ -59,15 +72,23 @@ export function SimplifiedSDKIntegration() {
   };
 
   const createApiKey = async () => {
-    if (!user) return;
+    if (!user) {
+      console.log('No user found, cannot create API key');
+      return;
+    }
     
     try {
+      console.log('Creating API key for user:', user.id);
+      
       // Use the database function to generate API key
-      const { data, error } = await supabase.rpc('generate_api_key');
+      const { data: generatedKey, error: rpcError } = await supabase.rpc('generate_api_key');
       
-      if (error) throw error;
+      if (rpcError) {
+        console.error('RPC error:', JSON.stringify(rpcError, null, 2));
+        throw rpcError;
+      }
       
-      const generatedKey = data;
+      console.log('Generated key:', generatedKey);
       
       // Insert the new API key
       const { error: insertError } = await supabase
@@ -78,15 +99,23 @@ export function SimplifiedSDKIntegration() {
           name: 'Default API Key'
         });
 
-      if (insertError) throw insertError;
+      if (insertError) {
+        console.error('Insert error:', JSON.stringify(insertError, null, 2));
+        throw insertError;
+      }
       
       setApiKey(generatedKey);
+      console.log('API key created successfully:', generatedKey);
+      
       toast({
         title: "API Key Created",
         description: "Your API key has been generated successfully",
       });
     } catch (error) {
-      console.error('Error creating API key:', error);
+      console.error('Error creating API key - type:', typeof error);
+      console.error('Error creating API key - stringified:', JSON.stringify(error, null, 2));
+      console.error('Error creating API key - message:', error instanceof Error ? error.message : 'Unknown error');
+      
       toast({
         title: "Error creating API key",
         description: error instanceof Error ? error.message : "Unknown error occurred",
@@ -325,6 +354,14 @@ function showCustomRetentionModal(riskData) {
         <p className="text-muted-foreground">
           Implement Churnaizer's production-ready SDK to track user behavior and prevent churn automatically.
         </p>
+        {/* Debug info */}
+        <div className="mt-4 p-4 bg-muted rounded-lg">
+          <p className="text-sm">
+            <strong>Debug Info:</strong> User ID: {user?.id || 'Not logged in'} | 
+            Email: {user?.email || 'No email'} | 
+            API Key: {apiKey ? 'Present' : 'Missing'}
+          </p>
+        </div>
       </div>
 
       {/* API Key Display */}

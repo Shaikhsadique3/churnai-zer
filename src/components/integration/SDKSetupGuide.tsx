@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { ArrowLeft, Copy, Code, CheckCircle, AlertTriangle, ExternalLink, Play } from "lucide-react";
+import { SDKHealthMonitor } from "./SDKHealthMonitor";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -293,7 +294,7 @@ window.Churnaizer.track({
                   <AlertTriangle className="h-5 w-5 text-blue-600 mt-0.5" />
                   <div>
                     <p className="text-sm font-medium text-blue-800">Best Practice</p>
-                    <p className="text-sm text-blue-700">Place the script in your &lt;head&gt; section for optimal loading performance.</p>
+                    <p className="text-sm text-blue-700">Place the script in your &lt;head&gt; section with async attribute for optimal loading performance and better Lighthouse SEO scores.</p>
                   </div>
                 </div>
               </div>
@@ -353,6 +354,16 @@ window.Churnaizer.track({
                 </TabsContent>
               </Tabs>
 
+              <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+                <div className="flex items-start gap-2">
+                  <AlertTriangle className="h-5 w-5 text-red-600 mt-0.5" />
+                  <div>
+                    <p className="text-sm font-medium text-red-800">🔐 Security Warning</p>
+                    <p className="text-sm text-red-700">DO NOT expose your API key in frontend code. This example is for testing only. In production, make API calls from your backend.</p>
+                  </div>
+                </div>
+              </div>
+
               <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
                 <div className="flex items-start gap-2">
                   <AlertTriangle className="h-5 w-5 text-amber-600 mt-0.5" />
@@ -364,6 +375,9 @@ window.Churnaizer.track({
               </div>
             </CardContent>
           </Card>
+
+          {/* SDK Health Monitor */}
+          <SDKHealthMonitor />
 
           {/* Step 3: Test Your Integration */}
           <Card className="border-l-4 border-l-green-500">

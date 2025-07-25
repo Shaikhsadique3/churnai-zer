@@ -643,6 +643,48 @@ export type Database = {
           },
         ]
       }
+      sdk_health_logs: {
+        Row: {
+          api_key_id: string | null
+          created_at: string
+          error_message: string | null
+          id: string
+          ip_address: unknown | null
+          ping_timestamp: string
+          request_data: Json | null
+          response_time_ms: number | null
+          status: string
+          user_agent: string | null
+          user_id: string
+        }
+        Insert: {
+          api_key_id?: string | null
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          ip_address?: unknown | null
+          ping_timestamp?: string
+          request_data?: Json | null
+          response_time_ms?: number | null
+          status?: string
+          user_agent?: string | null
+          user_id: string
+        }
+        Update: {
+          api_key_id?: string | null
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          ip_address?: unknown | null
+          ping_timestamp?: string
+          request_data?: Json | null
+          response_time_ms?: number | null
+          status?: string
+          user_agent?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       smtp_providers: {
         Row: {
           created_at: string
@@ -746,6 +788,7 @@ export type Database = {
           owner_id: string
           plan: Database["public"]["Enums"]["plan_type"] | null
           risk_level: Database["public"]["Enums"]["risk_level"] | null
+          source: string | null
           understanding_score: number | null
           updated_at: string | null
           usage: number | null
@@ -764,6 +807,7 @@ export type Database = {
           owner_id: string
           plan?: Database["public"]["Enums"]["plan_type"] | null
           risk_level?: Database["public"]["Enums"]["risk_level"] | null
+          source?: string | null
           understanding_score?: number | null
           updated_at?: string | null
           usage?: number | null
@@ -782,6 +826,7 @@ export type Database = {
           owner_id?: string
           plan?: Database["public"]["Enums"]["plan_type"] | null
           risk_level?: Database["public"]["Enums"]["risk_level"] | null
+          source?: string | null
           understanding_score?: number | null
           updated_at?: string | null
           usage?: number | null

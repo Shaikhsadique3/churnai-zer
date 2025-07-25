@@ -297,6 +297,37 @@ serve(async (req) => {
 
         console.log('Successfully saved user data for:', user_id);
 
+        // Log SDK health data
+        try {
+          const { data: apiKeyData } = await supabase
+            .from('api_keys')
+            .select('id')
+            .eq('key', apiKey)
+            .eq('user_id', ownerId)
+            .single();
+
+          await supabase
+            .from('sdk_health_logs')
+            .insert({
+              user_id: ownerId,
+              api_key_id: apiKeyData?.id || null,
+              ping_timestamp: new Date().toISOString(),
+              status: 'success',
+              request_data: { user_id, plan: validatedPlan, revenue: monthly_revenue },
+              user_agent: req.headers.get('user-agent') || null,
+              source: 'sdk'
+            });
+        } catch (logError) {
+          console.warn('Failed to log SDK health data:', logError);
+        }
+
+        // Update user_data source to mark as SDK
+        await supabase
+          .from('user_data')
+          .update({ source: 'sdk' })
+          .eq('owner_id', ownerId)
+          .eq('user_id', user_id);
+
         results.push({
           status: 'ok',
           churn_score: churnScore,
@@ -311,6 +342,31 @@ serve(async (req) => {
 
       } catch (userError) {
         console.error(`Error processing user ${user_id}:`, userError);
+        
+        // Log error to SDK health
+        try {
+          const { data: apiKeyData } = await supabase
+            .from('api_keys')
+            .select('id')
+            .eq('key', apiKey)
+            .eq('user_id', ownerId)
+            .single();
+
+          await supabase
+            .from('sdk_health_logs')
+            .insert({
+              user_id: ownerId,
+              api_key_id: apiKeyData?.id || null,
+              ping_timestamp: new Date().toISOString(),
+              status: 'error',
+              error_message: userError.message || 'Processing failed',
+              request_data: { user_id: user_id || 'unknown' },
+              user_agent: req.headers.get('user-agent') || null
+            });
+        } catch (logError) {
+          console.warn('Failed to log SDK error:', logError);
+        }
+
         results.push({
           status: 'error',
           user_id,

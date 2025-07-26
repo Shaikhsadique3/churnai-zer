@@ -20,7 +20,7 @@ import RefundPolicy from "./pages/RefundPolicy";
 import Pricing from "./pages/Pricing";
 import Contact from "./pages/Contact";
 import NotFound from "./pages/NotFound";
-import { MainLayout } from "./components/layout/MainLayout";
+import { DashboardLayout } from "./components/layout/DashboardLayout";
 // Blog pages
 import BlogIndex from "./pages/blog/BlogIndex";
 import BlogPost from "./pages/blog/BlogPost";
@@ -101,9 +101,9 @@ const App = () => {
                 path="/integration" 
                 element={
                   <ProtectedRoute>
-                    <MainLayout>
+                    <DashboardLayout>
                       <Integration />
-                    </MainLayout>
+                    </DashboardLayout>
                   </ProtectedRoute>
                 } 
               />
@@ -111,9 +111,9 @@ const App = () => {
                 path="/integration/setup" 
                 element={
                   <ProtectedRoute>
-                    <MainLayout>
+                    <DashboardLayout>
                       <Integration />
-                    </MainLayout>
+                    </DashboardLayout>
                   </ProtectedRoute>
                 } 
               />
@@ -122,9 +122,9 @@ const App = () => {
                 path="/integration/*" 
                 element={
                   <ProtectedRoute>
-                    <MainLayout>
+                    <DashboardLayout>
                       <Integration />
-                    </MainLayout>
+                    </DashboardLayout>
                   </ProtectedRoute>
                 } 
               />
@@ -132,9 +132,9 @@ const App = () => {
                 path="/users" 
                 element={
                   <ProtectedRoute>
-                    <MainLayout>
+                    <DashboardLayout>
                       <UploadedUsersPage />
-                    </MainLayout>
+                    </DashboardLayout>
                   </ProtectedRoute>
                 } 
               />
@@ -142,9 +142,9 @@ const App = () => {
                  path="/automation" 
                  element={
                    <ProtectedRoute>
-                     <MainLayout>
+                     <DashboardLayout>
                        <EmailAutomationPage />
-                     </MainLayout>
+                     </DashboardLayout>
                    </ProtectedRoute>
                  } 
                />
@@ -152,9 +152,9 @@ const App = () => {
                  path="/users/:userId" 
                  element={
                    <ProtectedRoute>
-                     <MainLayout>
+                     <DashboardLayout>
                        <UserDetailPage />
-                     </MainLayout>
+                     </DashboardLayout>
                    </ProtectedRoute>
                  } 
                />
@@ -163,9 +163,9 @@ const App = () => {
                 path="/dashboard" 
                 element={
                   <ProtectedRoute>
-                    <MainLayout>
+                    <DashboardLayout>
                       <Integration />
-                    </MainLayout>
+                    </DashboardLayout>
                   </ProtectedRoute>
                 } 
               />
@@ -174,9 +174,9 @@ const App = () => {
                 path="/dashboard/*" 
                 element={
                   <ProtectedRoute>
-                    <MainLayout>
+                    <DashboardLayout>
                       <Integration />
-                    </MainLayout>
+                    </DashboardLayout>
                   </ProtectedRoute>
                 } 
               />

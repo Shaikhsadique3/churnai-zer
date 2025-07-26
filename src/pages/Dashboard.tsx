@@ -10,6 +10,7 @@ import { DashboardOverview } from "@/components/dashboard/DashboardOverview";
 import { UploadedUsersTable } from "@/components/dashboard/UploadedUsersTable";
 import EnhancedCSVUploader from "@/components/dashboard/EnhancedCSVUploader";
 import { AIEmailPreview } from "@/components/dashboard/AIEmailPreview";
+import { RecentEmailsList } from "@/components/dashboard/RecentEmailsList";
 import { Badge } from "@/components/ui/badge";
 
 const Dashboard = () => {
@@ -140,38 +141,59 @@ const Dashboard = () => {
           {activeView === 'overview' && <DashboardOverview />}
           {activeView === 'users' && <UploadedUsersTable onUserSelect={setSelectedUser} />}
           {activeView === 'email' && (
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-              <AIEmailPreview userData={selectedUser} />
-              <div className="space-y-4">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Email Automation Settings</CardTitle>
-                    <CardDescription>
-                      Emails automatically trigger for high-risk users via SDK
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-3">
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm">Auto-trigger for high-risk users</span>
-                        <Badge variant="default">Active</Badge>
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm">AI Model</span>
-                        <Badge variant="outline">Mistral 7B + GPT-4o</Badge>
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm">Email sender</span>
-                        <Badge variant="outline">nexa@churnaizer.com</Badge>
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm">Psychology style</span>
-                        <Badge variant="outline">Urgency + Loss Aversion</Badge>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
+            <div className="space-y-6">
+              {/* Selected User Email Display */}
+              {selectedUser && (
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  <AIEmailPreview userData={selectedUser} />
+                  <div className="space-y-4">
+                    <Card>
+                      <CardHeader>
+                        <CardTitle>Email Automation Settings</CardTitle>
+                        <CardDescription>
+                          Emails automatically trigger for high-risk users via SDK
+                        </CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="space-y-3">
+                          <div className="flex items-center justify-between">
+                            <span className="text-sm">Auto-trigger for high-risk users</span>
+                            <Badge variant="default">Active</Badge>
+                          </div>
+                          <div className="flex items-center justify-between">
+                            <span className="text-sm">AI Model</span>
+                            <Badge variant="outline">Mistral 7B + GPT-4o</Badge>
+                          </div>
+                          <div className="flex items-center justify-between">
+                            <span className="text-sm">Email sender</span>
+                            <Badge variant="outline">nexa@churnaizer.com</Badge>
+                          </div>
+                          <div className="flex items-center justify-between">
+                            <span className="text-sm">Psychology style</span>
+                            <Badge variant="outline">Urgency + Loss Aversion</Badge>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </div>
+                </div>
+              )}
+              
+              {/* Auto-Generated Email Display for High-Risk Users */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Mail className="h-5 w-5" />
+                    Recent AI-Generated Emails
+                  </CardTitle>
+                  <CardDescription>
+                    Automatically generated retention emails for high-risk users detected by the SDK
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <RecentEmailsList />
+                </CardContent>
+              </Card>
             </div>
           )}
         </div>

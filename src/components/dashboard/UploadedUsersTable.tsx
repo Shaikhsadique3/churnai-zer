@@ -5,16 +5,18 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Search, Download, Upload, Trash2, Eye, ChevronLeft, ChevronRight } from "lucide-react";
+import { Search, Download, Upload, Trash2, Eye, ChevronLeft, ChevronRight, Mail } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
+import { AutoEmailDisplay } from "./AutoEmailDisplay";
 
 interface UploadedUser {
   id: string;
   user_id: string;
+  email?: string;
   plan: string;
   churn_score: number;
   churn_reason: string;
@@ -47,6 +49,7 @@ export const UploadedUsersTable = ({ onUserSelect }: UploadedUsersTableProps) =>
   const [riskFilter, setRiskFilter] = useState<'all' | 'high' | 'medium' | 'low'>('all');
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
+  const [expandedEmailRows, setExpandedEmailRows] = useState<Set<string>>(new Set());
 
   // Fetch users data
   const { data: userData, isLoading: usersLoading } = useQuery({
@@ -129,6 +132,16 @@ export const UploadedUsersTable = ({ onUserSelect }: UploadedUsersTableProps) =>
       case 'low': return 'default';
       default: return 'outline';
     }
+  };
+
+  const toggleEmailRow = (userId: string) => {
+    const newExpanded = new Set(expandedEmailRows);
+    if (newExpanded.has(userId)) {
+      newExpanded.delete(userId);
+    } else {
+      newExpanded.add(userId);
+    }
+    setExpandedEmailRows(newExpanded);
   };
 
   const handleDownloadCSV = () => {
@@ -269,71 +282,102 @@ export const UploadedUsersTable = ({ onUserSelect }: UploadedUsersTableProps) =>
                 </TableRow>
               ) : (
                 paginatedUsers.map((userData) => (
-                  <TableRow key={userData.id}>
-                    <TableCell className="font-medium">
-                      <div className="flex items-center gap-2">
-                        <button
-                          onClick={() => window.location.href = `/users/${userData.id}`}
-                          className="text-primary hover:underline focus:outline-none text-sm truncate max-w-[100px]"
-                          title={userData.user_id}
-                        >
-                          {userData.user_id}
-                        </button>
-                        {isNewUser(userData.days_until_mature) && (
-                          <Badge variant="secondary" className="text-xs">NEW</Badge>
-                        )}
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant="outline" className="text-xs">
-                        {userData.plan}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <span className={`font-medium text-sm px-2 py-1 rounded ${
-                        userData.churn_score > 0.75 ? 'bg-destructive/20 text-destructive' : 
-                        userData.churn_score > 0.4 ? 'bg-secondary/20 text-secondary-foreground' : 
-                        'bg-primary/20 text-primary'
-                      }`}>
-                        {userData.churn_score ? (userData.churn_score * 100).toFixed(1) + '%' : 'N/A'}
-                      </span>
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant={getRiskBadgeColor(userData.risk_level)} className="text-xs">
-                        {userData.risk_level?.toUpperCase()}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-sm text-muted-foreground hidden sm:table-cell">
-                      {userData.last_login ? format(new Date(userData.last_login), 'MMM d, yyyy') : 'Never'}
-                    </TableCell>
-                    <TableCell className="max-w-[150px] text-sm text-muted-foreground hidden md:table-cell">
-                      <span className="truncate block" title={userData.churn_reason}>
-                        {userData.churn_reason || 'No reason specified'}
-                      </span>
-                    </TableCell>
-                     <TableCell className="text-right">
-                       <div className="flex items-center gap-1">
-                         <Button
-                           variant="outline"
-                           size="sm"
-                           onClick={() => onUserSelect?.(userData)}
-                           className="h-8 w-8 p-0"
-                           title="Select for email preview"
-                         >
-                           <Eye className="h-4 w-4" />
-                         </Button>
-                         <Button
-                           variant="ghost"
-                           size="sm"
-                           onClick={() => deleteUserMutation.mutate(userData.id)}
-                           disabled={deleteUserMutation.isPending}
-                           className="text-destructive hover:text-destructive hover:bg-destructive/10 h-8 w-8 p-0"
-                         >
-                           <Trash2 className="h-4 w-4" />
-                         </Button>
-                       </div>
-                     </TableCell>
-                  </TableRow>
+                  <React.Fragment key={userData.id}>
+                    <TableRow>
+                      <TableCell className="font-medium">
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={() => window.location.href = `/users/${userData.id}`}
+                            className="text-primary hover:underline focus:outline-none text-sm truncate max-w-[100px]"
+                            title={userData.user_id}
+                          >
+                            {userData.user_id}
+                          </button>
+                          {isNewUser(userData.days_until_mature) && (
+                            <Badge variant="secondary" className="text-xs">NEW</Badge>
+                          )}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant="outline" className="text-xs">
+                          {userData.plan}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <span className={`font-medium text-sm px-2 py-1 rounded ${
+                          userData.churn_score > 0.75 ? 'bg-destructive/20 text-destructive' : 
+                          userData.churn_score > 0.4 ? 'bg-secondary/20 text-secondary-foreground' : 
+                          'bg-primary/20 text-primary'
+                        }`}>
+                          {userData.churn_score ? (userData.churn_score * 100).toFixed(1) + '%' : 'N/A'}
+                        </span>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant={getRiskBadgeColor(userData.risk_level)} className="text-xs">
+                          {userData.risk_level?.toUpperCase()}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-sm text-muted-foreground hidden sm:table-cell">
+                        {userData.last_login ? format(new Date(userData.last_login), 'MMM d, yyyy') : 'Never'}
+                      </TableCell>
+                      <TableCell className="max-w-[150px] text-sm text-muted-foreground hidden md:table-cell">
+                        <span className="truncate block" title={userData.churn_reason}>
+                          {userData.churn_reason || 'No reason specified'}
+                        </span>
+                      </TableCell>
+                       <TableCell className="text-right">
+                         <div className="flex items-center gap-1">
+                           <Button
+                             variant="outline"
+                             size="sm"
+                             onClick={() => onUserSelect?.(userData)}
+                             className="h-8 w-8 p-0"
+                             title="Select for email preview"
+                           >
+                             <Eye className="h-4 w-4" />
+                           </Button>
+                           {userData.risk_level === 'high' && (
+                             <Button
+                               variant="outline"
+                               size="sm"
+                               onClick={() => toggleEmailRow(userData.user_id)}
+                               className="h-8 px-2 text-xs"
+                               title="View AI email"
+                             >
+                               <Mail className="h-3 w-3 mr-1" />
+                               {expandedEmailRows.has(userData.user_id) ? 'Hide' : 'Email'}
+                             </Button>
+                           )}
+                           <Button
+                             variant="ghost"
+                             size="sm"
+                             onClick={() => deleteUserMutation.mutate(userData.id)}
+                             disabled={deleteUserMutation.isPending}
+                             className="text-destructive hover:text-destructive hover:bg-destructive/10 h-8 w-8 p-0"
+                           >
+                             <Trash2 className="h-4 w-4" />
+                           </Button>
+                         </div>
+                       </TableCell>
+                    </TableRow>
+                    
+                    {/* Email Row for High-Risk Users */}
+                    {userData.risk_level === 'high' && expandedEmailRows.has(userData.user_id) && (
+                      <TableRow>
+                        <TableCell colSpan={7} className="p-0">
+                          <div className="p-4 bg-muted/30 border-t">
+                            <AutoEmailDisplay
+                              userId={userData.user_id}
+                              userEmail={userData.email}
+                              riskLevel={userData.risk_level}
+                              autoExpand={true}
+                              className="border-0 bg-transparent shadow-none"
+                            />
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </React.Fragment>
                 ))
               )}
             </TableBody>

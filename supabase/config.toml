@@ -8,7 +8,7 @@ schemas = ["public", "graphql_public"]
 extra_search_path = ["public", "extensions"]
 max_rows = 1000
 
-[functions.email-inbound]
+[functions."email/inbound"]
 verify_jwt = false
 
 [db]

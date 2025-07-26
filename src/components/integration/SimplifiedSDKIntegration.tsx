@@ -134,69 +134,80 @@ export function SimplifiedSDKIntegration() {
 
   const testSDK = async () => {
     setTestLoading(true);
+    setTestResult(null);
+    
     try {
-      console.log('Testing SDK with API key:', apiKey ? 'Present' : 'Missing');
-      
       if (!apiKey) {
         throw new Error('API key is required for testing');
       }
 
-      // Test using the actual SDK track function with complete required data
-      const testUserData = {
-        user_id: "test_user_" + Date.now(),
-        days_since_signup: 30,
-        monthly_revenue: 99,
-        subscription_plan: "Pro",
-        number_of_logins_last30days: 20,
-        active_features_used: 5,
-        support_tickets_opened: 1,
-        last_payment_status: "Success",
-        email_opens_last30days: 15,
-        last_login_days_ago: 2,
-        billing_issue_count: 0
-      };
-
-      // Call the track edge function directly
-      const response = await supabase.functions.invoke('track', {
-        body: testUserData,
-        headers: {
-          'X-API-Key': apiKey,
-          'Content-Type': 'application/json'
+      // Create hidden iframe for testing
+      const iframe = document.createElement('iframe');
+      iframe.src = `https://churnaizer-sdk.netlify.app/test.html?apiKey=${encodeURIComponent(apiKey)}`;
+      iframe.style.display = 'none';
+      iframe.style.height = '0';
+      iframe.allow = 'scripts';
+      
+      // Listen for messages from the iframe
+      const messageHandler = (event: MessageEvent) => {
+        // Verify origin for security
+        if (event.origin !== 'https://churnaizer-sdk.netlify.app') {
+          return;
         }
-      });
-
-      console.log('SDK test response:', response);
-
-      if (response.error) {
-        console.error('SDK test error:', response.error);
-        throw new Error(response.error.message || 'SDK test failed');
-      }
-
-      if (response.data?.results && response.data.results.length > 0) {
-        const result = response.data.results[0];
-        setTestResult(result);
         
-        toast({
-          title: "✅ SDK Test Successful!",
-          description: `Risk Level: ${result.risk_level} • Score: ${Math.round(result.churn_score * 100)}%`,
-          duration: 5000,
-        });
-      } else {
-        throw new Error('Invalid response format from SDK');
-      }
+        // Clean up
+        document.body.removeChild(iframe);
+        window.removeEventListener('message', messageHandler);
+        setTestLoading(false);
+        
+        if (event.data.success) {
+          setTestResult(event.data.result);
+          toast({
+            title: "✅ Test Passed",
+            description: `SDK test completed successfully`,
+            duration: 5000,
+          });
+        } else {
+          setTestResult({ error: event.data.error || 'Test failed' });
+          toast({
+            title: "❌ Test Failed", 
+            description: event.data.error || "Unknown error occurred",
+            variant: "destructive",
+            duration: 5000,
+          });
+        }
+      };
+      
+      window.addEventListener('message', messageHandler);
+      document.body.appendChild(iframe);
+      
+      // Timeout fallback
+      setTimeout(() => {
+        if (document.body.contains(iframe)) {
+          document.body.removeChild(iframe);
+          window.removeEventListener('message', messageHandler);
+          setTestLoading(false);
+          setTestResult({ error: 'Test timeout' });
+          toast({
+            title: "❌ Test Failed",
+            description: "Test timed out",
+            variant: "destructive",
+            duration: 5000,
+          });
+        }
+      }, 30000);
       
     } catch (error) {
       console.error('SDK test failed:', error);
       const errorMessage = error instanceof Error ? error.message : "Unknown error";
+      setTestLoading(false);
+      setTestResult({ error: errorMessage });
       toast({
-        title: "❌ SDK Test Failed",
+        title: "❌ Test Failed",
         description: errorMessage,
         variant: "destructive",
         duration: 5000,
       });
-      setTestResult({ error: errorMessage });
-    } finally {
-      setTestLoading(false);
     }
   };
 

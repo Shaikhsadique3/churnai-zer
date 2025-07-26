@@ -44,23 +44,27 @@ serve(async (req) => {
   }
 
   try {
+    // Parse request body first
+    let body;
+    try {
+      body = await req.json();
+    } catch (e) {
+      console.error('Failed to parse request body:', e);
+      return new Response(
+        JSON.stringify({ error: 'Invalid JSON in request body' }),
+        { 
+          status: 400, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      );
+    }
+
     // Get API key from header (case-insensitive) or from request body
     let apiKey = req.headers.get('X-API-Key') || req.headers.get('x-api-key');
     
-    // If no API key in headers, try to get it from request body (for testing)
+    // If no API key in headers, try to get it from request body
     if (!apiKey) {
-      try {
-        const body = await req.json();
-        apiKey = body.api_key || body.apiKey;
-        // Reset the request for later processing
-        req = new Request(req.url, {
-          method: req.method,
-          headers: req.headers,
-          body: JSON.stringify(body)
-        });
-      } catch (e) {
-        // Ignore parsing errors, we'll handle missing API key below
-      }
+      apiKey = body.api_key || body.apiKey;
     }
     
     if (!apiKey) {
@@ -123,8 +127,7 @@ serve(async (req) => {
       console.log('Valid API key for user:', ownerId);
     }
 
-    // Parse request body - handle both single user and batch (array) requests
-    const body = await req.json();
+    // Handle both single user and batch (array) requests
     const users: TrackRequest[] = Array.isArray(body) ? body : [body];
     const results = [];
 

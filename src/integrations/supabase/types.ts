@@ -911,6 +911,7 @@ export type Database = {
           id: string
           is_deleted: boolean | null
           last_login: string | null
+          monthly_revenue: number | null
           owner_id: string
           plan: Database["public"]["Enums"]["plan_type"] | null
           risk_level: Database["public"]["Enums"]["risk_level"] | null
@@ -930,6 +931,7 @@ export type Database = {
           id?: string
           is_deleted?: boolean | null
           last_login?: string | null
+          monthly_revenue?: number | null
           owner_id: string
           plan?: Database["public"]["Enums"]["plan_type"] | null
           risk_level?: Database["public"]["Enums"]["risk_level"] | null
@@ -949,6 +951,7 @@ export type Database = {
           id?: string
           is_deleted?: boolean | null
           last_login?: string | null
+          monthly_revenue?: number | null
           owner_id?: string
           plan?: Database["public"]["Enums"]["plan_type"] | null
           risk_level?: Database["public"]["Enums"]["risk_level"] | null

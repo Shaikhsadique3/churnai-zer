@@ -4,7 +4,9 @@ import {
   Users,
   LogOut,
   Shield,
-  Code
+  Code,
+  Mail,
+  BarChart3
 } from "lucide-react";
 import {
   Sidebar,
@@ -22,7 +24,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 
-// Simplified: Only Website Integration (SDK) feature
+// Navigation items matching the reference site structure
 const navigationItems = [
   {
     title: "Website Integration",
@@ -31,9 +33,14 @@ const navigationItems = [
     isExact: true
   },
   {
-    title: "User Data",
-    url: "/dashboard/users",
+    title: "User Predictions",
+    url: "/users",
     icon: Users
+  },
+  {
+    title: "Email Automation",
+    url: "/automation",
+    icon: Mail
   }
 ];
 

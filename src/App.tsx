@@ -26,6 +26,7 @@ import BlogIndex from "./pages/blog/BlogIndex";
 import BlogPost from "./pages/blog/BlogPost";
 // Dashboard pages
 import { UploadedUsersPage } from "./pages/dashboard/UploadedUsersPage";
+import { EmailAutomationPage } from "./pages/EmailAutomationPage";
 import { UserDetailPage } from "./pages/dashboard/UserDetailPage";
 // Admin pages
 import AdminPanel from "./pages/AdminPanel";
@@ -137,16 +138,26 @@ const App = () => {
                   </ProtectedRoute>
                 } 
               />
-              <Route 
-                path="/users/:userId" 
-                element={
-                  <ProtectedRoute>
-                    <MainLayout>
-                      <UserDetailPage />
-                    </MainLayout>
-                  </ProtectedRoute>
-                } 
-              />
+               <Route 
+                 path="/automation" 
+                 element={
+                   <ProtectedRoute>
+                     <MainLayout>
+                       <EmailAutomationPage />
+                     </MainLayout>
+                   </ProtectedRoute>
+                 } 
+               />
+               <Route 
+                 path="/users/:userId" 
+                 element={
+                   <ProtectedRoute>
+                     <MainLayout>
+                       <UserDetailPage />
+                     </MainLayout>
+                   </ProtectedRoute>
+                 } 
+               />
               {/* Redirect dashboard to integration for backwards compatibility */}
               <Route 
                 path="/dashboard" 

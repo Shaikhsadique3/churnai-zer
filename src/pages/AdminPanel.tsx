@@ -319,31 +319,15 @@ const AdminPanel = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-white border-b border-gray-200 px-4 lg:px-6 py-4">
-        <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-bold text-gray-900">Churnaizer Admin Panel</h1>
-          <div className="flex items-center gap-4">
-            <Button 
-              variant="outline" 
-              onClick={() => window.location.href = '/integration'}
-              className="mr-2"
-            >
-              View Main Dashboard
-            </Button>
-            <span className="text-sm text-gray-600">{user?.email}</span>
-            <Button onClick={signOut} variant="outline" size="sm">
-              Sign Out
-            </Button>
-          </div>
-        </div>
-      </header>
+    <div className="p-4 lg:p-8">
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold">Admin Management</h1>
+        <p className="text-muted-foreground mt-2">Manage announcements and blog posts for your application</p>
+      </div>
 
-      {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-4 lg:px-6 py-8">
+      <div className="max-w-6xl mx-auto">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-3">
+          <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="announcements" className="flex items-center gap-2">
               <Megaphone className="w-4 h-4" />
               Announcements
@@ -351,10 +335,6 @@ const AdminPanel = () => {
             <TabsTrigger value="blogs" className="flex items-center gap-2">
               <FileText className="w-4 h-4" />
               Blog Manager
-            </TabsTrigger>
-            <TabsTrigger value="inbox" className="flex items-center gap-2">
-              <Mail className="w-4 h-4" />
-              Email Inbox
             </TabsTrigger>
           </TabsList>
 
@@ -678,33 +658,6 @@ const AdminPanel = () => {
                   {blogs.length === 0 && (
                     <p className="text-gray-500 text-center py-8">No blog posts yet.</p>
                   )}
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          {/* Inbox Tab */}
-          <TabsContent value="inbox" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Mail className="w-5 h-5" />
-                  Email Inbox Management
-                </CardTitle>
-                <CardDescription>
-                  Access the full email inbox interface to manage incoming emails to nexa@churnaizer.com
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="text-center py-8">
-                  <Mail className="h-16 w-16 mx-auto mb-4 text-muted-foreground" />
-                  <h3 className="text-lg font-medium mb-2">Admin Email Inbox</h3>
-                  <p className="text-muted-foreground mb-4">
-                    Manage all incoming emails sent to nexa@churnaizer.com with advanced filtering and organization tools.
-                  </p>
-                  <Button onClick={() => window.location.href = '/admin/inbox'}>
-                    Open Full Inbox Interface
-                  </Button>
                 </div>
               </CardContent>
             </Card>

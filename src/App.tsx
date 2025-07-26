@@ -21,6 +21,7 @@ import Pricing from "./pages/Pricing";
 import Contact from "./pages/Contact";
 import NotFound from "./pages/NotFound";
 import { DashboardLayout } from "./components/layout/DashboardLayout";
+import { AdminLayout } from "./components/layout/AdminLayout";
 // Blog pages
 import BlogIndex from "./pages/blog/BlogIndex";
 import BlogPost from "./pages/blog/BlogPost";
@@ -68,42 +69,16 @@ const App = () => {
                 path="/admin" 
                 element={
                   <AdminRoute>
-                    <AdminDashboard />
+                    <AdminLayout />
                   </AdminRoute>
                 } 
-              />
-              <Route 
-                path="/admin/dashboard" 
-                element={
-                  <AdminRoute>
-                    <AdminDashboard />
-                  </AdminRoute>
-                } 
-              />
-              <Route 
-                path="/admin/announcements" 
-                element={
-                  <AdminRoute>
-                    <AdminAnnouncements />
-                  </AdminRoute>
-                } 
-              />
-              <Route 
-                path="/admin/blogs" 
-                element={
-                  <AdminRoute>
-                    <AdminBlogs />
-                  </AdminRoute>
-                } 
-              />
-              <Route 
-                path="/admin/inbox" 
-                element={
-                  <AdminRoute>
-                    <AdminInbox />
-                  </AdminRoute>
-                } 
-              />
+              >
+                <Route index element={<AdminDashboard />} />
+                <Route path="dashboard" element={<AdminDashboard />} />
+                <Route path="announcements" element={<AdminAnnouncements />} />
+                <Route path="blogs" element={<AdminBlogs />} />
+                <Route path="inbox" element={<AdminInbox />} />
+              </Route>
               <Route path="/not-authorized" element={<NotAuthorized />} />
               {/* Protected Main App Routes */}
               <Route 

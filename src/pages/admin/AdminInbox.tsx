@@ -159,23 +159,24 @@ const AdminInbox = () => {
   const unreadCount = emails.filter(email => !email.is_read).length;
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-foreground">Admin Inbox</h1>
-          <p className="text-muted-foreground">
-            Manage incoming emails sent to nexa@churnaizer.com
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
-          <Badge variant="secondary" className="text-sm">
-            {unreadCount} unread
-          </Badge>
-          <Button onClick={fetchEmails} disabled={loading} variant="outline" size="sm">
-            <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
-            Refresh
-          </Button>
+    <div className="p-4 lg:p-8">
+      <div className="mb-8">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div>
+            <h1 className="text-3xl font-bold">Email Inbox</h1>
+            <p className="text-muted-foreground mt-2">
+              Manage incoming emails sent to nexa@churnaizer.com
+            </p>
+          </div>
+          <div className="flex items-center gap-2">
+            <Badge variant="secondary" className="text-sm">
+              {unreadCount} unread
+            </Badge>
+            <Button onClick={fetchEmails} disabled={loading} variant="outline" size="sm">
+              <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+              Refresh
+            </Button>
+          </div>
         </div>
       </div>
 
@@ -325,9 +326,9 @@ const AdminInbox = () => {
                         <div className="flex items-center gap-2">
                           <span className="font-medium">Date:</span>
                           <span>{new Date(selectedEmail.received_at).toLocaleString()}</span>
-                        </div>
-                      </div>
-                    </div>
+        </div>
+      </div>
+    </div>
                     <div className="flex items-center gap-2">
                       <Button
                         variant="outline"

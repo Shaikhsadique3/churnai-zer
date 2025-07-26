@@ -9,10 +9,11 @@ const corsHeaders = {
 };
 
 const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
+const openRouterApiKey = Deno.env.get('OPENROUTER_API_KEY');
 const resendApiKey = Deno.env.get('RESEND_API_KEY');
 
 interface EmailRequest {
-  targetUsers: Array<{
+  targetUsers?: Array<{
     id: string;
     email: string;
     plan: string;
@@ -22,6 +23,14 @@ interface EmailRequest {
     last_login: string;
     churn_reason: string;
   }>;
+  // Support single user data from SDK
+  user_id?: string;
+  customer_email?: string;
+  customer_name?: string;
+  subscription_plan?: string;
+  churn_score?: number;
+  risk_level?: string;
+  churn_reason?: string;
   psychologyStyle: string;
   customMessage?: string;
   scheduleFor?: string;
@@ -37,11 +46,12 @@ const psychologyPrompts = {
   'reciprocity': 'Offer something valuable first (free guide, trial extension, bonus features) to encourage engagement.'
 };
 
-async function generateEmailWithAI(user: any, psychologyStyle: string, customMessage?: string): Promise<{subject: string, body: string}> {
+async function generateEmailWithOpenRouter(user: any, psychologyStyle: string, customMessage?: string): Promise<{subject: string, body: string}> {
   const psychologyPrompt = psychologyPrompts[psychologyStyle as keyof typeof psychologyPrompts] || psychologyPrompts.loss_aversion;
   
   const prompt = `Generate a professional SaaS retention email for a user with these characteristics:
 - Email: ${user.email}
+- Name: ${user.name || user.email?.split('@')[0] || 'there'}
 - Plan: ${user.plan}
 - Usage/Logins: ${user.usage}
 - Risk Level: ${user.risk_level}
@@ -67,24 +77,65 @@ Format as JSON:
   "body": "Your email body here with proper HTML formatting"
 }`;
 
-  const response = await fetch('https://api.openai.com/v1/chat/completions', {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${openAIApiKey}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      model: 'gpt-4o-mini',
-      messages: [
-        { role: 'system', content: 'You are an expert email marketer specializing in SaaS retention campaigns. Always respond with valid JSON.' },
-        { role: 'user', content: prompt }
-      ],
-      temperature: 0.7,
-      max_tokens: 800,
-    }),
-  });
+  // Try OpenRouter first, fallback to OpenAI
+  let response;
+  let apiUsed = 'openrouter';
+  
+  if (openRouterApiKey) {
+    try {
+      response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${openRouterApiKey}`,
+          'Content-Type': 'application/json',
+          'HTTP-Referer': 'https://churnaizer.com',
+          'X-Title': 'Churnaizer Email AI',
+        },
+        body: JSON.stringify({
+          model: 'mistralai/mistral-7b-instruct',
+          messages: [
+            { role: 'system', content: 'You are an expert email marketer specializing in SaaS retention campaigns. Always respond with valid JSON.' },
+            { role: 'user', content: prompt }
+          ],
+          temperature: 0.7,
+          max_tokens: 800,
+        }),
+      });
+    } catch (error) {
+      console.log('OpenRouter failed, falling back to OpenAI:', error);
+      apiUsed = 'openai';
+    }
+  } else {
+    apiUsed = 'openai';
+  }
+
+  // Fallback to OpenAI if OpenRouter fails or isn't configured
+  if (!response || !response.ok) {
+    if (!openAIApiKey) {
+      throw new Error('Neither OpenRouter nor OpenAI API key configured');
+    }
+    
+    response = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${openAIApiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'gpt-4o-mini',
+        messages: [
+          { role: 'system', content: 'You are an expert email marketer specializing in SaaS retention campaigns. Always respond with valid JSON.' },
+          { role: 'user', content: prompt }
+        ],
+        temperature: 0.7,
+        max_tokens: 800,
+      }),
+    });
+    apiUsed = 'openai';
+  }
 
   const data = await response.json();
+  console.log(`Email generated using: ${apiUsed}`);
   
   if (!data.choices || !data.choices[0]) {
     throw new Error('Failed to generate email content');
@@ -142,31 +193,47 @@ serve(async (req) => {
       throw new Error('Unauthorized');
     }
 
-    const { targetUsers, psychologyStyle, customMessage, scheduleFor }: EmailRequest = await req.json();
-
-    if (!openAIApiKey) {
-      throw new Error('OpenAI API key not configured');
-    }
-
+    const requestData: EmailRequest = await req.json();
+    
     if (!resendApiKey) {
       throw new Error('Resend API key not configured');
     }
 
+    if (!openRouterApiKey && !openAIApiKey) {
+      throw new Error('No AI API key configured (OpenRouter or OpenAI required)');
+    }
+
     const results = [];
+    let targetUsers = requestData.targetUsers || [];
+
+    // Handle single user from SDK (automatic trigger)
+    if (requestData.user_id && requestData.customer_email) {
+      targetUsers = [{
+        id: requestData.user_id,
+        email: requestData.customer_email,
+        name: requestData.customer_name || requestData.customer_email.split('@')[0],
+        plan: requestData.subscription_plan || 'Free',
+        usage: 1,
+        churn_score: requestData.churn_score || 0.8,
+        risk_level: requestData.risk_level || 'high',
+        last_login: 'Recently',
+        churn_reason: requestData.churn_reason || 'High churn risk detected by AI',
+      }];
+    }
 
     for (const targetUser of targetUsers) {
       try {
         console.log(`Generating email for user: ${targetUser.email}`);
         
-        // Generate email content with AI
-        const { subject, body } = await generateEmailWithAI(targetUser, psychologyStyle, customMessage);
+        // Generate email content with AI (OpenRouter + Mistral fallback to OpenAI)
+        const { subject, body } = await generateEmailWithOpenRouter(targetUser, requestData.psychologyStyle || 'urgency', requestData.customMessage);
         
         let emailStatus = 'pending';
         let sentAt = null;
         let errorMessage = null;
 
         // Send email immediately if not scheduled
-        if (!scheduleFor) {
+        if (!requestData.scheduleFor) {
           console.log(`Sending email to: ${targetUser.email}`);
           const emailSent = await sendEmailWithResend(targetUser.email, subject, body);
           
@@ -188,18 +255,16 @@ serve(async (req) => {
             user_id: user.id,
             target_email: targetUser.email,
             target_user_id: targetUser.id,
-            subject,
-            body,
-            psychology_style: psychologyStyle,
+            email_data: {
+              subject,
+              body,
+              psychology_style: requestData.psychologyStyle,
+              user_characteristics: targetUser,
+              custom_message: requestData.customMessage,
+            },
             status: emailStatus,
             sent_at: sentAt,
-            scheduled_for: scheduleFor,
-            error_message: errorMessage,
-            ai_generated: true,
-            email_data: {
-              user_characteristics: targetUser,
-              custom_message: customMessage,
-            }
+            error_message: errorMessage
           });
 
         if (logError) {
@@ -224,12 +289,14 @@ serve(async (req) => {
             user_id: user.id,
             target_email: targetUser.email,
             target_user_id: targetUser.id,
-            subject: 'Failed to generate',
-            body: 'Email generation failed',
-            psychology_style: psychologyStyle,
+            email_data: {
+              subject: 'Failed to generate',
+              body: 'Email generation failed',
+              psychology_style: requestData.psychologyStyle,
+              error: error.message,
+            },
             status: 'failed',
             error_message: error.message,
-            ai_generated: true,
           });
 
         results.push({

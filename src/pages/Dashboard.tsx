@@ -2,20 +2,22 @@
 import { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Upload, Code, Users, TrendingUp, AlertTriangle, Filter } from "lucide-react";
+import { Upload, Code, Users, TrendingUp, AlertTriangle, Filter, Mail } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { MainLayout } from "@/components/layout/MainLayout";
 import { DashboardOverview } from "@/components/dashboard/DashboardOverview";
 import { UploadedUsersTable } from "@/components/dashboard/UploadedUsersTable";
 import EnhancedCSVUploader from "@/components/dashboard/EnhancedCSVUploader";
+import { AIEmailPreview } from "@/components/dashboard/AIEmailPreview";
 import { Badge } from "@/components/ui/badge";
 
 const Dashboard = () => {
   const { user, signOut } = useAuth();
   const [uploadModalOpen, setUploadModalOpen] = useState(false);
-  const [activeView, setActiveView] = useState<'overview' | 'users'>('overview');
+  const [activeView, setActiveView] = useState<'overview' | 'users' | 'email'>('overview');
   const [riskFilter, setRiskFilter] = useState<'all' | 'high' | 'medium' | 'low'>('all');
+  const [selectedUser, setSelectedUser] = useState<any>(null);
 
   const handleLogout = async () => {
     await signOut();
@@ -73,6 +75,19 @@ const Dashboard = () => {
                 User Analysis
               </div>
             </button>
+            <button
+              className={`pb-3 px-1 border-b-2 transition-colors ${
+                activeView === 'email' 
+                  ? 'border-primary text-foreground font-medium' 
+                  : 'border-transparent text-muted-foreground hover:text-foreground'
+              }`}
+              onClick={() => setActiveView('email')}
+            >
+              <div className="flex items-center gap-2">
+                <Mail className="h-4 w-4" />
+                Email Automation
+              </div>
+            </button>
           </div>
         </div>
 
@@ -123,7 +138,42 @@ const Dashboard = () => {
         {/* Content */}
         <div className="space-y-8">
           {activeView === 'overview' && <DashboardOverview />}
-          {activeView === 'users' && <UploadedUsersTable />}
+          {activeView === 'users' && <UploadedUsersTable onUserSelect={setSelectedUser} />}
+          {activeView === 'email' && (
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+              <AIEmailPreview userData={selectedUser} />
+              <div className="space-y-4">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Email Automation Settings</CardTitle>
+                    <CardDescription>
+                      Emails automatically trigger for high-risk users via SDK
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm">Auto-trigger for high-risk users</span>
+                        <Badge variant="default">Active</Badge>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm">AI Model</span>
+                        <Badge variant="outline">Mistral 7B + GPT-4o</Badge>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm">Email sender</span>
+                        <Badge variant="outline">nexa@churnaizer.com</Badge>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm">Psychology style</span>
+                        <Badge variant="outline">Urgency + Loss Aversion</Badge>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            </div>
+          )}
         </div>
 
         <EnhancedCSVUploader 

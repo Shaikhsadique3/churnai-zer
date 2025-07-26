@@ -34,7 +34,11 @@ interface CSVUpload {
 
 const ITEMS_PER_PAGE_OPTIONS = [10, 25, 50];
 
-export const UploadedUsersTable = () => {
+interface UploadedUsersTableProps {
+  onUserSelect?: (user: UploadedUser | null) => void;
+}
+
+export const UploadedUsersTable = ({ onUserSelect }: UploadedUsersTableProps) => {
   const { user } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -307,17 +311,28 @@ export const UploadedUsersTable = () => {
                         {userData.churn_reason || 'No reason specified'}
                       </span>
                     </TableCell>
-                    <TableCell className="text-right">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => deleteUserMutation.mutate(userData.id)}
-                        disabled={deleteUserMutation.isPending}
-                        className="text-destructive hover:text-destructive hover:bg-destructive/10"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </TableCell>
+                     <TableCell className="text-right">
+                       <div className="flex items-center gap-1">
+                         <Button
+                           variant="outline"
+                           size="sm"
+                           onClick={() => onUserSelect?.(userData)}
+                           className="h-8 w-8 p-0"
+                           title="Select for email preview"
+                         >
+                           <Eye className="h-4 w-4" />
+                         </Button>
+                         <Button
+                           variant="ghost"
+                           size="sm"
+                           onClick={() => deleteUserMutation.mutate(userData.id)}
+                           disabled={deleteUserMutation.isPending}
+                           className="text-destructive hover:text-destructive hover:bg-destructive/10 h-8 w-8 p-0"
+                         >
+                           <Trash2 className="h-4 w-4" />
+                         </Button>
+                       </div>
+                     </TableCell>
                   </TableRow>
                 ))
               )}

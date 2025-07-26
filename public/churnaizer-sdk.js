@@ -264,6 +264,7 @@
         const syncData = {
           ...userData,
           ...result,
+          shouldTriggerEmail: result.risk_level === 'high',
           synced_at: new Date().toISOString()
         };
 
@@ -277,11 +278,52 @@
 
         if (response.ok) {
           log('Dashboard sync successful');
+          
+          // Trigger email automation for high-risk users
+          if (result.risk_level === 'high' && result.shouldTriggerEmail) {
+            this._triggerEmailAutomation(userData, result);
+          }
         } else {
           log('Dashboard sync failed:', response.status);
         }
       } catch (error) {
         log('Dashboard sync error:', error.message);
+      }
+    },
+
+    _triggerEmailAutomation: async function(userData, result) {
+      try {
+        log('Triggering email automation for high-risk user:', userData.user_id);
+        
+        const emailData = {
+          user_id: userData.user_id,
+          customer_email: userData.customer_email,
+          customer_name: userData.customer_name,
+          churn_score: result.churn_score,
+          risk_level: result.risk_level,
+          churn_reason: result.insights?.churn_reason || 'High churn risk detected',
+          subscription_plan: userData.subscription_plan,
+          shouldTriggerEmail: true
+        };
+
+        const response = await fetch(`${API_BASE_URL}/auto-email-trigger`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-SDK-Version': SDK_VERSION
+          },
+          body: JSON.stringify(emailData)
+        });
+
+        const emailResult = await response.json();
+        
+        if (response.ok && emailResult.triggered) {
+          log('Email automation triggered successfully:', emailResult);
+        } else {
+          log('Email automation skipped or failed:', emailResult.message || 'Unknown error');
+        }
+      } catch (error) {
+        logError('Email automation failed:', error.message);
       }
     },
 

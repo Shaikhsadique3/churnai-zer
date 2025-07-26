@@ -54,3 +54,6 @@ verify_jwt = false
 
 [functions.api-sync]
 verify_jwt = false
+
+[functions.auto-email-trigger]
+verify_jwt = false

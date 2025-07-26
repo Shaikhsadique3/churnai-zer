@@ -141,10 +141,9 @@ export function SimplifiedSDKIntegration() {
         throw new Error('API key is required for testing');
       }
 
-      // Test using the actual SDK track function with real tracking data
+      // Test using the actual SDK track function with complete required data
       const testUserData = {
         user_id: "test_user_" + Date.now(),
-        customer_email: "test@churnaizer.com",
         days_since_signup: 30,
         monthly_revenue: 99,
         subscription_plan: "Pro",

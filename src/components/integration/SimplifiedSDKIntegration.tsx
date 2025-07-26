@@ -132,83 +132,61 @@ export function SimplifiedSDKIntegration() {
     });
   };
 
-  const testSDK = async () => {
+  const testSDK = () => {
     setTestLoading(true);
     setTestResult(null);
-    
-    try {
-      if (!apiKey) {
-        throw new Error('API key is required for testing');
+
+    const existingIframe = document.getElementById("sdk-test-iframe");
+    if (existingIframe) existingIframe.remove();
+
+    const iframe = document.createElement("iframe");
+    iframe.src = "https://churnaizer-sdk.netlify.app/test.html";
+    iframe.style.display = "none";
+    iframe.id = "sdk-test-iframe";
+    iframe.allow = "scripts";
+    iframe.title = "SDK Test";
+    document.body.appendChild(iframe);
+
+    // Timeout if no response received
+    const timeout = setTimeout(() => {
+      setTestLoading(false);
+      setTestResult({ error: 'Test timeout' });
+      toast({
+        title: "⚠️ Test Timeout",
+        description: "No response from the test. Please check your SDK setup.",
+        variant: "destructive",
+      });
+      window.removeEventListener("message", listener);
+    }, 6000);
+
+    // Listen for test result from iframe
+    const listener = (event: MessageEvent) => {
+      if (event.origin !== "https://churnaizer-sdk.netlify.app") return;
+
+      clearTimeout(timeout); // Clear timeout on response
+      setTestLoading(false);
+
+      const { status, result, error } = event.data;
+
+      if (status === "passed") {
+        setTestResult(result);
+        toast({
+          title: "✅ Test Passed",
+          description: "SDK is working correctly!",
+        });
+      } else if (status === "failed") {
+        setTestResult({ error: error || 'Test failed' });
+        toast({
+          title: "❌ Test Failed",
+          description: error || "Something went wrong.",
+          variant: "destructive",
+        });
       }
 
-      // Create hidden iframe for testing
-      const iframe = document.createElement('iframe');
-      iframe.src = `https://churnaizer-sdk.netlify.app/test.html?apiKey=${encodeURIComponent(apiKey)}`;
-      iframe.style.display = 'none';
-      iframe.style.height = '0';
-      iframe.allow = 'scripts';
-      
-      // Listen for messages from the iframe
-      const messageHandler = (event: MessageEvent) => {
-        // Verify origin for security
-        if (event.origin !== 'https://churnaizer-sdk.netlify.app') {
-          return;
-        }
-        
-        // Clean up
-        document.body.removeChild(iframe);
-        window.removeEventListener('message', messageHandler);
-        setTestLoading(false);
-        
-        if (event.data.success) {
-          setTestResult(event.data.result);
-          toast({
-            title: "✅ Test Passed",
-            description: `SDK test completed successfully`,
-            duration: 5000,
-          });
-        } else {
-          setTestResult({ error: event.data.error || 'Test failed' });
-          toast({
-            title: "❌ Test Failed", 
-            description: event.data.error || "Unknown error occurred",
-            variant: "destructive",
-            duration: 5000,
-          });
-        }
-      };
-      
-      window.addEventListener('message', messageHandler);
-      document.body.appendChild(iframe);
-      
-      // Timeout fallback
-      setTimeout(() => {
-        if (document.body.contains(iframe)) {
-          document.body.removeChild(iframe);
-          window.removeEventListener('message', messageHandler);
-          setTestLoading(false);
-          setTestResult({ error: 'Test timeout' });
-          toast({
-            title: "❌ Test Failed",
-            description: "Test timed out",
-            variant: "destructive",
-            duration: 5000,
-          });
-        }
-      }, 30000);
-      
-    } catch (error) {
-      console.error('SDK test failed:', error);
-      const errorMessage = error instanceof Error ? error.message : "Unknown error";
-      setTestLoading(false);
-      setTestResult({ error: errorMessage });
-      toast({
-        title: "❌ Test Failed",
-        description: errorMessage,
-        variant: "destructive",
-        duration: 5000,
-      });
-    }
+      window.removeEventListener("message", listener); // Clean up
+    };
+
+    window.addEventListener("message", listener);
   };
 
   const sdkImplementationCode = `<!-- 1. Add Churnaizer SDK to your website -->

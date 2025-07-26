@@ -34,6 +34,7 @@ import AdminLogin from "./pages/AdminLogin";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import AdminAnnouncements from "./pages/admin/AdminAnnouncements";
 import AdminBlogs from "./pages/admin/AdminBlogs";
+import AdminInbox from "./pages/admin/AdminInbox";
 import NotAuthorized from "./pages/NotAuthorized";
 import AdminRoute from "./components/auth/AdminRoute";
 
@@ -92,6 +93,14 @@ const App = () => {
                 element={
                   <AdminRoute>
                     <AdminBlogs />
+                  </AdminRoute>
+                } 
+              />
+              <Route 
+                path="/admin/inbox" 
+                element={
+                  <AdminRoute>
+                    <AdminInbox />
                   </AdminRoute>
                 } 
               />

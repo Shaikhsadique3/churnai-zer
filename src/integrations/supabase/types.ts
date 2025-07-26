@@ -431,6 +431,48 @@ export type Database = {
         }
         Relationships: []
       }
+      inbound_emails: {
+        Row: {
+          attachments: Json | null
+          body_html: string | null
+          body_text: string | null
+          created_at: string | null
+          from_email: string
+          id: string
+          is_read: boolean | null
+          priority: string | null
+          received_at: string | null
+          subject: string | null
+          to_email: string
+        }
+        Insert: {
+          attachments?: Json | null
+          body_html?: string | null
+          body_text?: string | null
+          created_at?: string | null
+          from_email: string
+          id?: string
+          is_read?: boolean | null
+          priority?: string | null
+          received_at?: string | null
+          subject?: string | null
+          to_email: string
+        }
+        Update: {
+          attachments?: Json | null
+          body_html?: string | null
+          body_text?: string | null
+          created_at?: string | null
+          from_email?: string
+          id?: string
+          is_read?: boolean | null
+          priority?: string | null
+          received_at?: string | null
+          subject?: string | null
+          to_email?: string
+        }
+        Relationships: []
+      }
       integration_settings: {
         Row: {
           created_at: string

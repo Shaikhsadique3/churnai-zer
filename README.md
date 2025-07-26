@@ -1,73 +1,143 @@
-# Welcome to your Lovable project
+# Churnaizer - AI-Powered Churn Prediction Platform
 
-## Project info
+> Predict & Prevent Customer Churn with AI - Smart insights for SaaS businesses
 
-**URL**: https://lovable.dev/projects/19bbb304-3471-4d58-96e0-3f17ce42bb31
+## 🚀 Quick Start
 
-## How can I edit this code?
+```bash
+# Install dependencies
+npm install
 
-There are several ways of editing your application.
-
-**Use Lovable**
-
-Simply visit the [Lovable Project](https://lovable.dev/projects/19bbb304-3471-4d58-96e0-3f17ce42bb31) and start prompting.
-
-Changes made via Lovable will be committed automatically to this repo.
-
-**Use your preferred IDE**
-
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
-
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
-
-Follow these steps:
-
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
-
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
-
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
+# Start development server
 npm run dev
+
+# Build for production
+npm run build
+
+# Preview production build
+npm run preview
 ```
 
-**Edit a file directly in GitHub**
+## 📋 Project Structure
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+```
+src/
+├── components/          # Reusable UI components
+│   ├── auth/           # Authentication components
+│   ├── dashboard/      # Dashboard-specific components
+│   ├── integration/    # SDK integration components
+│   ├── layout/         # Layout components
+│   └── ui/             # Base UI components (shadcn/ui)
+├── pages/              # Page components
+│   ├── admin/          # Admin panel pages
+│   ├── blog/           # Blog pages
+│   └── dashboard/      # Main dashboard pages
+├── hooks/              # Custom React hooks
+├── lib/                # Utility libraries
+├── contexts/           # React contexts
+├── utils/              # Utility functions
+├── assets/             # Static assets
+└── styles/             # Global styles
+```
 
-**Use GitHub Codespaces**
+## 🛠 Tech Stack
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+- **Frontend**: React 18 + TypeScript + Vite
+- **Styling**: Tailwind CSS + shadcn/ui
+- **Backend**: Supabase (Database + Auth + Edge Functions)
+- **Email**: Resend API
+- **AI**: OpenAI/OpenRouter integration
+- **Charts**: Recharts
+- **Forms**: React Hook Form + Zod validation
 
-## What technologies are used for this project?
+## 🔧 Environment Setup
 
-This project is built with:
+The project uses Supabase for backend services. All configuration is handled through Supabase's dashboard and secrets management.
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+Required Supabase secrets:
+- `OPENAI_API_KEY` or `OPENROUTER_API_KEY`
+- `RESEND_API_KEY`
+- `CHURN_API_KEY`
 
-## How can I deploy this project?
+## 📊 Features
 
-Simply open [Lovable](https://lovable.dev/projects/19bbb304-3471-4d58-96e0-3f17ce42bb31) and click on Share -> Publish.
+### Core Dashboard
+- Real-time churn prediction analytics
+- User risk assessment and segmentation
+- CSV data upload and processing
+- Automated retention campaigns
 
-## Can I connect a custom domain to my Lovable project?
+### SDK Integration
+- JavaScript SDK for easy integration
+- Real-time user tracking
+- Churn prediction API
+- Webhook support for real-time notifications
 
-Yes, you can!
+### Email Automation
+- Smart retention email campaigns
+- Template management
+- A/B testing capabilities
+- Performance analytics
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
+### Admin Panel
+- User management and analytics
+- Content management (blogs, announcements)
+- Email inbox and communication
+- System configuration
 
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
+## 🌐 Deployment
+
+### Automatic Deployment
+The project is configured for automatic deployment with:
+- Supabase Edge Functions (auto-deployed)
+- Frontend hosting (Vercel/Netlify recommended)
+
+### Custom Domain Setup
+1. Configure your domain DNS
+2. Update domain settings in hosting provider
+3. Update `src/lib/config.ts` with your domain
+
+## 🔐 Security
+
+- Row Level Security (RLS) enabled on all database tables
+- JWT-based authentication
+- API key management for SDK access
+- Admin role protection for sensitive routes
+
+## 📱 SDK Usage
+
+```html
+<!-- Include the Churnaizer SDK -->
+<script src="https://churnaizer.com/churnaizer-sdk.js"></script>
+
+<script>
+// Initialize tracking
+Churnaizer.track({
+  userId: 'user123',
+  email: 'user@example.com',
+  plan: 'pro',
+  usage: 145,
+  lastLogin: new Date()
+});
+</script>
+```
+
+## 🤝 Contributing
+
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
+
+## 📄 License
+
+This project is proprietary software. All rights reserved.
+
+## 🆘 Support
+
+For support and questions, contact us at support@churnaizer.com
+
+---
+
+Built with ❤️ for SaaS businesses worldwide.

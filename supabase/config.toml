@@ -51,3 +51,6 @@ verify_jwt = false
 
 [functions.track]
 verify_jwt = false
+
+[functions.api-sync]
+verify_jwt = false

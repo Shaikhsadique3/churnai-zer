@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Churnaizer SDK Example</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 40px 20px;
+            line-height: 1.6;
+        }
+        .example-section {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+        .code-block {
+            background: #2d3748;
+            color: #e2e8f0;
+            padding: 15px;
+            border-radius: 6px;
+            overflow-x: auto;
+            font-family: 'Monaco', 'Consolas', monospace;
+            font-size: 14px;
+        }
+        button {
+            background: #1C4E80;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            cursor: pointer;
+            margin: 10px 5px;
+            font-size: 16px;
+        }
+        button:hover {
+            background: #2563eb;
+        }
+        .success {
+            background: #d4edda;
+            color: #155724;
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <h1>🎯 Churnaizer SDK Example</h1>
+    <p>This example demonstrates how to integrate the Churnaizer SDK into your SaaS application for churn prediction and user retention.</p>
+
+    <div class="example-section">
+        <h2>1. Basic SDK Setup</h2>
+        <div class="code-block">
+&lt;!-- 1. Load Churnaizer SDK --&gt;
+&lt;script src="https://cdn.churnaizer.com/churnaizer-sdk.js"&gt;&lt;/script&gt;
+
+&lt;!-- 2. Set Config (optional modal or triggers) --&gt;
+&lt;script&gt;
+  window.ChurnaizerConfig = {
+    modalEnabled: true,          // set true if you want to show retention popup
+    checkInterval: 5000,         // Check user activity every 5 seconds
+    autoTrigger: true,           // Auto-start retention monitoring
+    debug: true                  // Enable console logging
+  };
+&lt;/script&gt;
+        </div>
+    </div>
+
+    <div class="example-section">
+        <h2>2. Track User Data</h2>
+        <div class="code-block">
+&lt;script&gt;
+  // Example user data (replace with your actual user data)
+  const currentUser = {
+    user_id: "user_123",
+    customer_name: "John Doe",
+    customer_email: "john@example.com",
+    days_since_signup: 45,
+    monthly_revenue: 99,
+    subscription_plan: "Pro",
+    number_of_logins_last30days: 14,
+    active_features_used: 5,
+    support_tickets_opened: 1,
+    last_payment_status: "active",
+    email_opens_last30days: 8,
+    last_login_days_ago: 2,
+    billing_issue_count: 0
+  };
+
+  // Track user with callback
+  Churnaizer.track(currentUser, "YOUR_API_KEY_HERE", function(result, error) {
+    if (error) {
+      console.error("❌ Churnaizer SDK Error:", error);
+      return;
+    }
+
+    console.log("✅ Churn prediction received:", result);
+
+    // Take action based on risk level
+    if (result.shouldTriggerEmail) {
+      console.log("🚨 High-risk user detected - email automation triggered");
+    }
+  });
+&lt;/script&gt;
+        </div>
+    </div>
+
+    <div class="example-section">
+        <h2>3. Interactive Demo</h2>
+        <p>Try the SDK with sample data:</p>
+        
+        <div>
+            <button onclick="trackSampleUser()">Track Sample User</button>
+            <button onclick="trackHighRiskUser()">Track High-Risk User</button>
+            <button onclick="trackBatchUsers()">Track Batch Users</button>
+            <button onclick="showSDKInfo()">Show SDK Info</button>
+        </div>
+
+        <div id="results"></div>
+    </div>
+
+    <div class="example-section">
+        <h2>4. Advanced Features</h2>
+        <div class="code-block">
+// Batch tracking multiple users
+const users = [
+  { user_id: "u1", customer_email: "user1@example.com", ... },
+  { user_id: "u2", customer_email: "user2@example.com", ... }
+];
+
+Churnaizer.trackBatch(users, "YOUR_API_KEY", function(results, error) {
+  console.log("Batch results:", results);
+});
+
+// Show retention badge
+Churnaizer.showBadge("Welcome back! We missed you.", "success");
+
+// Get SDK version and info
+Churnaizer.info();
+console.log("SDK Version:", Churnaizer.version);
+        </div>
+    </div>
+
+    <div class="example-section">
+        <h2>5. Custom Retention Modal</h2>
+        <div class="code-block">
+window.ChurnaizerConfig = {
+  modalEnabled: true,
+  customModalCallback: function(riskData) {
+    // Your custom retention logic here
+    alert(`Risk Level: ${riskData.risk_level} - Score: ${Math.round(riskData.churn_score * 100)}%`);
+  }
+};
+        </div>
+    </div>
+
+    <!-- Load the actual SDK -->
+    <script src="./churnaizer-sdk.js"></script>
+
+    <script>
+        // Configure the SDK
+        window.ChurnaizerConfig = {
+            modalEnabled: true,
+            checkInterval: 10000,
+            autoTrigger: true,
+            debug: true
+        };
+
+        function showResult(message, isError = false) {
+            const results = document.getElementById('results');
+            results.innerHTML = `<div class="${isError ? 'error' : 'success'}">${message}</div>`;
+        }
+
+        function trackSampleUser() {
+            const sampleUser = {
+                user_id: "demo_user_" + Date.now(),
+                customer_name: "Demo User",
+                customer_email: "demo@example.com",
+                days_since_signup: 30,
+                monthly_revenue: 49,
+                subscription_plan: "Starter",
+                number_of_logins_last30days: 12,
+                active_features_used: 3,
+                support_tickets_opened: 0,
+                last_payment_status: "active",
+                email_opens_last30days: 5,
+                last_login_days_ago: 1,
+                billing_issue_count: 0
+            };
+
+            Churnaizer.track(sampleUser, "demo_api_key", function(result, error) {
+                if (error) {
+                    showResult(`Error: ${error}`, true);
+                    return;
+                }
+                showResult(`✅ Tracking successful! Risk Level: ${result?.risk_level || 'N/A'}, Score: ${Math.round((result?.churn_score || 0) * 100)}%`);
+            });
+        }
+
+        function trackHighRiskUser() {
+            const highRiskUser = {
+                user_id: "high_risk_" + Date.now(),
+                customer_name: "High Risk User",
+                customer_email: "highrisk@example.com",
+                days_since_signup: 90,
+                monthly_revenue: 99,
+                subscription_plan: "Pro",
+                number_of_logins_last30days: 2,
+                active_features_used: 1,
+                support_tickets_opened: 3,
+                last_payment_status: "failed",
+                email_opens_last30days: 0,
+                last_login_days_ago: 15,
+                billing_issue_count: 2
+            };
+
+            Churnaizer.track(highRiskUser, "demo_api_key", function(result, error) {
+                if (error) {
+                    showResult(`Error: ${error}`, true);
+                    return;
+                }
+                showResult(`🚨 High-risk user tracked! Risk Level: ${result?.risk_level || 'N/A'}, Score: ${Math.round((result?.churn_score || 0) * 100)}%`);
+            });
+        }
+
+        function trackBatchUsers() {
+            const batchUsers = [
+                {
+                    user_id: "batch_1_" + Date.now(),
+                    customer_email: "batch1@example.com",
+                    subscription_plan: "Free",
+                    number_of_logins_last30days: 5
+                },
+                {
+                    user_id: "batch_2_" + Date.now(),
+                    customer_email: "batch2@example.com",
+                    subscription_plan: "Pro",
+                    number_of_logins_last30days: 20
+                }
+            ];
+
+            Churnaizer.trackBatch(batchUsers, "demo_api_key", function(results, error) {
+                if (error) {
+                    showResult(`Batch Error: ${error}`, true);
+                    return;
+                }
+                showResult(`✅ Batch tracking complete! Processed ${batchUsers.length} users.`);
+            });
+        }
+
+        function showSDKInfo() {
+            Churnaizer.info();
+            showResult(`SDK Version: ${Churnaizer.version} - Check console for detailed info.`);
+        }
+
+        // Show welcome message
+        setTimeout(() => {
+            Churnaizer.showBadge("Churnaizer SDK Example loaded! Try the demo buttons above.", "success");
+        }, 1000);
+    </script>
+</body>
+</html>

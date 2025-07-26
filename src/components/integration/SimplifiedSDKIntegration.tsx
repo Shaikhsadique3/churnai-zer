@@ -138,22 +138,28 @@ export function SimplifiedSDKIntegration() {
         throw new Error('API key is required for testing');
       }
 
-      // Test the SDK by calling our edge function directly
-      const response = await supabase.functions.invoke('sdk-track', {
-        body: {
-          user_id: "test_user_123",
-          email: "test@example.com",
-          subscription_plan: "premium",
-          usage: 15,
-          last_login: new Date().toISOString(),
-          feature_usage: {
-            dashboard: 10,
-            reports: 5,
-            analytics: 8
-          }
-        },
+      // Test using the actual SDK track function with real tracking data
+      const testUserData = {
+        user_id: "test_user_" + Date.now(),
+        customer_email: "test@churnaizer.com",
+        days_since_signup: 30,
+        monthly_revenue: 99,
+        subscription_plan: "Pro",
+        number_of_logins_last30days: 20,
+        active_features_used: 5,
+        support_tickets_opened: 1,
+        last_payment_status: "Success",
+        email_opens_last30days: 15,
+        last_login_days_ago: 2,
+        billing_issue_count: 0
+      };
+
+      // Call the track edge function directly
+      const response = await supabase.functions.invoke('track', {
+        body: testUserData,
         headers: {
-          'X-Churnaizer-API-Key': apiKey,
+          'X-API-Key': apiKey,
+          'Content-Type': 'application/json'
         }
       });
 
@@ -161,21 +167,27 @@ export function SimplifiedSDKIntegration() {
 
       if (response.error) {
         console.error('SDK test error:', response.error);
-        throw response.error;
+        throw new Error(response.error.message || 'SDK test failed');
+      }
+
+      if (response.data?.results && response.data.results.length > 0) {
+        const result = response.data.results[0];
+        setTestResult(result);
+        
+        toast({
+          title: "✅ SDK Test Successful!",
+          description: `Risk Level: ${result.risk_level} • Score: ${Math.round(result.churn_score * 100)}%`,
+          duration: 5000,
+        });
+      } else {
+        throw new Error('Invalid response format from SDK');
       }
       
-      setTestResult(response.data);
-      
-      toast({
-        title: "SDK Test Successful!",
-        description: `Risk Level: ${response.data.risk_level} • Score: ${Math.round(response.data.churn_score * 100)}%`,
-        duration: 5000,
-      });
     } catch (error) {
       console.error('SDK test failed:', error);
       const errorMessage = error instanceof Error ? error.message : "Unknown error";
       toast({
-        title: "SDK Test Failed",
+        title: "❌ SDK Test Failed",
         description: errorMessage,
         variant: "destructive",
         duration: 5000,

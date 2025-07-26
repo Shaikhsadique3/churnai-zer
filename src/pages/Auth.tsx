@@ -210,7 +210,7 @@ const Auth = () => {
 
       toast({
         title: "🎉 Account created successfully!",
-        description: "Welcome to ChurnGuard Lite! Check your email for a welcome message.",
+        description: "Welcome to churnaizer.com! Check your email for a welcome message.",
       });
       
       // For new signups, we can assume they are new users
@@ -229,7 +229,7 @@ const Auth = () => {
         <div className="text-center mb-6 sm:mb-8">
           <Link to="/" className="inline-flex items-center space-x-2 mb-4 transition-all duration-300 hover:scale-105">
             <Shield className="h-6 w-6 sm:h-8 sm:w-8 text-primary" />
-            <span className="text-xl sm:text-2xl font-bold text-foreground">ChurnGuard Lite</span>
+            <span className="text-xl sm:text-2xl font-bold text-foreground">churnaizer.com</span>
           </Link>
           <p className="text-muted-foreground text-xs sm:text-sm">Predict and prevent customer churn with AI</p>
         </div>

@@ -3,14 +3,17 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Copy, ExternalLink, Play, CheckCircle, AlertTriangle, Code, Shield } from "lucide-react";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import { Copy, ExternalLink, Play, CheckCircle, AlertTriangle, Code, Shield, ChevronDown } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 export function SimplifiedSDKIntegration() {
   const { toast } = useToast();
   const { user } = useAuth();
+  const isMobile = useIsMobile();
   const [apiKey, setApiKey] = useState<string>("");
   const [loading, setLoading] = useState(true);
   const [testResult, setTestResult] = useState<any>(null);
@@ -355,21 +358,62 @@ function showCustomRetentionModal(riskData) {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 md:space-y-6">
       {/* Header */}
-      <div>
-        <h1 className="text-3xl font-bold text-foreground mb-2">Production SDK Integration</h1>
-        <p className="text-muted-foreground">
-          Implement Churnaizer's production-ready SDK to track user behavior and prevent churn automatically.
-        </p>
-        {/* Debug info */}
-        <div className="mt-4 p-4 bg-muted rounded-lg">
-          <p className="text-sm">
-            <strong>Debug Info:</strong> User ID: {user?.id || 'Not logged in'} | 
-            Email: {user?.email || 'No email'} | 
-            API Key: {apiKey ? 'Present' : 'Missing'}
+      <div className="space-y-4">
+        <div className="space-y-2">
+          <h1 className="text-2xl md:text-3xl font-bold text-foreground">Production SDK Integration</h1>
+          <p className="text-sm md:text-base text-muted-foreground">
+            Implement Churnaizer's production-ready SDK to track user behavior and prevent churn automatically.
           </p>
         </div>
+        
+        {/* Primary CTA */}
+        <div className="flex flex-col sm:flex-row gap-3">
+          <Button 
+            onClick={() => copyToClipboard(sdkImplementationCode)}
+            disabled={!apiKey}
+            className="w-full sm:w-auto"
+          >
+            <Code className="h-4 w-4 mr-2" />
+            Get SDK Code
+          </Button>
+          <Button 
+            variant="outline"
+            onClick={testSDK} 
+            disabled={testLoading || !apiKey}
+            className="w-full sm:w-auto"
+          >
+            {testLoading ? "Testing..." : "Test Integration"}
+          </Button>
+        </div>
+        
+        {/* Debug info - collapsed on mobile */}
+        {isMobile ? (
+          <Accordion type="single" collapsible className="w-full">
+            <AccordionItem value="debug-info">
+              <AccordionTrigger className="text-sm py-2">Debug Information</AccordionTrigger>
+              <AccordionContent>
+                <div className="p-3 bg-muted rounded-lg">
+                  <p className="text-xs">
+                    <strong>Debug Info:</strong><br/>
+                    User ID: {user?.id || 'Not logged in'}<br/>
+                    Email: {user?.email || 'No email'}<br/>
+                    API Key: {apiKey ? 'Present' : 'Missing'}
+                  </p>
+                </div>
+              </AccordionContent>
+            </AccordionItem>
+          </Accordion>
+        ) : (
+          <div className="p-4 bg-muted rounded-lg">
+            <p className="text-sm">
+              <strong>Debug Info:</strong> User ID: {user?.id || 'Not logged in'} | 
+              Email: {user?.email || 'No email'} | 
+              API Key: {apiKey ? 'Present' : 'Missing'}
+            </p>
+          </div>
+        )}
       </div>
 
       {/* API Key Display */}
@@ -400,42 +444,26 @@ function showCustomRetentionModal(riskData) {
         </CardContent>
       </Card>
 
-      {/* Test SDK */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Play className="h-5 w-5 text-primary" />
-            Test SDK Integration
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <Button 
-            onClick={testSDK} 
-            disabled={testLoading || !apiKey}
-            className="w-full"
-          >
-            {testLoading ? "Testing..." : "Test SDK Tracking"}
-          </Button>
-          
-          {testResult && (
-            <div className="p-4 bg-muted rounded-lg">
-              <div className="flex items-center gap-2 mb-2">
-                {testResult.error ? (
-                  <AlertTriangle className="h-5 w-5 text-destructive" />
-                ) : (
-                  <CheckCircle className="h-5 w-5 text-green-600" />
-                )}
-                <span className="font-medium">
-                  {testResult.error ? "Test Failed" : "Test Successful"}
-                </span>
-              </div>
-              <pre className="text-sm overflow-auto">
-                {JSON.stringify(testResult, null, 2)}
-              </pre>
+      {/* Test Results */}
+      {testResult && (
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center gap-2 mb-2">
+              {testResult.error ? (
+                <AlertTriangle className="h-5 w-5 text-destructive" />
+              ) : (
+                <CheckCircle className="h-5 w-5 text-green-600" />
+              )}
+              <span className="font-medium text-sm md:text-base">
+                {testResult.error ? "Test Failed" : "Test Successful"}
+              </span>
             </div>
-          )}
-        </CardContent>
-      </Card>
+            <pre className="text-xs md:text-sm overflow-auto max-h-40">
+              {JSON.stringify(testResult, null, 2)}
+            </pre>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Implementation Guide */}
       <Card>
@@ -447,10 +475,10 @@ function showCustomRetentionModal(riskData) {
         </CardHeader>
         <CardContent>
           <Tabs defaultValue="basic" className="w-full">
-            <TabsList className="grid w-full grid-cols-3">
-              <TabsTrigger value="basic">Basic Setup</TabsTrigger>
-              <TabsTrigger value="react">React/Vue/Angular</TabsTrigger>
-              <TabsTrigger value="advanced">Advanced Config</TabsTrigger>
+            <TabsList className="grid w-full grid-cols-3 text-xs md:text-sm">
+              <TabsTrigger value="basic" className="text-xs md:text-sm">Basic Setup</TabsTrigger>
+              <TabsTrigger value="react" className="text-xs md:text-sm">React/Vue/Angular</TabsTrigger>
+              <TabsTrigger value="advanced" className="text-xs md:text-sm">Advanced Config</TabsTrigger>
             </TabsList>
             
             <TabsContent value="basic" className="space-y-4">
@@ -460,7 +488,7 @@ function showCustomRetentionModal(riskData) {
                   Add this code to your website to start tracking user behavior and preventing churn.
                 </p>
                 <div className="relative">
-                  <pre className="p-4 bg-muted rounded-lg text-sm overflow-auto max-h-96">
+                  <pre className="p-3 md:p-4 bg-muted rounded-lg text-xs md:text-sm overflow-auto max-h-60 md:max-h-96">
                     <code>{sdkImplementationCode}</code>
                   </pre>
                   <Button
@@ -469,7 +497,7 @@ function showCustomRetentionModal(riskData) {
                     className="absolute top-2 right-2"
                     onClick={() => copyToClipboard(sdkImplementationCode)}
                   >
-                    <Copy className="h-4 w-4" />
+                    <Copy className="h-3 w-3 md:h-4 md:w-4" />
                   </Button>
                 </div>
               </div>
@@ -482,7 +510,7 @@ function showCustomRetentionModal(riskData) {
                   Integration example for React, Vue, Angular, and other modern frameworks.
                 </p>
                 <div className="relative">
-                  <pre className="p-4 bg-muted rounded-lg text-sm overflow-auto max-h-96">
+                  <pre className="p-3 md:p-4 bg-muted rounded-lg text-xs md:text-sm overflow-auto max-h-60 md:max-h-96">
                     <code>{reactImplementationCode}</code>
                   </pre>
                   <Button
@@ -491,7 +519,7 @@ function showCustomRetentionModal(riskData) {
                     className="absolute top-2 right-2"
                     onClick={() => copyToClipboard(reactImplementationCode)}
                   >
-                    <Copy className="h-4 w-4" />
+                    <Copy className="h-3 w-3 md:h-4 md:w-4" />
                   </Button>
                 </div>
               </div>
@@ -504,7 +532,7 @@ function showCustomRetentionModal(riskData) {
                   Customize retention monitoring and modal behavior for your specific needs.
                 </p>
                 <div className="relative">
-                  <pre className="p-4 bg-muted rounded-lg text-sm overflow-auto max-h-96">
+                  <pre className="p-3 md:p-4 bg-muted rounded-lg text-xs md:text-sm overflow-auto max-h-60 md:max-h-96">
                     <code>{advancedConfigCode}</code>
                   </pre>
                   <Button
@@ -513,7 +541,7 @@ function showCustomRetentionModal(riskData) {
                     className="absolute top-2 right-2"
                     onClick={() => copyToClipboard(advancedConfigCode)}
                   >
-                    <Copy className="h-4 w-4" />
+                    <Copy className="h-3 w-3 md:h-4 md:w-4" />
                   </Button>
                 </div>
               </div>

@@ -143,7 +143,7 @@ const ResetPassword = () => {
         <div className="text-center mb-8">
           <Link to="/" className="inline-flex items-center space-x-2 mb-4 transition-all duration-300 hover:scale-105">
             <Shield className="h-8 w-8 text-primary" />
-            <span className="text-2xl font-bold text-foreground">ChurnGuard Lite</span>
+            <span className="text-2xl font-bold text-foreground">churnaizer.com</span>
           </Link>
           <p className="text-muted-foreground text-sm">Reset your password</p>
         </div>

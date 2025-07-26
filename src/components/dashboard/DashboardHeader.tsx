@@ -21,7 +21,7 @@ const DashboardHeader = ({ userEmail, onLogout }: DashboardHeaderProps) => {
           <Link to="/" className="flex items-center space-x-2 transition-transform hover:scale-105">
             <Shield className="h-6 w-6 sm:h-8 sm:w-8 text-primary" />
             <h1 className="text-lg sm:text-2xl font-bold text-foreground">
-              {isMobile ? "ChurnGuard" : "ChurnGuard Lite"}
+              churnaizer.com
             </h1>
           </Link>
           

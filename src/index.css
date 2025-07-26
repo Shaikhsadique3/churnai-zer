@@ -97,3 +97,53 @@
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   }
 }
+
+@layer utilities {
+  /* Mobile-first responsive utilities for very small screens */
+  @media (max-width: 374px) {
+    .mobile-sm\:text-xs {
+      font-size: 0.75rem;
+      line-height: 1rem;
+    }
+    
+    .mobile-sm\:p-2 {
+      padding: 0.5rem;
+    }
+    
+    .mobile-sm\:px-3 {
+      padding-left: 0.75rem;
+      padding-right: 0.75rem;
+    }
+    
+    .mobile-sm\:space-y-2 > :not([hidden]) ~ :not([hidden]) {
+      margin-top: 0.5rem;
+    }
+  }
+  
+  /* Animate accordion */
+  .accordion-up {
+    animation: accordion-up 0.2s ease-out;
+  }
+  
+  .accordion-down {
+    animation: accordion-down 0.2s ease-out;
+  }
+}
+
+@keyframes accordion-down {
+  from {
+    height: 0;
+  }
+  to {
+    height: var(--radix-accordion-content-height);
+  }
+}
+
+@keyframes accordion-up {
+  from {
+    height: var(--radix-accordion-content-height);
+  }
+  to {
+    height: 0;
+  }
+}

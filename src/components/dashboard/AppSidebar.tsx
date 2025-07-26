@@ -6,7 +6,9 @@ import {
   Shield,
   Code,
   Mail,
-  BarChart3
+  BarChart3,
+  BookOpen,
+  ExternalLink
 } from "lucide-react";
 import {
   Sidebar,
@@ -41,6 +43,15 @@ const navigationItems = [
     title: "Email Automation",
     url: "/automation",
     icon: Mail
+  }
+];
+
+const externalLinks = [
+  {
+    title: "Blog",
+    url: "https://churnaizer.com/blog",
+    icon: BookOpen,
+    external: true
   }
 ];
 
@@ -99,6 +110,31 @@ export function AppSidebar() {
                       <item.icon className="h-4 w-4" />
                       {!collapsed && <span>{item.title}</span>}
                     </NavLink>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              ))}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+
+        <SidebarGroup>
+          <SidebarGroupLabel className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
+            {!collapsed && "Resources"}
+          </SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu className="space-y-1">
+              {externalLinks.map((item) => (
+                <SidebarMenuItem key={item.title}>
+                  <SidebarMenuButton asChild className="w-full justify-start text-muted-foreground hover:text-foreground hover:bg-accent/50 transition-colors">
+                    <a href={item.url} target="_blank" rel="noopener noreferrer">
+                      <item.icon className="h-4 w-4" />
+                      {!collapsed && (
+                        <>
+                          <span>{item.title}</span>
+                          <ExternalLink className="h-3 w-3 ml-auto" />
+                        </>
+                      )}
+                    </a>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               ))}

@@ -252,7 +252,7 @@ export const DashboardOverview = () => {
               Website Integration
             </CardTitle>
             <CardDescription>
-              Connect ChurnGuard to your website via SDK
+              Connect Churnaizer to your website via SDK
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">

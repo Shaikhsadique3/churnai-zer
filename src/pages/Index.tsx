@@ -21,29 +21,40 @@ const Index = () => {
         <AnnouncementBanner />
         {/* Sticky Navigation */}
         <nav className="sticky top-0 z-50 bg-background/80 backdrop-blur-lg border-b border-border/50">
-          <div className="container mx-auto px-4 lg:px-8 py-4 flex items-center justify-between">
-            <div className="flex items-center space-x-3">
-              <Logo size="md" />
-              <h1 className="text-2xl font-bold text-foreground">Churnaizer</h1>
-            </div>
-            <div className="flex items-center space-x-4">
-              <Link to="/blog" className="hidden md:inline-block text-foreground/70 hover:text-foreground font-medium">
-                Blog
-              </Link>
-              {user ? (
-                <Link to="/dashboard">
-                  <Button>Dashboard</Button>
-                </Link>
-              ) : (
-                <>
-                  <Link to="/integration" className="hidden md:inline-block">
-                    <Button variant="ghost">View SDK Setup</Button>
+          <div className="container mx-auto px-4 lg:px-8 py-4">
+            {/* Mobile-first: Stack logo and CTA vertically on small screens */}
+            <div className="flex flex-col mobile-sm:space-y-3 lg:flex-row lg:items-center lg:justify-between lg:space-y-0">
+              {/* Logo and Brand */}
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-3">
+                  <Logo size="md" />
+                  <h1 className="text-xl mobile-sm:text-lg lg:text-2xl font-bold text-foreground">Churnaizer</h1>
+                </div>
+                {/* Secondary nav for larger screens */}
+                <div className="hidden lg:flex items-center space-x-4">
+                  <Link to="/blog" className="text-foreground/70 hover:text-foreground font-medium">
+                    Blog
                   </Link>
-                  <Link to="/auth">
-                    <Button>Start Free – Get SDK Code</Button>
+                  <Link to="/integration" className="text-foreground/70 hover:text-foreground font-medium">
+                    SDK Setup
                   </Link>
-                </>
-              )}
+                </div>
+              </div>
+              
+              {/* CTA Section - Below logo on mobile, right side on desktop */}
+              <div className="flex flex-col mobile-sm:space-y-2 sm:flex-row sm:items-center sm:justify-center sm:space-y-0 sm:space-x-3 lg:justify-end">
+                {user ? (
+                  <Link to="/dashboard" className="w-full sm:w-auto">
+                    <Button className="w-full sm:w-auto">Dashboard</Button>
+                  </Link>
+                ) : (
+                  <Link to="/auth" className="w-full sm:w-auto">
+                    <Button className="w-full sm:w-auto bg-primary hover:bg-primary/90">
+                      Start Free
+                    </Button>
+                  </Link>
+                )}
+              </div>
             </div>
           </div>
         </nav>
@@ -66,7 +77,7 @@ const Index = () => {
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-12">
               <Link to={user ? "/dashboard" : "/auth"}>
                 <Button size="lg" className="bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg hover:shadow-xl transition-all duration-300">
-                  Start Free – Get SDK Code
+                  {user ? "Go to Dashboard" : "Start Free – Get SDK Code"}
                   <ArrowRight className="ml-2 h-5 w-5" />
                 </Button>
               </Link>
@@ -391,14 +402,14 @@ const Index = () => {
           <div className="absolute inset-0 bg-gradient-to-r from-primary/10 via-primary/5 to-primary/10"></div>
           <div className="container mx-auto px-4 lg:px-8 text-center relative z-10">
             <h2 className="text-3xl lg:text-5xl font-bold text-foreground mb-6">
-              Start Predicting Churn Today
+              Ready to Reduce Churn?
             </h2>
             <p className="text-xl text-muted-foreground mb-8 max-w-2xl mx-auto">
-              Join 10+ SaaS founders who use Churnaizer to retain customers and grow revenue.
+              Join 10+ SaaS founders using our AI-powered retention system.
             </p>
-            <Link to={user ? "/dashboard" : "/auth"}>
-              <Button size="lg" className="bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg hover:shadow-xl transition-all duration-300">
-                {user ? "Go to Dashboard" : "Start Free – Get SDK Code"}
+            <Link to="/integration">
+              <Button variant="outline" size="lg" className="border-primary text-primary hover:bg-primary hover:text-primary-foreground">
+                View SDK Documentation
                 <ArrowRight className="ml-2 h-5 w-5" />
               </Button>
             </Link>

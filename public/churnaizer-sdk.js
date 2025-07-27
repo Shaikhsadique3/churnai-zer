@@ -211,11 +211,10 @@
     _sendTrackingRequest: function(data, apiKey, callback) {
       const xhr = new XMLHttpRequest();
       
-      xhr.open('POST', `${API_BASE_URL}/track`, true);
+      xhr.open('POST', `${API_BASE_URL}/sdk-track`, true);
       xhr.setRequestHeader('Content-Type', 'application/json');
-      xhr.setRequestHeader('X-API-Key', apiKey);
+      xhr.setRequestHeader('x-churnaizer-api-key', apiKey);
       xhr.setRequestHeader('X-SDK-Version', SDK_VERSION);
-      xhr.setRequestHeader('Origin', window.location.origin);
       
       xhr.onreadystatechange = function() {
         if (xhr.readyState === 4) {

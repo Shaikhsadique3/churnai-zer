@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.50.2';
 
@@ -168,6 +167,25 @@ serve(async (req) => {
       console.log('Processing tracking request for user:', user_id);
 
       try {
+        // Check if this is a test API key for mock response
+        const isTestKey = apiKey.startsWith('cg_');
+        
+        if (isTestKey) {
+          console.log('Test API key detected, returning mock response');
+          results.push({
+            status: 'ok',
+            user_id,
+            churn_probability: 0.93,
+            reason: "Low engagement and failed payments",
+            message: "User is showing signs of disengagement and may churn soon.",
+            understanding_score: 87,
+            risk_level: "high",
+            shouldTriggerEmail: true,
+            recommended_tone: "empathetic"
+          });
+          continue;
+        }
+
         // Call external churn prediction API with fallback
         const churnApiUrl = Deno.env.get('CHURN_API_URL');
         const churnApiKey = Deno.env.get('CHURN_API_KEY');
@@ -301,6 +319,7 @@ serve(async (req) => {
             understanding_score: Math.round(understandingScore),
             days_until_mature: daysUntilMature,
             action_recommended: actionRecommended,
+            monthly_revenue: monthly_revenue,
             updated_at: new Date().toISOString(),
           }, {
             onConflict: 'owner_id,user_id'
@@ -349,34 +368,22 @@ serve(async (req) => {
           .eq('owner_id', ownerId)
           .eq('user_id', user_id);
 
-        // Return mock response for test API keys  
-        const isTestKey = apiKey.startsWith('cg_');
-        
-        if (isTestKey) {
-          results.push({
-            status: 'ok',
-            user_id,
-            churn_probability: 0.93,
-            reason: "Low engagement and failed payments",
-            message: "User is showing signs of disengagement and may churn soon.",
-            understanding_score: 87,
-            risk_level: "high",
-            shouldTriggerEmail: true,
-            recommended_tone: "empathetic"
-          });
-        } else {
-          results.push({
-            status: 'ok',
-            churn_score: churnScore,
-            churn_reason: churnReason,
-            risk_level: riskLevel,
-            understanding_score: understandingScore,
-            status_tag: statusTag,
-            action_recommended: actionRecommended,
-            days_until_mature: daysUntilMature,
-            user_id
-          });
-        }
+        results.push({
+          status: 'ok',
+          user_id,
+          churn_probability: churnScore,
+          churn_score: churnScore,
+          reason: churnReason,
+          churn_reason: churnReason,
+          message: actionRecommended,
+          risk_level: riskLevel,
+          understanding_score: understandingScore,
+          shouldTriggerEmail: riskLevel === 'high',
+          recommended_tone: riskLevel === 'high' ? 'empathetic' : 'friendly',
+          status_tag: statusTag,
+          action_recommended: actionRecommended,
+          days_until_mature: daysUntilMature
+        });
 
       } catch (userError) {
         console.error(`Error processing user ${user_id}:`, userError);

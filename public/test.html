@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Churnaizer SDK Test</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            padding: 20px;
+            background: #f8f9fa;
+        }
+        .test-container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .test-button {
+            background: #1C4E80;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            width: 100%;
+            margin: 10px 0;
+        }
+        .test-button:hover {
+            background: #2563eb;
+        }
+        .status {
+            padding: 15px;
+            border-radius: 6px;
+            margin: 15px 0;
+            font-weight: bold;
+        }
+        .success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .loading {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>🧪 Churnaizer SDK Test</h1>
+        <p>Testing the Churnaizer SDK integration with mock data.</p>
+        
+        <button class="test-button" onclick="runSDKTest()">Test Integration</button>
+        
+        <div id="status"></div>
+        
+        <div id="response-details" style="display: none;">
+            <h3>Response Details:</h3>
+            <pre id="response-data"></pre>
+        </div>
+    </div>
+
+    <script src="./churnaizer-sdk.js"></script>
+    
+    <script>
+        // Configure SDK for testing
+        window.ChurnaizerConfig = {
+            debug: true,
+            modalEnabled: false
+        };
+
+        function showStatus(message, type = 'loading') {
+            const statusDiv = document.getElementById('status');
+            statusDiv.className = `status ${type}`;
+            statusDiv.innerHTML = message;
+        }
+
+        function showResponse(data) {
+            document.getElementById('response-details').style.display = 'block';
+            document.getElementById('response-data').textContent = JSON.stringify(data, null, 2);
+        }
+
+        function sendResultToParent(success, data, error = null) {
+            if (window.parent && window.parent !== window) {
+                const message = success 
+                    ? { success: true, ...data }
+                    : { success: false, error: error || 'Unknown error' };
+                
+                window.parent.postMessage(message, '*');
+                console.log('Sent message to parent:', message);
+            }
+        }
+
+        function runSDKTest() {
+            showStatus('🔄 Testing SDK integration...', 'loading');
+            
+            // Mock test data
+            const testUserData = {
+                user_id: "user_high_risk_001",
+                customer_name: "Test User",
+                customer_email: "test@example.com",
+                days_since_signup: 30,
+                monthly_revenue: 29.99,
+                subscription_plan: "Pro",
+                number_of_logins_last30days: 3,
+                active_features_used: 2,
+                support_tickets_opened: 1,
+                last_payment_status: "failed",
+                email_opens_last30days: 1,
+                last_login_days_ago: 7,
+                billing_issue_count: 2
+            };
+
+            // Use test API key (starts with cg_)
+            const testApiKey = "cg_test_key_12345";
+            
+            console.log('Testing with data:', testUserData);
+            console.log('Testing with API key:', testApiKey);
+
+            window.Churnaizer.track(testUserData, testApiKey, function(result, error) {
+                if (error) {
+                    console.error('SDK Test Failed:', error);
+                    showStatus(`❌ Test Failed: ${error}`, 'error');
+                    sendResultToParent(false, null, error);
+                    return;
+                }
+
+                console.log('SDK Test Success:', result);
+                showStatus('✅ Test Passed! SDK integration working correctly.', 'success');
+                showResponse(result);
+                sendResultToParent(true, result);
+            });
+        }
+
+        // Auto-run test on load if in iframe
+        if (window.parent && window.parent !== window) {
+            // Wait a moment for SDK to load
+            setTimeout(() => {
+                runSDKTest();
+            }, 500);
+        }
+    </script>
+</body>
+</html>

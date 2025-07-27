@@ -140,7 +140,7 @@ export function SimplifiedSDKIntegration() {
     if (existingIframe) existingIframe.remove();
 
     const iframe = document.createElement("iframe");
-    iframe.src = "https://churnaizer-sdk.netlify.app/test.html";
+    iframe.src = "/test.html";
     iframe.style.display = "none";
     iframe.id = "sdk-test-iframe";
     iframe.allow = "scripts";
@@ -161,7 +161,7 @@ export function SimplifiedSDKIntegration() {
 
     // Listen for test result from iframe
     const listener = (event: MessageEvent) => {
-      if (event.origin !== "https://churnaizer-sdk.netlify.app") return;
+      if (event.origin !== window.location.origin) return;
 
       clearTimeout(timeout); // Clear timeout on response
       setTestLoading(false);

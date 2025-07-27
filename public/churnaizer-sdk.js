@@ -223,10 +223,11 @@
             const response = JSON.parse(xhr.responseText);
             
             if (xhr.status === 200 || xhr.status === 201) {
-              log('Tracking successful:', response);
+              log('Tracking successful - Full response:', response);
               
               // Check if it's a single result or batch results
               const result = response.results?.[0] || response.result || response;
+              log('Extracted result:', result);
               
               // Validate required fields for SDK response
               const requiredFields = ['churn_probability', 'reason', 'message', 'understanding_score', 'risk_level', 'shouldTriggerEmail', 'recommended_tone'];
@@ -234,7 +235,9 @@
               
               if (missingFields.length > 0) {
                 const error = `API response missing required fields: ${missingFields.join(', ')}`;
-                logError(error);
+                logError('Missing fields error. Full response:', response);
+                logError('Extracted result:', result);
+                logError('Missing fields:', missingFields);
                 if (callback) callback(null, error);
                 return;
               }

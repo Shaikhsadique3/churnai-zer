@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SDK Integration Test</title>
+</head>
+<body>
+    <h1>SDK Test</h1>
+    <button onclick="testSDK()">Test SDK</button>
+    <div id="output"></div>
+
+    <script src="./churnaizer-sdk.js"></script>
+    <script>
+        window.ChurnaizerConfig = { debug: true };
+
+        function testSDK() {
+            const output = document.getElementById('output');
+            output.innerHTML = 'Testing...';
+
+            const testData = {
+                user_id: "test_user_001",
+                customer_email: "test@example.com",
+                days_since_signup: 30,
+                monthly_revenue: 29.99,
+                subscription_plan: "Pro",
+                number_of_logins_last30days: 3,
+                active_features_used: 2,
+                support_tickets_opened: 1,
+                last_payment_status: "failed",
+                email_opens_last30days: 1,
+                last_login_days_ago: 7,
+                billing_issue_count: 2
+            };
+
+            window.Churnaizer.track(testData, "cg_test_key_12345", function(result, error) {
+                if (error) {
+                    output.innerHTML = `<pre style="color: red;">Error: ${error}</pre>`;
+                } else {
+                    output.innerHTML = `<pre style="color: green;">Success: ${JSON.stringify(result, null, 2)}</pre>`;
+                }
+            });
+        }
+    </script>
+</body>
+</html>

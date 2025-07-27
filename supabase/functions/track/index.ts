@@ -171,7 +171,7 @@ serve(async (req) => {
         const isTestKey = apiKey.startsWith('cg_');
         
         if (isTestKey) {
-          console.log('Test API key detected, returning mock response');
+          console.log('Test API key detected, returning mock response for user:', user_id);
           results.push({
             status: 'ok',
             user_id,

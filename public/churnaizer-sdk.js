@@ -225,21 +225,30 @@
             if (xhr.status === 200 || xhr.status === 201) {
               log('Tracking successful:', response);
               
-              // Add shouldTriggerEmail flag
-              if (response.result) {
-                response.result.shouldTriggerEmail = response.result.risk_level === 'high';
+              // Check if it's a single result or batch results
+              const result = response.results?.[0] || response.result || response;
+              
+              // Validate required fields for SDK response
+              const requiredFields = ['churn_probability', 'reason', 'message', 'understanding_score', 'risk_level', 'shouldTriggerEmail', 'recommended_tone'];
+              const missingFields = requiredFields.filter(field => result[field] === undefined);
+              
+              if (missingFields.length > 0) {
+                const error = `API response missing required fields: ${missingFields.join(', ')}`;
+                logError(error);
+                if (callback) callback(null, error);
+                return;
               }
               
               // Auto-sync to dashboard
-              this._syncToDashboard(data, response.result);
+              this._syncToDashboard(data, result);
               
               // Handle high-risk users
-              if (response.result?.risk_level === 'high' && this._retentionConfig?.modalEnabled) {
-                this._showRetentionModal(response.result);
+              if (result?.risk_level === 'high' && this._retentionConfig?.modalEnabled) {
+                this._showRetentionModal(result);
               }
               
               // Execute callback
-              if (callback) callback(response.result, null);
+              if (callback) callback(result, null);
             } else {
               logError('Tracking failed:', response);
               if (callback) callback(null, response.error || 'Tracking failed');

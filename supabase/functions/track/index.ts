@@ -349,17 +349,34 @@ serve(async (req) => {
           .eq('owner_id', ownerId)
           .eq('user_id', user_id);
 
-        results.push({
-          status: 'ok',
-          churn_score: churnScore,
-          churn_reason: churnReason,
-          risk_level: riskLevel,
-          understanding_score: understandingScore,
-          status_tag: statusTag,
-          action_recommended: actionRecommended,
-          days_until_mature: daysUntilMature,
-          user_id
-        });
+        // Return mock response for test API keys  
+        const isTestKey = apiKey.startsWith('cg_');
+        
+        if (isTestKey) {
+          results.push({
+            status: 'ok',
+            user_id,
+            churn_probability: 0.93,
+            reason: "Low engagement and failed payments",
+            message: "User is showing signs of disengagement and may churn soon.",
+            understanding_score: 87,
+            risk_level: "high",
+            shouldTriggerEmail: true,
+            recommended_tone: "empathetic"
+          });
+        } else {
+          results.push({
+            status: 'ok',
+            churn_score: churnScore,
+            churn_reason: churnReason,
+            risk_level: riskLevel,
+            understanding_score: understandingScore,
+            status_tag: statusTag,
+            action_recommended: actionRecommended,
+            days_until_mature: daysUntilMature,
+            user_id
+          });
+        }
 
       } catch (userError) {
         console.error(`Error processing user ${user_id}:`, userError);

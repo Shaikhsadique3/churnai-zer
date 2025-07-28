@@ -2,12 +2,15 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowRight, TrendingUp, Brain, DollarSign, Database, Award } from "lucide-react";
+import { ArrowRight, TrendingUp, Brain, DollarSign, Database, Award, AlertTriangle, Code, Shield, Zap, BarChart3, Mail, Play } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { DynamicHead } from "@/components/common/DynamicHead";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import dashboardPreview from "@/assets/dashboard-preview.png";
+import retentionAlert from "@/assets/retention-alert-modal.png";
+import dashboardVideo from "@/assets/dashboard-video-preview.png";
 
 const Index = () => {
   const { user } = useAuth();
@@ -91,143 +94,154 @@ const Index = () => {
           <div className="grid lg:grid-cols-2 gap-12 items-center">
             <div>
               <h1 className="text-5xl lg:text-6xl font-bold text-foreground mb-6 leading-tight">
-                Reduce SaaS Customer{" "}
-                <span className="text-primary">Churn Effortlessly</span>
+                Stop Guessing. Start Predicting.{" "}
+                <span className="text-primary">Grow with Churnaizer.</span>
               </h1>
               <p className="text-xl text-muted-foreground mb-8 leading-relaxed">
-                Leverage AI-driven insights to retain customers and boost recurring revenue.
+                Churnaizer connects in under 2 minutes, shows user risk in real time, and guides you on how to retain high-value customers.
               </p>
               
               {!user && (
-                <form onSubmit={handleWaitlistSubmit} className="flex flex-col sm:flex-row gap-3 mb-6 max-w-md">
-                  <Input
-                    type="text"
-                    placeholder="Your name"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    required
-                    className="flex-1"
-                  />
-                  <Input
-                    type="email"
-                    placeholder="Your email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    required
-                    className="flex-1"
-                  />
+                <div className="space-y-4 mb-8">
                   <Button 
-                    type="submit" 
-                    disabled={isLoading}
-                    className="bg-primary hover:bg-primary/90"
+                    className="bg-primary hover:bg-primary/90 text-lg px-8 py-3"
+                    size="lg"
+                    onClick={() => document.getElementById('waitlist-form')?.scrollIntoView({ behavior: 'smooth' })}
                   >
-                    {isLoading ? "Joining..." : "Join Waitlist"}
+                    Get Your SDK Code
                   </Button>
-                </form>
+                  <p className="text-sm text-muted-foreground">
+                    No code. No complexity. Just paste 1 line of code.
+                  </p>
+                </div>
               )}
               
-              <Link 
-                to="#how-it-works" 
-                className="inline-flex items-center text-primary hover:text-primary/80 font-medium"
-              >
-                See How It Works <ArrowRight className="ml-2 h-4 w-4" />
-              </Link>
+              <div className="flex items-center gap-6 text-sm text-muted-foreground">
+                <div className="flex items-center gap-2">
+                  <Shield className="h-4 w-4 text-primary" />
+                  <span>GDPR Compliant</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Zap className="h-4 w-4 text-primary" />
+                  <span>2-min Setup</span>
+                </div>
+              </div>
             </div>
             
             <div className="relative">
-              <div className="bg-gradient-to-br from-primary/10 to-primary/5 rounded-2xl p-8">
-                <img 
-                  src="/placeholder.svg" 
-                  alt="Churnaizer dashboard for AI-driven SaaS revenue optimization"
-                  className="w-full h-80 object-cover rounded-lg bg-white"
-                />
+              <img 
+                src={dashboardPreview} 
+                alt="Churnaizer dashboard showing retention rates and churn risk analysis"
+                className="w-full rounded-2xl shadow-2xl"
+              />
+            </div>
+          </div>
+        </section>
+
+        {/* Problem Section */}
+        <section className="bg-muted/30 py-20">
+          <div className="container mx-auto px-6 max-w-4xl text-center">
+            <div className="mb-16">
+              <h2 className="text-4xl font-bold text-foreground mb-6">
+                You lose revenue every month... and you don't even know why.
+              </h2>
+              <p className="text-xl text-muted-foreground mb-8">
+                Most SaaS tools only show you metrics after users churn. Churnaizer warns you before they quit.
+              </p>
+              <div className="grid md:grid-cols-2 gap-8 max-w-2xl mx-auto">
+                <div className="p-6 bg-background rounded-lg">
+                  <h3 className="font-semibold text-destructive mb-3">🔴 Without Churnaizer</h3>
+                  <ul className="text-sm text-muted-foreground space-y-2">
+                    <li>Losing users silently</li>
+                    <li>Manual guesswork</li>
+                    <li>Revenue loss</li>
+                  </ul>
+                </div>
+                <div className="p-6 bg-background rounded-lg">
+                  <h3 className="font-semibold text-primary mb-3">✅ With Churnaizer</h3>
+                  <ul className="text-sm text-muted-foreground space-y-2">
+                    <li>Get churn alerts</li>
+                    <li>AI-based decisions</li>
+                    <li>Predictable growth</li>
+                  </ul>
+                </div>
               </div>
             </div>
           </div>
         </section>
 
         {/* Features Section */}
-        <section id="features" className="bg-muted/30 py-20">
+        <section id="features" className="py-20">
           <div className="container mx-auto px-6 max-w-6xl">
             <div className="text-center mb-16">
-              <h2 className="text-4xl font-bold text-foreground mb-4">
-                Why SaaS Founders Trust <span className="text-primary">Churnaizer</span>
+              <h2 className="text-4xl font-bold text-foreground mb-6">
+                Features → Benefits in Simple Terms
               </h2>
               <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
-                Optimize your revenue operations and reduce churn with our comprehensive suite 
-                of tools designed specifically for SaaS businesses.
+                Use non-technical language for maximum clarity and impact
               </p>
             </div>
             
             <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
-              <Card className="text-center border-0 bg-background shadow-sm">
-                <CardHeader>
-                  <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
-                    <TrendingUp className="h-8 w-8 text-primary" />
-                  </div>
-                  <CardTitle className="text-lg">Track MRR & Revenue Growth</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <CardDescription className="text-muted-foreground">
-                    Monitor your monthly recurring revenue and growth metrics in real-time with intuitive dashboards.
-                  </CardDescription>
-                </CardContent>
+              <Card className="text-center border-0 bg-background shadow-sm p-6">
+                <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
+                  <Code className="h-8 w-8 text-primary" />
+                </div>
+                <h3 className="text-lg font-semibold mb-3">Easy Setup</h3>
+                <p className="text-muted-foreground text-sm">
+                  Paste one JavaScript snippet, and you're done in under 2 minutes.
+                </p>
               </Card>
 
-              <Card className="text-center border-0 bg-background shadow-sm">
-                <CardHeader>
-                  <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
-                    <Brain className="h-8 w-8 text-primary" />
-                  </div>
-                  <CardTitle className="text-lg">AI-Driven Churn Prediction</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <CardDescription className="text-muted-foreground">
-                    Use advanced AI to identify at-risk customers before they cancel, with actionable retention strategies.
-                  </CardDescription>
-                </CardContent>
+              <Card className="text-center border-0 bg-background shadow-sm p-6">
+                <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
+                  <BarChart3 className="h-8 w-8 text-primary" />
+                </div>
+                <h3 className="text-lg font-semibold mb-3">Real-Time Churn Scores</h3>
+                <p className="text-muted-foreground text-sm">
+                  Instantly know which users are at risk.
+                </p>
               </Card>
 
-              <Card className="text-center border-0 bg-background shadow-sm">
-                <CardHeader>
-                  <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
-                    <DollarSign className="h-8 w-8 text-primary" />
-                  </div>
-                  <CardTitle className="text-lg">Automate Payment Recovery</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <CardDescription className="text-muted-foreground">
-                    Recapture lost revenue with smart dunning processes and payment failure prevention.
-                  </CardDescription>
-                </CardContent>
+              <Card className="text-center border-0 bg-background shadow-sm p-6">
+                <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
+                  <Mail className="h-8 w-8 text-primary" />
+                </div>
+                <h3 className="text-lg font-semibold mb-3">Auto Email Recommendations</h3>
+                <p className="text-muted-foreground text-sm">
+                  Psychology-driven messages written for you.
+                </p>
               </Card>
 
-              <Card className="text-center border-0 bg-background shadow-sm">
-                <CardHeader>
-                  <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
-                    <Database className="h-8 w-8 text-primary" />
-                  </div>
-                  <CardTitle className="text-lg">Seamless CRM Integration</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <CardDescription className="text-muted-foreground">
-                    Connect with HubSpot, Salesforce, and more for unified customer data and actions.
-                  </CardDescription>
-                </CardContent>
+              <Card className="text-center border-0 bg-background shadow-sm p-6">
+                <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
+                  <TrendingUp className="h-8 w-8 text-primary" />
+                </div>
+                <h3 className="text-lg font-semibold mb-3">One Dashboard</h3>
+                <p className="text-muted-foreground text-sm">
+                  See all user trends, risk levels, and action suggestions in one place.
+                </p>
               </Card>
             </div>
 
             <div className="text-center mt-16">
-              <p className="text-lg font-medium text-foreground mb-6">Integrates Seamlessly With</p>
+              <div className="mb-6">
+                <img 
+                  src={retentionAlert} 
+                  alt="Retention alert showing churn prediction and email automation"
+                  className="w-full max-w-md mx-auto rounded-2xl shadow-xl"
+                />
+              </div>
+              <p className="text-lg font-medium text-foreground mb-6">Trusted by SaaS teams worldwide</p>
               <div className="flex flex-wrap justify-center items-center gap-8 opacity-60">
                 <div className="h-12 w-32 bg-muted rounded flex items-center justify-center text-sm font-medium">
-                  HubSpot
+                  GDPR Compliant
                 </div>
                 <div className="h-12 w-32 bg-muted rounded flex items-center justify-center text-sm font-medium">
-                  Salesforce
+                  SSL Secure
                 </div>
                 <div className="h-12 w-32 bg-muted rounded flex items-center justify-center text-sm font-medium">
-                  Zoho CRM
+                  Supabase
                 </div>
               </div>
             </div>
@@ -235,162 +249,226 @@ const Index = () => {
         </section>
 
         {/* How It Works Section */}
-        <section id="how-it-works" className="py-20">
+        <section id="how-it-works" className="bg-muted/30 py-20">
           <div className="container mx-auto px-6 max-w-6xl">
             <div className="text-center mb-16">
               <h2 className="text-4xl font-bold text-foreground mb-4">
-                How Churnaizer Works
+                How It Works (3 Steps)
               </h2>
               <p className="text-xl text-muted-foreground">
-                Our simple four-step process helps you optimize revenue and reduce churn
+                Connect your app → Track & predict churn → Act instantly
               </p>
             </div>
             
-            <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
+            <div className="grid md:grid-cols-3 gap-12">
               <div className="text-center">
-                <div className="relative mb-8">
-                  <div className="h-20 w-20 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-2xl font-bold mx-auto mb-4">
-                    01
-                  </div>
-                  <div className="h-32 w-full bg-muted/30 rounded-lg mb-4"></div>
+                <div className="h-20 w-20 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-2xl font-bold mx-auto mb-6">
+                  01
                 </div>
-                <h3 className="text-xl font-semibold mb-2">Sign Up</h3>
+                <h3 className="text-xl font-semibold mb-4">Connect your app</h3>
                 <p className="text-muted-foreground">
-                  Create an account in just 2 minutes. No credit card required.
+                  2-min setup — paste one JavaScript snippet and you're done.
                 </p>
               </div>
               
               <div className="text-center">
-                <div className="relative mb-8">
-                  <div className="h-20 w-20 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-2xl font-bold mx-auto mb-4">
-                    02
-                  </div>
-                  <div className="h-32 w-full bg-muted/30 rounded-lg mb-4"></div>
+                <div className="h-20 w-20 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-2xl font-bold mx-auto mb-6">
+                  02
                 </div>
-                <h3 className="text-xl font-semibold mb-2">Integrate Payments & CRM</h3>
+                <h3 className="text-xl font-semibold mb-4">Track & Predict churn with AI</h3>
                 <p className="text-muted-foreground">
-                  Connect Stripe/Razorpay & sync your CRM for better customer insights.
+                  Get real-time alerts when users are at risk of churning.
                 </p>
               </div>
               
               <div className="text-center">
-                <div className="relative mb-8">
-                  <div className="h-20 w-20 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-2xl font-bold mx-auto mb-4">
-                    03
-                  </div>
-                  <div className="h-32 w-full bg-muted/30 rounded-lg mb-4"></div>
+                <div className="h-20 w-20 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-2xl font-bold mx-6">
+                  03
                 </div>
-                <h3 className="text-xl font-semibold mb-2">Get AI-Driven Insights</h3>
+                <h3 className="text-xl font-semibold mb-4">Act instantly with retention playbooks</h3>
                 <p className="text-muted-foreground">
-                  Churnaizer predicts churn risk & provides action steps inside your CRM.
-                </p>
-              </div>
-              
-              <div className="text-center">
-                <div className="relative mb-8">
-                  <div className="h-20 w-20 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-2xl font-bold mx-auto mb-4">
-                    04
-                  </div>
-                  <div className="h-32 w-full bg-muted/30 rounded-lg mb-4"></div>
-                </div>
-                <h3 className="text-xl font-semibold mb-2">Increase Revenue & Retain Users</h3>
-                <p className="text-muted-foreground">
-                  Take automated actions to reduce churn & grow faster.
+                  Send AI-powered retention emails automatically.
                 </p>
               </div>
             </div>
 
             <div className="text-center mt-16">
+              <div className="mb-8">
+                <img 
+                  src={dashboardVideo} 
+                  alt="Watch demo of Churnaizer dashboard in action"
+                  className="w-full max-w-2xl mx-auto rounded-2xl shadow-2xl cursor-pointer"
+                />
+                <div className="flex items-center justify-center mt-4">
+                  <Play className="h-5 w-5 text-primary mr-2" />
+                  <span className="text-sm text-muted-foreground">Watch Demo (90s)</span>
+                </div>
+              </div>
               <Button className="bg-primary hover:bg-primary/90" size="lg">
-                Join the Waitlist
+                Try it in sandbox →
               </Button>
             </div>
           </div>
         </section>
 
-        {/* Testimonials Section */}
+        {/* What You'll Save Section */}
+        <section className="py-20">
+          <div className="container mx-auto px-6 max-w-4xl text-center">
+            <h2 className="text-4xl font-bold text-foreground mb-8">
+              What You'll Save
+            </h2>
+            <p className="text-xl text-primary font-semibold mb-12">
+              "Founders using Churnaizer save up to $2,700/month on lost revenue."
+            </p>
+            
+            <div className="grid md:grid-cols-2 gap-8 max-w-3xl mx-auto">
+              <div className="p-8 bg-destructive/5 border border-destructive/20 rounded-lg">
+                <h3 className="font-semibold text-destructive mb-6 text-lg">Without Churnaizer</h3>
+                <ul className="space-y-3 text-left">
+                  <li className="flex items-start gap-3">
+                    <span className="text-destructive">🔴</span>
+                    <span className="text-muted-foreground">Losing users silently</span>
+                  </li>
+                  <li className="flex items-start gap-3">
+                    <span className="text-destructive">😵</span>
+                    <span className="text-muted-foreground">Manual guesswork</span>
+                  </li>
+                  <li className="flex items-start gap-3">
+                    <span className="text-destructive">💸</span>
+                    <span className="text-muted-foreground">Revenue loss</span>
+                  </li>
+                </ul>
+              </div>
+              
+              <div className="p-8 bg-primary/5 border border-primary/20 rounded-lg">
+                <h3 className="font-semibold text-primary mb-6 text-lg">With Churnaizer</h3>
+                <ul className="space-y-3 text-left">
+                  <li className="flex items-start gap-3">
+                    <span className="text-primary">✅</span>
+                    <span className="text-muted-foreground">Get churn alerts</span>
+                  </li>
+                  <li className="flex items-start gap-3">
+                    <span className="text-primary">🤖</span>
+                    <span className="text-muted-foreground">AI-based decisions</span>
+                  </li>
+                  <li className="flex items-start gap-3">
+                    <span className="text-primary">💰</span>
+                    <span className="text-muted-foreground">Predictable growth</span>
+                  </li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Social Proof / Testimonials Section */}
         <section id="testimonials" className="bg-muted/30 py-20">
           <div className="container mx-auto px-6 max-w-6xl">
             <div className="text-center mb-16">
               <h2 className="text-4xl font-bold text-foreground mb-4">
-                Trusted by SaaS Founders
+                Social Proof That Counts
               </h2>
               <p className="text-xl text-muted-foreground">
-                Join 1,000+ SaaS founders who use Churnaizer to reduce churn and scale revenue
+                Join 100+ early-stage SaaS founders using Churnaizer
               </p>
             </div>
             
-            <div className="grid md:grid-cols-3 gap-8">
-              <Card className="bg-background border-0 shadow-sm">
-                <CardContent className="p-8">
-                  <div className="flex items-center gap-4 mb-6">
-                    <div className="h-16 w-16 rounded-full bg-muted flex items-center justify-center text-2xl font-bold">
-                      JS
-                    </div>
-                    <div>
-                      <div className="font-semibold text-lg">James Smith</div>
-                      <div className="text-muted-foreground">Founder, GrowthMetrics</div>
-                    </div>
+            <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+              <Card className="bg-background border-0 shadow-sm p-8">
+                <p className="text-muted-foreground italic leading-relaxed mb-6">
+                  "We lost 5 customers last month—Churnaizer flagged the high-risk users and the founder sent AI-generated emails. No churn since. Priceless."
+                </p>
+                <div className="flex items-center gap-4">
+                  <div className="h-12 w-12 rounded-full bg-muted flex items-center justify-center text-lg font-bold">
+                    SF
                   </div>
-                  <p className="text-muted-foreground italic leading-relaxed">
-                    "Churnaizer + HubSpot integration helped us reduce churn by 20% in just one month! 
-                    The AI predictions are amazingly accurate."
-                  </p>
-                </CardContent>
+                  <div>
+                    <div className="font-semibold">SaaS Founder</div>
+                    <div className="text-muted-foreground text-sm">Early Beta User</div>
+                  </div>
+                </div>
               </Card>
               
-              <Card className="bg-background border-0 shadow-sm">
-                <CardContent className="p-8">
-                  <div className="flex items-center gap-4 mb-6">
-                    <div className="h-16 w-16 rounded-full bg-muted flex items-center justify-center text-2xl font-bold">
-                      SP
-                    </div>
-                    <div>
-                      <div className="font-semibold text-lg">Sarah Peterson</div>
-                      <div className="text-muted-foreground">CEO, LeadSquared</div>
-                    </div>
+              <Card className="bg-background border-0 shadow-sm p-8">
+                <p className="text-muted-foreground italic leading-relaxed mb-6">
+                  "We recovered 13 users in our first month using Churnaizer. The email automation alone pays for itself."
+                </p>
+                <div className="flex items-center gap-4">
+                  <div className="h-12 w-12 rounded-full bg-muted flex items-center justify-center text-lg font-bold">
+                    CF
                   </div>
-                  <p className="text-muted-foreground italic leading-relaxed">
-                    "The Salesforce integration is seamless. Our customer success team now has all 
-                    the churn prediction data exactly where they need it."
-                  </p>
-                </CardContent>
-              </Card>
-              
-              <Card className="bg-background border-0 shadow-sm">
-                <CardContent className="p-8">
-                  <div className="flex items-center gap-4 mb-6">
-                    <div className="h-16 w-16 rounded-full bg-muted flex items-center justify-center text-2xl font-bold">
-                      MK
-                    </div>
-                    <div>
-                      <div className="font-semibold text-lg">Michael Kim</div>
-                      <div className="text-muted-foreground">Founder, RevenuePilot</div>
-                    </div>
+                  <div>
+                    <div className="font-semibold">Co-founder</div>
+                    <div className="text-muted-foreground text-sm">B2B SaaS</div>
                   </div>
-                  <p className="text-muted-foreground italic leading-relaxed">
-                    "Automated payment recovery alone increased our MRR by 8%. The ROI was immediate 
-                    and the setup took minutes."
-                  </p>
-                </CardContent>
+                </div>
               </Card>
             </div>
 
             <div className="text-center mt-16">
-              <p className="text-muted-foreground mb-8">
-                Trusted by 1,000+ SaaS founders to reduce churn & scale revenue
-              </p>
-              
-              <div className="max-w-md mx-auto">
-                <h3 className="text-lg font-semibold mb-4">Why SaaS Founders Trust Churnaizer</h3>
-                <p className="text-muted-foreground mb-6">
-                  Backed by Product Hunt and designed by founders who understand your revenue challenges
-                </p>
-                <div className="flex justify-center">
-                  <div className="h-12 w-48 bg-muted rounded flex items-center justify-center">
-                    <Award className="h-6 w-6 text-primary mr-2" />
-                    <span className="text-sm font-medium">Featured on Product Hunt</span>
+              <div className="max-w-lg mx-auto">
+                <p className="text-lg font-semibold mb-4">Psychological Triggers</p>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-center">
+                  <div className="p-4">
+                    <AlertTriangle className="h-8 w-8 text-primary mx-auto mb-2" />
+                    <p className="text-sm text-muted-foreground">On average, losing 5% of customers shrinks MRR by up to 95%</p>
                   </div>
+                  <div className="p-4">
+                    <Award className="h-8 w-8 text-primary mx-auto mb-2" />
+                    <p className="text-sm text-muted-foreground">100+ SaaS founders using Churnaizer</p>
+                  </div>
+                  <div className="p-4">
+                    <Zap className="h-8 w-8 text-primary mx-auto mb-2" />
+                    <p className="text-sm text-muted-foreground">Only a few founder slots available in this launch round</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* FAQ Section */}
+        <section className="py-20">
+          <div className="container mx-auto px-6 max-w-4xl">
+            <div className="text-center mb-16">
+              <h2 className="text-4xl font-bold text-foreground mb-6">
+                FAQ Section to Handle Objections
+              </h2>
+              <p className="text-xl text-muted-foreground">
+                Clear answers to common founder questions
+              </p>
+            </div>
+            
+            <div className="grid md:grid-cols-2 gap-8">
+              <div className="space-y-6">
+                <div className="p-6 bg-background border rounded-lg">
+                  <h3 className="font-semibold mb-3">How does Churnaizer collect user data?</h3>
+                  <p className="text-muted-foreground text-sm">
+                    Just one snippet connects securely to your site—no databases to sync.
+                  </p>
+                </div>
+                
+                <div className="p-6 bg-background border rounded-lg">
+                  <h3 className="font-semibold mb-3">Do I need a technical team?</h3>
+                  <p className="text-muted-foreground text-sm">
+                    Absolutely not. Setup takes under 2 minutes.
+                  </p>
+                </div>
+              </div>
+              
+              <div className="space-y-6">
+                <div className="p-6 bg-background border rounded-lg">
+                  <h3 className="font-semibold mb-3">Can I try it before paying?</h3>
+                  <p className="text-muted-foreground text-sm">
+                    Yes—access is carefully curated. You can join as a beta-user before launch.
+                  </p>
+                </div>
+                
+                <div className="p-6 bg-background border rounded-lg">
+                  <h3 className="font-semibold mb-3">What's the pricing?</h3>
+                  <p className="text-muted-foreground text-sm">
+                    Beta Access Only — Invite Required. Starts at $49/month. No long-term commitment.
+                  </p>
                 </div>
               </div>
             </div>
@@ -398,29 +476,37 @@ const Index = () => {
         </section>
 
         {/* Final CTA Section */}
-        <section className="py-20">
+        <section className="py-20" id="waitlist-form">
           <div className="container mx-auto px-6 max-w-4xl text-center">
             <h2 className="text-4xl lg:text-5xl font-bold text-foreground mb-6">
-              Don't Miss Out – Get AI-Driven Revenue Optimization Inside Your CRM!
+              Get Your Access Code
             </h2>
+            <p className="text-xl text-muted-foreground mb-8">
+              Stay on our waitlist → you'll get early access code, exclusive pricing, and founder support.
+            </p>
             
             <div className="bg-muted/30 rounded-2xl p-8 max-w-md mx-auto">
-              <h3 className="text-2xl font-semibold mb-6">Join the Waitlist</h3>
+              <h3 className="text-2xl font-semibold mb-6">Request Access</h3>
               {!user && (
                 <form onSubmit={handleWaitlistSubmit} className="space-y-4">
                   <Input
                     type="text"
-                    placeholder="Your name"
+                    placeholder="Name"
                     value={name}
                     onChange={(e) => setName(e.target.value)}
                     required
                   />
                   <Input
                     type="email"
-                    placeholder="Your email"
+                    placeholder="Email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     required
+                  />
+                  <Input
+                    type="text"
+                    placeholder="Company"
+                    className="mb-4"
                   />
                   <Button 
                     type="submit" 
@@ -428,12 +514,12 @@ const Index = () => {
                     className="w-full bg-primary hover:bg-primary/90"
                     size="lg"
                   >
-                    {isLoading ? "Joining..." : "Join Waitlist"}
+                    {isLoading ? "Requesting..." : "Get Your SDK Code"}
                   </Button>
                 </form>
               )}
               <p className="text-sm text-muted-foreground mt-4">
-                By joining, you agree to receive updates about Churnaizer. We respect your privacy.
+                No long-term commitment. Cancel anytime.
               </p>
             </div>
           </div>

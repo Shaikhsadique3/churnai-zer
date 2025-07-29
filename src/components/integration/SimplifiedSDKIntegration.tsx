@@ -366,14 +366,6 @@ function showCustomRetentionModal(riskData) {
             <Code className="h-4 w-4 mr-2" />
             Get SDK Code
           </Button>
-          <Button 
-            variant="outline"
-            onClick={testSDK} 
-            disabled={testLoading || !apiKey}
-            className="w-full sm:w-auto"
-          >
-            {testLoading ? "Testing..." : "Test Integration"}
-          </Button>
         </div>
         
         {/* Debug info - collapsed on mobile */}

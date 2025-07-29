@@ -121,8 +121,9 @@
                 billing_issue_count: 2
             };
 
-            // Use test API key (starts with cg_) to trigger mock response
-            const testApiKey = "cg_test_key_12345";
+            // Get API key from URL parameter or use default test key
+            const urlParams = new URLSearchParams(window.location.search);
+            const testApiKey = urlParams.get('apiKey') || "cg_261f34e9bdd5de338ee994e8f99d7809";
             
             console.log('Testing with data:', testUserData);
             console.log('Testing with API key:', testApiKey);

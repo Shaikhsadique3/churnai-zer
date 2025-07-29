@@ -24,9 +24,9 @@ export const TestIntegration = () => {
     setIsLoading(true);
     setTestResult(null);
 
-    // Create iframe for test
+    // Create iframe for test with specific API key
     const iframe = document.createElement('iframe');
-    iframe.src = window.location.origin + '/test.html';
+    iframe.src = window.location.origin + '/test.html?apiKey=cg_261f34e9bdd5de338ee994e8f99d7809';
     iframe.style.display = 'none';
     iframe.style.width = '0';
     iframe.style.height = '0';

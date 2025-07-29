@@ -76,8 +76,8 @@ Deno.serve(async (req) => {
 
     console.log('Received tracking data:', trackingData)
 
-    // Handle test/mock API keys (starting with cg_test_)
-    if (apiKey.startsWith('cg_test_')) {
+    // Handle test/mock API keys (starting with cg_)
+    if (apiKey.startsWith('cg_')) {
       console.log('Test API key detected, returning mock response')
       
       const mockResponse = {

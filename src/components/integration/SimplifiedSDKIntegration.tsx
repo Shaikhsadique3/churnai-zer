@@ -205,8 +205,12 @@ function trackUserActivity(userData) {
   window.Churnaizer.track({
     user_id: userData.id,
     email: userData.email,
+    customer_name: userData.name || userData.full_name,
+    customer_email: userData.email,
     subscription_plan: userData.plan || 'free',
-    usage: userData.loginCount || 1,
+    monthly_revenue: userData.monthlyRevenue || 0,
+    loginCount: userData.loginCount || 1,
+    dashboardViews: userData.dashboardViews || 0,
     feature_usage: {
       dashboard: userData.dashboardViews || 0,
       reports: userData.reportsGenerated || 0,
@@ -251,8 +255,12 @@ function useChurnaizerTracking(user) {
       window.Churnaizer.track({
         user_id: user.id,
         email: user.email,
+        customer_name: user.name || user.full_name,
+        customer_email: user.email,
         subscription_plan: user.plan || 'free',
-        usage: user.loginCount || 1,
+        monthly_revenue: user.monthlyRevenue || 0,
+        loginCount: user.loginCount || 1,
+        dashboardViews: user.dashboardViews || 0,
         feature_usage: {
           dashboard: user.dashboardViews || 0,
           reports: user.reportsGenerated || 0,

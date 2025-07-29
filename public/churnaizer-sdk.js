@@ -67,7 +67,7 @@
       }
 
       // Validate required user fields
-      const requiredFields = ['user_id', 'customer_email'];
+      const requiredFields = ['user_id', 'email'];
       const missingFields = requiredFields.filter(field => !userData[field]);
       
       if (missingFields.length > 0) {
@@ -82,7 +82,7 @@
       // Prepare tracking data with all expected fields
       const trackingData = {
         user_id: userData.user_id,
-        email: userData.customer_email, // Map customer_email to email for API
+        email: userData.email || userData.customer_email, // Support both email fields
         customer_name: userData.customer_name || userData.customer_email?.split('@')[0] || 'Unknown',
         customer_email: userData.customer_email,
         days_since_signup: userData.days_since_signup || 0,

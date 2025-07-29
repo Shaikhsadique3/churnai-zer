@@ -10,8 +10,6 @@ import { APP_CONFIG } from "./lib/config";
 import DynamicHead from "./components/common/DynamicHead";
 import WaitlistLanding from "./components/waitlist/WaitlistLanding";
 import Index from "./pages/Index";
-import Features from "./pages/Features";
-import Blog from "./pages/Blog";
 import Integration from "./pages/Integration";
 import Auth from "./pages/Auth";
 import ResetPassword from "./pages/ResetPassword";
@@ -24,6 +22,9 @@ import Contact from "./pages/Contact";
 import NotFound from "./pages/NotFound";
 import { DashboardLayout } from "./components/layout/DashboardLayout";
 import { AdminLayout } from "./components/layout/AdminLayout";
+// Blog pages
+import BlogIndex from "./pages/blog/BlogIndex";
+import BlogPost from "./pages/blog/BlogPost";
 // Dashboard pages
 import { UploadedUsersPage } from "./pages/dashboard/UploadedUsersPage";
 import { EmailAutomationPage } from "./pages/EmailAutomationPage";
@@ -60,8 +61,8 @@ const App = () => {
               <Route path="/pricing" element={<Pricing />} />
               <Route path="/contact" element={<Contact />} />
               {/* Blog routes */}
-              <Route path="/features" element={<Features />} />
-              <Route path="/blog" element={<Blog />} />
+              <Route path="/blog" element={<BlogIndex />} />
+              <Route path="/blog/:slug" element={<BlogPost />} />
               {/* Admin routes */}
               <Route path="/admin/login" element={<AdminLogin />} />
               <Route 

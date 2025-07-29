@@ -1,51 +1,6 @@
-@font-face {
-  font-family: 'ClashDisplay';
-  src: url('/fonts/ClashDisplay-Regular.woff2') format('woff2'),
-       url('/fonts/ClashDisplay-Regular.woff') format('woff');
-  font-weight: 400;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: 'ClashDisplay';
-  src: url('/fonts/ClashDisplay-Medium.woff2') format('woff2'),
-       url('/fonts/ClashDisplay-Medium.woff') format('woff');
-  font-weight: 500;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: 'ClashDisplay';
-  src: url('/fonts/ClashDisplay-Semibold.woff2') format('woff2'),
-       url('/fonts/ClashDisplay-Semibold.woff') format('woff');
-  font-weight: 600;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: 'ClashDisplay';
-  src: url('/fonts/ClashDisplay-Bold.woff2') format('woff2'),
-       url('/fonts/ClashDisplay-Bold.woff') format('woff');
-  font-weight: 700;
-  font-display: swap;
-}
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-
-/* Custom Gradients and Shadows */
-.gradient-background {
-  background: linear-gradient(to bottom right, var(--background), var(--muted));
-}
-
-.soft-shadow {
-  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-}
-
-.soft-shadow-lg {
-  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
-}
 
 /* Definition of the design system. All colors, gradients, fonts, etc should be defined here. */
 
@@ -139,7 +94,7 @@
 
   body {
     @apply bg-background text-foreground;
-    font-family: 'ClashDisplay', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   }
 }
 

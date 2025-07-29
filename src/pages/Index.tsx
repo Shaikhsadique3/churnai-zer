@@ -8,7 +8,9 @@ import { useAuth } from "@/contexts/AuthContext";
 import { DynamicHead } from "@/components/common/DynamicHead";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-
+import dashboardPreview from "@/assets/dashboard-preview.png";
+import retentionAlert from "@/assets/retention-alert-modal.png";
+import dashboardVideo from "@/assets/dashboard-video-preview.png";
 
 const Index = () => {
   const { user } = useAuth();
@@ -49,11 +51,10 @@ const Index = () => {
   return (
     <>
       <DynamicHead 
-        title="Churnaizer - Predict SaaS Churn"
+        title="Churnaizer – Predict and Prevent SaaS Churn with AI"
         description="Track user behavior, predict churn, and send AI-powered retention emails – all in one SDK. Trusted by 100+ SaaS founders."
-        ogImage="/og-image.png"
       />
-      <div className="min-h-screen bg-background gradient-background">
+      <div className="min-h-screen bg-background">
         {/* Navigation */}
         <nav className="border-b bg-background">
           <div className="container mx-auto px-6 py-4 flex items-center justify-between max-w-6xl">
@@ -61,24 +62,21 @@ const Index = () => {
               <h1 className="text-2xl font-bold text-primary">Churnaizer</h1>
             </div>
             <div className="hidden md:flex items-center space-x-8">
-              <Link to="/features" className="text-foreground/70 hover:text-foreground font-medium">
+              <Link to="#features" className="text-foreground/70 hover:text-foreground font-medium">
                 Features
               </Link>
               <Link to="#how-it-works" className="text-foreground/70 hover:text-foreground font-medium">
                 How It Works
               </Link>
-              <Link to="/blog" className="text-foreground/70 hover:text-foreground font-medium">
-                Blog
+              <Link to="#testimonials" className="text-foreground/70 hover:text-foreground font-medium">
+                Testimonials
               </Link>
               {user ? (
                 <Link to="/dashboard">
                   <Button className="bg-primary hover:bg-primary/90">Dashboard</Button>
                 </Link>
               ) : (
-                <>
-                  <Button className="bg-primary hover:bg-primary/90">Start Free Demo</Button>
-                  <Button variant="outline" className="ml-2">Get SDK Code</Button>
-                </>
+                <Button className="bg-primary hover:bg-primary/90">Join Waitlist</Button>
               )}
             </div>
           </div>
@@ -86,36 +84,31 @@ const Index = () => {
 
         {/* Announcement Banner */}
         <div className="bg-muted text-center py-3">
-          
+          <p className="text-sm text-muted-foreground">
+            Launching Soon — Join the Waitlist
+          </p>
         </div>
 
         {/* Hero Section */}
-        <section className="container mx-auto px-6 py-20 max-w-6xl soft-shadow-lg rounded-lg my-12">
+        <section className="container mx-auto px-6 py-20 max-w-6xl">
           <div className="grid lg:grid-cols-2 gap-12 items-center">
             <div>
               <h1 className="text-5xl lg:text-6xl font-bold text-foreground mb-6 leading-tight">
-                  Track. Predict. <span className="text-primary">Grow your SaaS.</span>
-                </h1>
-                <p className="text-xl text-muted-foreground mb-8 leading-relaxed">
-                  AI predicts churn. You take action.
-                </p>
+                Stop Guessing. Start Predicting.{" "}
+                <span className="text-primary">Grow with Churnaizer.</span>
+              </h1>
+              <p className="text-xl text-muted-foreground mb-8 leading-relaxed">
+                Churnaizer connects in under 2 minutes, shows user risk in real time, and guides you on how to retain high-value customers.
+              </p>
               
               {!user && (
                 <div className="space-y-4 mb-8">
                   <Button 
                     className="bg-primary hover:bg-primary/90 text-lg px-8 py-3"
                     size="lg"
-                    onClick={() => document.getElementById('sdk-instructions')?.scrollIntoView({ behavior: 'smooth' })}
+                    onClick={() => document.getElementById('waitlist-form')?.scrollIntoView({ behavior: 'smooth' })}
                   >
-                    Start Free Demo
-                  </Button>
-                  <Button 
-                    variant="outline"
-                    className="ml-4 text-lg px-8 py-3"
-                    size="lg"
-                    onClick={() => alert('SDK Code copied to clipboard!')} // Placeholder for copying SDK code
-                  >
-                    Get SDK Code
+                    Get Your SDK Code
                   </Button>
                   <p className="text-sm text-muted-foreground">
                     No code. No complexity. Just paste 1 line of code.
@@ -137,7 +130,7 @@ const Index = () => {
             
             <div className="relative">
               <img 
-                src="/churnaizer dashbroad .png" 
+                src={dashboardPreview} 
                 alt="Churnaizer dashboard showing retention rates and churn risk analysis"
                 className="w-full rounded-2xl shadow-2xl"
               />
@@ -146,15 +139,15 @@ const Index = () => {
         </section>
 
         {/* Problem Section */}
-        <section className="bg-muted/30 py-20 soft-shadow-lg rounded-lg my-12">
+        <section className="bg-muted/30 py-20">
           <div className="container mx-auto px-6 max-w-4xl text-center">
             <div className="mb-16">
               <h2 className="text-4xl font-bold text-foreground mb-6">
-                  Connect → Track → Predict → Retain
-                </h2>
-                <p className="text-xl text-muted-foreground mb-8">
-                  Increase revenue, Reduce churn, Improve product-market fit.
-                </p>
+                You lose revenue every month... and you don't even know why.
+              </h2>
+              <p className="text-xl text-muted-foreground mb-8">
+                Most SaaS tools only show you metrics after users churn. Churnaizer warns you before they quit.
+              </p>
               <div className="grid md:grid-cols-2 gap-8 max-w-2xl mx-auto">
                 <div className="p-6 bg-background rounded-lg">
                   <h3 className="font-semibold text-destructive mb-3">🔴 Without Churnaizer</h3>
@@ -178,15 +171,15 @@ const Index = () => {
         </section>
 
         {/* Features Section */}
-        <section id="features" className="py-20 soft-shadow-lg rounded-lg my-12">
+        <section id="features" className="py-20">
           <div className="container mx-auto px-6 max-w-6xl">
             <div className="text-center mb-16">
               <h2 className="text-4xl font-bold text-foreground mb-6">
-                  Features & Benefits
-                </h2>
-                <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
-                  Here's how Churnaizer helps you grow:
-                </p>
+                Features → Benefits in Simple Terms
+              </h2>
+              <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
+                Use non-technical language for maximum clarity and impact
+              </p>
             </div>
             
             <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
@@ -234,10 +227,10 @@ const Index = () => {
             <div className="text-center mt-16">
               <div className="mb-6">
                 <img 
-                src="/Retention alert.png" 
-                alt="Retention alert modal showing a user at risk of churning"
-                className="w-full rounded-2xl shadow-2xl"
-              />
+                  src={retentionAlert} 
+                  alt="Retention alert showing churn prediction and email automation"
+                  className="w-full max-w-md mx-auto rounded-2xl shadow-xl"
+                />
               </div>
               <p className="text-lg font-medium text-foreground mb-6">Trusted by SaaS teams worldwide</p>
               <div className="flex flex-wrap justify-center items-center gap-8 opacity-60">
@@ -302,10 +295,10 @@ const Index = () => {
             <div className="text-center mt-16">
               <div className="mb-8">
                 <img 
-                src="/Demo video preview.png" 
-                alt="Dashboard video preview"
-                className="w-full rounded-2xl shadow-2xl"
-              />
+                  src={dashboardVideo} 
+                  alt="Watch demo of Churnaizer dashboard in action"
+                  className="w-full max-w-2xl mx-auto rounded-2xl shadow-2xl cursor-pointer"
+                />
                 <div className="flex items-center justify-center mt-4">
                   <Play className="h-5 w-5 text-primary mr-2" />
                   <span className="text-sm text-muted-foreground">Watch Demo (90s)</span>

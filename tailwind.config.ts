@@ -20,7 +20,6 @@ export default {
 		extend: {
 			fontFamily: {
 				'inter': ['Inter', 'sans-serif'],
-        'clashDisplay': ['ClashDisplay', 'sans-serif'],
 			},
 			colors: {
 				border: 'hsl(var(--border))',

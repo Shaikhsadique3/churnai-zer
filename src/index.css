@@ -16,7 +16,7 @@
     --popover: 0 0% 100%;
     --popover-foreground: 217 23% 14%;
 
-    --primary: 231 81% 59%; /* #6D6BFE Churnaizer Primary Blue */
+    --primary: 210 68% 31%; /* #1C4E80 Churnaizer Primary Blue */
     --primary-foreground: 0 0% 100%;
 
     --secondary: 159 100% 33%; /* #00A86B Churnaizer Accent Green */
@@ -33,18 +33,18 @@
 
     --border: 210 17% 90%; /* Subtle Borders */
     --input: 0 0% 100%;
-    --ring: 231 81% 59%; /* Primary blue ring */
+    --ring: 210 68% 31%; /* Primary blue ring */
 
     --radius: 0.75rem; /* Slightly more rounded */
 
     --sidebar-background: 0 0% 100%; /* Pure white sidebar */
     --sidebar-foreground: 217 23% 14%;
-    --sidebar-primary: 231 81% 59%; /* #6D6BFE Brand color */
+    --sidebar-primary: 210 68% 31%; /* #1C4E80 Brand color */
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 231 81% 95%; /* Light brand color for active state */
-    --sidebar-accent-foreground: 231 81% 59%; /* Brand color text */
+    --sidebar-accent: 210 68% 95%; /* Light brand color for active state */
+    --sidebar-accent-foreground: 210 68% 31%; /* Brand color text */
     --sidebar-border: 210 17% 90%;
-    --sidebar-ring: 231 81% 59%;
+    --sidebar-ring: 210 68% 31%;
   }
 
   .dark {

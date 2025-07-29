@@ -74,7 +74,43 @@ Deno.serve(async (req) => {
     // Parse tracking data
     const trackingData: TrackingData = await req.json()
 
-    // Validate required fields
+    console.log('Received tracking data:', trackingData)
+
+    // Handle test/mock API keys (starting with cg_test_)
+    if (apiKey.startsWith('cg_test_')) {
+      console.log('Test API key detected, returning mock response')
+      
+      const mockResponse = {
+        success: true,
+        user_id: trackingData.user_id,
+        churn_probability: 0.89,
+        churn_score: 0.89,
+        risk_level: 'high',
+        understanding_score: 85,
+        reason: 'Low feature usage and recent billing issues',
+        message: 'User at high risk of churn',
+        shouldTriggerEmail: true,
+        recommended_tone: 'empathetic',
+        insights: {
+          churn_reason: 'Low feature usage and recent billing issues',
+          recommended_actions: 'Send personalized retention email',
+          risk_factors: ['Low login frequency', 'Billing issues', 'Limited feature adoption'],
+          protective_factors: []
+        },
+        metadata: {
+          processed_at: new Date().toISOString(),
+          sdk_version: '1.0.0',
+          api_version: 'v1',
+          test_mode: true
+        }
+      }
+
+      return new Response(JSON.stringify(mockResponse), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      })
+    }
+
+    // Validate required fields for real tracking
     if (!trackingData.user_id || !trackingData.email) {
       return new Response(JSON.stringify({ error: 'user_id and email are required' }), {
         status: 400,

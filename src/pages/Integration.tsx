@@ -1,9 +1,11 @@
 import { SimplifiedSDKIntegration } from "@/components/integration/SimplifiedSDKIntegration";
+import { TestIntegration } from "@/components/integration/TestIntegration";
 
 const Integration = () => {
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       <SimplifiedSDKIntegration />
+      <TestIntegration />
     </div>
   );
 };

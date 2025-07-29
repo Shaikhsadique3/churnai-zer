@@ -82,6 +82,7 @@
       // Prepare tracking data with all expected fields
       const trackingData = {
         user_id: userData.user_id,
+        email: userData.customer_email, // Map customer_email to email for API
         customer_name: userData.customer_name || userData.customer_email?.split('@')[0] || 'Unknown',
         customer_email: userData.customer_email,
         days_since_signup: userData.days_since_signup || 0,
@@ -230,7 +231,7 @@
               
               // Validate required fields for SDK response
               const requiredFields = ['churn_probability', 'reason', 'message', 'understanding_score', 'risk_level', 'shouldTriggerEmail', 'recommended_tone'];
-              const missingFields = requiredFields.filter(field => result[field] === undefined);
+              const missingFields = requiredFields.filter(field => result[field] === undefined && result[field] !== null);
               
               if (missingFields.length > 0) {
                 const error = `API response missing required fields: ${missingFields.join(', ')}`;

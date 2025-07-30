@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Loader2, CheckCircle2, XCircle, TestTube, AlertCircle } from 'lucide-react';
+import { showErrorToast, showSuccessToast, showSDKErrorToast, errorMessages } from '@/components/ui/error-toast';
 
 interface TestResult {
   success: boolean;
@@ -19,7 +19,6 @@ export const TestIntegration = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [testResult, setTestResult] = useState<TestResult | null>(null);
   const [apiKey, setApiKey] = useState<string>("");
-  const { toast } = useToast();
   const { user } = useAuth();
 
   useEffect(() => {
@@ -42,7 +41,7 @@ export const TestIntegration = () => {
       if (error) throw error;
       if (data) setApiKey(data.key);
     } catch (error) {
-      console.error('Error fetching API key:', error);
+      // Silently handle API key fetch errors - user will see appropriate message
     }
   };
 
@@ -53,17 +52,17 @@ export const TestIntegration = () => {
     try {
       // 1. Check if SDK is loaded
       if (!window.Churnaizer) {
-        throw new Error('SDK not installed. Please add the Churnaizer SDK script to your website.');
+        throw new Error(errorMessages.sdkNotFound);
       }
 
       // 2. Check if user is logged in
       if (!user) {
-        throw new Error('User not logged in. Please sign in to test the integration.');
+        throw new Error('Please sign in to test the integration.');
       }
 
       // 3. Check if API key is available
       if (!apiKey) {
-        throw new Error('API key not found. Please ensure you have an active API key.');
+        throw new Error(errorMessages.apiKeyMissing);
       }
 
       // 4. Prepare real user data
@@ -100,7 +99,7 @@ export const TestIntegration = () => {
         window.Churnaizer.track(userData, apiKey, (error: any, result: any) => {
           clearTimeout(timeout);
           if (error) {
-            reject(new Error(error.message || 'SDK tracking failed'));
+            reject(new Error(error.message || 'SDK tracking request failed'));
           } else {
             resolve(result);
           }
@@ -109,7 +108,7 @@ export const TestIntegration = () => {
 
       // 6. Validate response
       if (!result.churn_probability || !result.risk_level) {
-        throw new Error('Invalid SDK response structure');
+        throw new Error('Invalid response from SDK');
       }
 
       const successResult = {
@@ -119,10 +118,10 @@ export const TestIntegration = () => {
       
       setTestResult(successResult);
       
-      toast({
-        title: "✅ SDK Integration Successful",
-        description: `Risk Level: ${result.risk_level} | Churn Probability: ${Math.round(result.churn_probability * 100)}%`,
-      });
+      showSuccessToast(
+        "SDK Integration Successful",
+        `Risk Level: ${result.risk_level} | Churn Probability: ${Math.round(result.churn_probability * 100)}%`
+      );
 
     } catch (error) {
       const errorResult = {
@@ -132,11 +131,7 @@ export const TestIntegration = () => {
       
       setTestResult(errorResult);
       
-      toast({
-        title: "❌ SDK Integration Failed",
-        description: errorResult.error,
-        variant: "destructive",
-      });
+      showSDKErrorToast(errorResult.error);
     } finally {
       setIsLoading(false);
     }
@@ -157,10 +152,10 @@ export const TestIntegration = () => {
       </p>
 
       {!canTest && (
-        <div className="p-3 rounded-lg bg-amber-50 border border-amber-200">
+        <div className="p-3 rounded-lg bg-muted border border-border">
           <div className="flex items-start space-x-2">
-            <AlertCircle className="h-4 w-4 text-amber-600 mt-0.5" />
-            <div className="text-xs md:text-sm text-amber-800">
+            <AlertCircle className="h-4 w-4 text-muted-foreground mt-0.5" />
+            <div className="text-xs md:text-sm text-muted-foreground">
               {!user ? 'Please sign in to test the integration.' : 'API key not found. Please refresh the page.'}
             </div>
           </div>
@@ -190,31 +185,31 @@ export const TestIntegration = () => {
         {testResult && (
           <div className={`p-3 md:p-4 rounded-lg border ${
             testResult.success 
-              ? 'bg-green-50 border-green-200' 
-              : 'bg-red-50 border-red-200'
+              ? 'bg-secondary/5 border-secondary/20' 
+              : 'bg-destructive/5 border-destructive/20'
           }`}>
             <div className="flex items-start space-x-2">
               {testResult.success ? (
-                <CheckCircle2 className="h-4 w-4 md:h-5 md:w-5 text-green-600 mt-0.5" />
+                <CheckCircle2 className="h-4 w-4 md:h-5 md:w-5 text-secondary mt-0.5" />
               ) : (
-                <XCircle className="h-4 w-4 md:h-5 md:w-5 text-red-600 mt-0.5" />
+                <XCircle className="h-4 w-4 md:h-5 md:w-5 text-destructive mt-0.5" />
               )}
               <div className="flex-1">
                 <h4 className={`text-sm md:text-base font-medium ${
-                  testResult.success ? 'text-green-800' : 'text-red-800'
+                  testResult.success ? 'text-secondary' : 'text-destructive'
                 }`}>
-                  {testResult.success ? 'Live Integration Test Passed' : 'Live Integration Test Failed'}
+                  {testResult.success ? 'Integration Test Passed' : 'Integration Test Failed'}
                 </h4>
                 
                 {testResult.success ? (
-                  <div className="mt-2 text-xs md:text-sm text-green-700 space-y-1">
+                  <div className="mt-2 text-xs md:text-sm text-secondary space-y-1">
                     <p><strong>Risk Level:</strong> {testResult.risk_level}</p>
                     <p><strong>Churn Probability:</strong> {Math.round((testResult.churn_probability || 0) * 100)}%</p>
                     <p><strong>Understanding Score:</strong> {testResult.understanding_score}</p>
                     <p><strong>Reason:</strong> {testResult.reason}</p>
                   </div>
                 ) : (
-                  <p className="mt-1 text-xs md:text-sm text-red-700">
+                  <p className="mt-1 text-xs md:text-sm text-destructive">
                     {testResult.error}
                   </p>
                 )}

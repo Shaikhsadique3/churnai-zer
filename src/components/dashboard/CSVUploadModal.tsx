@@ -3,7 +3,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useToast } from "@/hooks/use-toast";
+import { showErrorToast, showSuccessToast } from "@/components/ui/error-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Upload, AlertCircle, CheckCircle, Clock } from "lucide-react";
 import Papa from "papaparse";
@@ -19,7 +19,7 @@ const CSVUploadModal = ({ open, onOpenChange, onUploadComplete }: CSVUploadModal
   const [file, setFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadResult, setUploadResult] = useState<any>(null);
-  const { toast } = useToast();
+  
 
   const requiredColumns = [
     'user_id', 'days_since_signup', 'monthly_revenue', 'subscription_plan',
@@ -154,16 +154,15 @@ const CSVUploadModal = ({ open, onOpenChange, onUploadComplete }: CSVUploadModal
             setUploadResult(data);
             
             if (data.validation_errors && data.validation_errors.length > 0) {
-              toast({
-                title: "Upload completed with warnings",
-                description: `${data.processed} rows processed, ${data.failed} failed. Check validation errors below.`,
-                variant: "destructive"
-              });
+              showErrorToast(
+                "Upload completed with warnings",
+                `${data.processed} rows processed, ${data.failed} failed. Check validation errors below.`
+              );
             } else {
-              toast({
-                title: "Upload successful",
-                description: `Successfully processed ${data.processed} rows with enhanced churn predictions.`,
-              });
+              showSuccessToast(
+                "Upload successful",
+                `Successfully processed ${data.processed} rows with enhanced churn predictions.`
+              );
             }
 
             onUploadComplete();
@@ -174,32 +173,20 @@ const CSVUploadModal = ({ open, onOpenChange, onUploadComplete }: CSVUploadModal
               status: 'error',
               message: error instanceof Error ? error.message : 'Upload failed'
             });
-            toast({
-              title: "Upload failed",
-              description: "There was an error processing your CSV file.",
-              variant: "destructive"
-            });
+            showErrorToast("Upload failed", "There was an error processing your CSV file.");
           } finally {
             setIsUploading(false);
           }
         },
         error: (error) => {
           console.error('CSV parse error:', error);
-          toast({
-            title: "Invalid CSV file",
-            description: "Could not parse the CSV file. Please check the file format.",
-            variant: "destructive"
-          });
+          showErrorToast("Invalid CSV file", "Could not parse the CSV file. Please check the file format.");
           setIsUploading(false);
         }
       });
     } catch (error) {
       console.error('File processing error:', error);
-      toast({
-        title: "Upload failed",
-        description: "There was an error processing your file.",
-        variant: "destructive"
-      });
+      showErrorToast("Upload failed", "There was an error processing your file.");
       setIsUploading(false);
     }
   };

@@ -3,7 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Play, Clock, FileText, AlertCircle, CheckCircle, Copy, Trash2 } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
+import { showErrorToast, showSuccessToast } from "@/components/ui/error-toast";
 import { supabase } from "@/integrations/supabase/client";
 
 interface PlaybookLog {
@@ -45,7 +45,7 @@ export const EnhancedPlaybooksList: React.FC<EnhancedPlaybooksListProps> = ({
   onToggleStatus,
   onReload
 }) => {
-  const { toast } = useToast();
+  
   const [logs, setLogs] = useState<PlaybookLog[]>([]);
   const [loadingLogs, setLoadingLogs] = useState(false);
   const [selectedPlaybook, setSelectedPlaybook] = useState<string | null>(null);
@@ -71,7 +71,6 @@ export const EnhancedPlaybooksList: React.FC<EnhancedPlaybooksListProps> = ({
       const { data, error } = await query.limit(50);
 
       if (error) {
-        console.error('Error loading logs:', error);
         return;
       }
 
@@ -87,7 +86,7 @@ export const EnhancedPlaybooksList: React.FC<EnhancedPlaybooksListProps> = ({
 
       setLogs(transformedLogs);
     } catch (error) {
-      console.error('Error loading logs:', error);
+      // Silently handle log loading errors
     } finally {
       setLoadingLogs(false);
     }
@@ -103,11 +102,7 @@ export const EnhancedPlaybooksList: React.FC<EnhancedPlaybooksListProps> = ({
       
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) {
-        toast({
-          title: "Error",
-          description: "Please log in to run playbooks.",
-          variant: "destructive",
-        });
+        showErrorToast("Error", "Please log in to run playbooks.");
         return;
       }
 
@@ -121,11 +116,7 @@ export const EnhancedPlaybooksList: React.FC<EnhancedPlaybooksListProps> = ({
 
       if (error) {
         console.error('Error running playbook:', error);
-        toast({
-          title: "Error",
-          description: `Failed to run playbook: ${error.message}`,
-          variant: "destructive",
-        });
+        showErrorToast("Error", `Failed to run playbook: ${error.message}`);
         return;
       }
 
@@ -133,10 +124,7 @@ export const EnhancedPlaybooksList: React.FC<EnhancedPlaybooksListProps> = ({
       const matchesFound = result.matches || 0;
       const actionsQueued = result.actions_queued || 0;
 
-      toast({
-        title: "Success!",
-        description: `Playbook executed successfully. Found ${matchesFound} matches, queued ${actionsQueued} actions.`,
-      });
+      showSuccessToast("Success!", `Playbook executed successfully. Found ${matchesFound} matches, queued ${actionsQueued} actions.`);
 
       // Reload playbooks and logs
       onReload();
@@ -144,11 +132,7 @@ export const EnhancedPlaybooksList: React.FC<EnhancedPlaybooksListProps> = ({
       
     } catch (error) {
       console.error('Error running playbook:', error);
-      toast({
-        title: "Error",
-        description: "Failed to run playbook",
-        variant: "destructive",
-      });
+      showErrorToast("Error", "Failed to run playbook");
     } finally {
       setRunningPlaybooks(prev => {
         const newSet = new Set(prev);
@@ -162,11 +146,7 @@ export const EnhancedPlaybooksList: React.FC<EnhancedPlaybooksListProps> = ({
     try {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) {
-        toast({
-          title: "Error",
-          description: "Please log in to clone playbooks.",
-          variant: "destructive",
-        });
+        showErrorToast("Error", "Please log in to clone playbooks.");
         return;
       }
 
@@ -186,27 +166,16 @@ export const EnhancedPlaybooksList: React.FC<EnhancedPlaybooksListProps> = ({
 
       if (error) {
         console.error('Error cloning playbook:', error);
-        toast({
-          title: "Error",
-          description: "Failed to clone playbook to database.",
-          variant: "destructive",
-        });
+        showErrorToast("Error", "Failed to clone playbook to database.");
         return;
       }
 
-      toast({
-        title: "Success!",
-        description: "Playbook cloned successfully",
-      });
+      showSuccessToast("Success!", "Playbook cloned successfully");
 
       onReload();
     } catch (error) {
       console.error('Error cloning playbook:', error);
-      toast({
-        title: "Error",
-        description: "Failed to clone playbook", 
-        variant: "destructive",
-      });
+      showErrorToast("Error", "Failed to clone playbook");
     }
   };
 
@@ -214,11 +183,7 @@ export const EnhancedPlaybooksList: React.FC<EnhancedPlaybooksListProps> = ({
     try {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) {
-        toast({
-          title: "Error",
-          description: "Please log in to delete playbooks.",
-          variant: "destructive",
-        });
+        showErrorToast("Error", "Please log in to delete playbooks.");
         return;
       }
 
@@ -230,27 +195,16 @@ export const EnhancedPlaybooksList: React.FC<EnhancedPlaybooksListProps> = ({
 
       if (error) {
         console.error('Error deleting playbook:', error);
-        toast({
-          title: "Error",
-          description: "Failed to delete playbook from database.",
-          variant: "destructive",
-        });
+        showErrorToast("Error", "Failed to delete playbook from database.");
         return;
       }
 
-      toast({
-        title: "Success!",
-        description: "Playbook deleted successfully",
-      });
+      showSuccessToast("Success!", "Playbook deleted successfully");
 
       onReload();
     } catch (error) {
       console.error('Error deleting playbook:', error);
-      toast({
-        title: "Error",
-        description: "Failed to delete playbook.",
-        variant: "destructive",
-      });
+      showErrorToast("Error", "Failed to delete playbook.");
     }
   };
 

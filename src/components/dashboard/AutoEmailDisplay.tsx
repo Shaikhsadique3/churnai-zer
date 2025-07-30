@@ -6,7 +6,7 @@ import { Mail, Send, Edit, Download, Calendar, Clock, Loader2 } from "lucide-rea
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
-import { useToast } from "@/hooks/use-toast";
+import { showErrorToast, showSuccessToast } from "@/components/ui/error-toast";
 import { format } from "date-fns";
 
 interface EmailLog {
@@ -42,7 +42,7 @@ export const AutoEmailDisplay = ({
   className = "" 
 }: AutoEmailDisplayProps) => {
   const { user } = useAuth();
-  const { toast } = useToast();
+  
   const [isExpanded, setIsExpanded] = useState(autoExpand || riskLevel === 'high');
 
   // Fetch latest email for this user
@@ -94,19 +94,17 @@ export const AutoEmailDisplay = ({
         throw new Error(response.error.message);
       }
 
-      toast({
-        title: "📧 Email Sent Successfully",
-        description: `Retention email sent to ${userEmail || emailLog.target_email}`
-      });
+      showSuccessToast(
+        "Email sent successfully",
+        `Retention email sent to ${userEmail || emailLog.target_email}`
+      );
       
       refetch();
     } catch (error: any) {
-      console.error('Email sending error:', error);
-      toast({
-        title: "❌ Send Failed",
-        description: error.message || "Failed to send email",
-        variant: "destructive"
-      });
+      showErrorToast(
+        "Send Failed",
+        error.message || "Failed to send email"
+      );
     }
   };
 

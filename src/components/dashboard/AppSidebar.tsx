@@ -71,11 +71,11 @@ export function AppSidebar() {
   };
 
   const getNavClassName = (path: string, isExact = false) => {
-    const baseClass = "w-full justify-start transition-colors";
+    const baseClass = "w-full justify-start transition-all duration-200";
     if (isActive(path, isExact)) {
-      return `${baseClass} bg-accent text-accent-foreground font-medium`;
+      return `${baseClass} bg-primary text-primary-foreground font-semibold shadow-sm`;
     }
-    return `${baseClass} text-muted-foreground hover:text-foreground hover:bg-accent/50`;
+    return `${baseClass} text-muted-foreground hover:text-foreground hover:bg-primary/10`;
   };
 
   const handleLogout = async () => {
@@ -83,32 +83,34 @@ export function AppSidebar() {
   };
 
   return (
-    <Sidebar className="border-r bg-card">
-      <SidebarHeader className="border-b px-6 py-4">
-        <div className="flex items-center gap-2">
-          <Shield className="h-6 w-6 text-primary" />
+    <Sidebar className="border-r-0 shadow-sm bg-white">
+      <SidebarHeader className="border-b border-border/30 px-6 py-6">
+        <div className="flex items-center gap-3">
+          <div className="p-2 bg-primary/10 rounded-xl shadow-sm">
+            <Shield className="h-6 w-6 text-primary" />
+          </div>
           {!collapsed && (
             <div>
-              <h2 className="text-lg font-bold text-foreground">Churnaizer</h2>
-              <p className="text-xs text-muted-foreground">Production Ready</p>
+              <h2 className="text-xl font-bold text-foreground">Churnaizer</h2>
+              <p className="text-xs text-muted-foreground">Smart Churn Detection</p>
             </div>
           )}
         </div>
       </SidebarHeader>
 
-      <SidebarContent className="px-3 py-4">
+      <SidebarContent className="px-4 py-6">
         <SidebarGroup>
-          <SidebarGroupLabel className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
+          <SidebarGroupLabel className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-4 px-2">
             {!collapsed && "Navigation"}
           </SidebarGroupLabel>
           <SidebarGroupContent>
-            <SidebarMenu className="space-y-1">
+            <SidebarMenu className="space-y-2">
               {navigationItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton asChild className={getNavClassName(item.url, item.isExact)}>
-                    <NavLink to={item.url}>
-                      <item.icon className="h-4 w-4" />
-                      {!collapsed && <span>{item.title}</span>}
+                    <NavLink to={item.url} className="rounded-lg px-3 py-2.5">
+                      <item.icon className="h-5 w-5" />
+                      {!collapsed && <span className="ml-3 font-medium">{item.title}</span>}
                     </NavLink>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
@@ -117,20 +119,20 @@ export function AppSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
 
-        <SidebarGroup>
-          <SidebarGroupLabel className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
+        <SidebarGroup className="mt-8">
+          <SidebarGroupLabel className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-4 px-2">
             {!collapsed && "Resources"}
           </SidebarGroupLabel>
           <SidebarGroupContent>
-            <SidebarMenu className="space-y-1">
+            <SidebarMenu className="space-y-2">
               {externalLinks.map((item) => (
                 <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton asChild className="w-full justify-start text-muted-foreground hover:text-foreground hover:bg-accent/50 transition-colors">
+                  <SidebarMenuButton asChild className="w-full justify-start text-muted-foreground hover:text-foreground hover:bg-accent/50 transition-all duration-200 rounded-lg px-3 py-2.5">
                     <a href={item.url} target="_blank" rel="noopener noreferrer">
-                      <item.icon className="h-4 w-4" />
+                      <item.icon className="h-5 w-5" />
                       {!collapsed && (
                         <>
-                          <span>{item.title}</span>
+                          <span className="ml-3 font-medium">{item.title}</span>
                           <ExternalLink className="h-3 w-3 ml-auto" />
                         </>
                       )}
@@ -143,10 +145,10 @@ export function AppSidebar() {
         </SidebarGroup>
       </SidebarContent>
 
-      <SidebarFooter className="border-t px-3 py-4">
+      <SidebarFooter className="border-t border-border/30 px-4 py-4">
         {!collapsed && (
-          <div className="mb-3 px-3">
-            <p className="text-sm font-medium text-foreground">
+          <div className="mb-4 px-3 py-3 bg-muted/50 rounded-lg">
+            <p className="text-sm font-semibold text-foreground">
               {user?.email?.split('@')[0] || 'User'}
             </p>
             <p className="text-xs text-muted-foreground">
@@ -157,10 +159,10 @@ export function AppSidebar() {
         <Button
           variant="ghost"
           onClick={handleLogout}
-          className="w-full justify-start text-muted-foreground hover:text-foreground hover:bg-accent/50"
+          className="w-full justify-start text-muted-foreground hover:text-foreground hover:bg-red-50 hover:text-red-600 transition-all duration-200 rounded-lg px-3 py-2.5"
         >
-          <LogOut className="h-4 w-4" />
-          {!collapsed && <span className="ml-2">Logout</span>}
+          <LogOut className="h-5 w-5" />
+          {!collapsed && <span className="ml-3 font-medium">Logout</span>}
         </Button>
       </SidebarFooter>
     </Sidebar>

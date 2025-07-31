@@ -6,45 +6,54 @@
 
 @layer base {
   :root {
-    /* Churnaizer Brand Colors - Production SaaS */
-    --background: 210 20% 98%; /* #F8F9FC */
-    --foreground: 217 23% 14%; /* Dark Text */
+    /* Modern SaaS Design System - Conduktor-inspired */
+    --background: 0 0% 98%; /* #FAFAFA - Very light background */
+    --foreground: 224 71% 4%; /* #020817 - Deep text */
 
-    --card: 0 0% 100%; /* Pure White Cards */
-    --card-foreground: 217 23% 14%;
+    --card: 0 0% 100%; /* Pure white cards */
+    --card-foreground: 224 71% 4%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 217 23% 14%;
+    --popover-foreground: 224 71% 4%;
 
-    --primary: 210 68% 31%; /* #1C4E80 Churnaizer Primary Blue */
+    --primary: 262 83% 58%; /* #8B5CF6 - Modern purple */
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 159 100% 33%; /* #00A86B Churnaizer Accent Green */
-    --secondary-foreground: 0 0% 100%;
+    --secondary: 220 14% 96%; /* #F1F5F9 - Light gray */
+    --secondary-foreground: 224 71% 4%;
 
-    --muted: 210 17% 93%; /* Light Background */
-    --muted-foreground: 215 14% 50%; /* Muted Text */
+    --muted: 220 14% 96%; /* #F1F5F9 - Light muted */
+    --muted-foreground: 220 9% 46%; /* #64748B - Medium gray */
 
-    --accent: 159 100% 33%; /* Same as secondary green */
+    --accent: 262 83% 58%; /* Same as primary purple */
     --accent-foreground: 0 0% 100%;
 
-    --destructive: 0 84% 60%;
+    --destructive: 0 84% 60%; /* #EF4444 - Red */
     --destructive-foreground: 0 0% 98%;
 
-    --border: 210 17% 90%; /* Subtle Borders */
+    --border: 220 13% 91%; /* #E2E8F0 - Subtle border */
     --input: 0 0% 100%;
-    --ring: 210 68% 31%; /* Primary blue ring */
+    --ring: 262 83% 58%; /* Purple ring */
 
-    --radius: 0.75rem; /* Slightly more rounded */
+    --radius: 0.5rem; /* Modern rounded corners */
 
-    --sidebar-background: 0 0% 100%; /* Pure white sidebar */
-    --sidebar-foreground: 217 23% 14%;
-    --sidebar-primary: 210 68% 31%; /* #1C4E80 Brand color */
+    /* Modern sidebar styling */
+    --sidebar-background: 0 0% 100%;
+    --sidebar-foreground: 224 71% 4%;
+    --sidebar-primary: 262 83% 58%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 210 68% 95%; /* Light brand color for active state */
-    --sidebar-accent-foreground: 210 68% 31%; /* Brand color text */
-    --sidebar-border: 210 17% 90%;
-    --sidebar-ring: 210 68% 31%;
+    --sidebar-accent: 262 83% 96%; /* Very light purple */
+    --sidebar-accent-foreground: 262 83% 58%;
+    --sidebar-border: 220 13% 91%;
+    --sidebar-ring: 262 83% 58%;
+
+    /* Additional modern colors */
+    --success: 142 76% 36%; /* #16A34A - Green */
+    --success-foreground: 0 0% 100%;
+    --warning: 48 96% 53%; /* #F59E0B - Amber */
+    --warning-foreground: 0 0% 100%;
+    --info: 213 94% 68%; /* #3B82F6 - Blue */
+    --info-foreground: 0 0% 100%;
   }
 
   .dark {
@@ -94,7 +103,31 @@
 
   body {
     @apply bg-background text-foreground;
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+    letter-spacing: -0.01em;
+    line-height: 1.6;
+  }
+  
+  /* Modern typography */
+  h1, h2, h3, h4, h5, h6 {
+    font-weight: 600;
+    letter-spacing: -0.025em;
+    line-height: 1.3;
+  }
+  
+  /* Modern card styling */
+  .card-modern {
+    @apply bg-card border border-border rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200;
+  }
+  
+  /* Modern input styling */
+  .input-modern {
+    @apply border border-border rounded-md px-3 py-2 text-sm bg-background focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all duration-200;
+  }
+  
+  /* Modern button styling */
+  .btn-modern {
+    @apply inline-flex items-center justify-center rounded-md text-sm font-medium transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2;
   }
 }
 

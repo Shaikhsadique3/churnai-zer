@@ -13,56 +13,64 @@ interface StatsCardsProps {
 
 const StatsCards = ({ stats }: StatsCardsProps) => {
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6 mb-6 sm:mb-8">
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1 sm:pb-2">
-          <CardTitle className="text-xs sm:text-sm font-medium">Total Customers</CardTitle>
-          <Users className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground" />
-        </CardHeader>
-        <CardContent className="pt-1 sm:pt-2">
-          <div className="text-lg sm:text-2xl font-bold">{stats.total}</div>
-          <p className="text-xs text-muted-foreground hidden sm:block">
-            Active customer base
-          </p>
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-8">
+      <Card className="border-0 shadow-sm bg-gradient-to-br from-white to-gray-50/50">
+        <CardContent className="p-6">
+          <div className="flex items-center justify-between">
+            <div className="flex-1">
+              <p className="text-sm font-medium text-muted-foreground mb-2">Total Customers</p>
+              <p className="text-3xl font-bold text-foreground">{stats.total}</p>
+              <p className="text-xs text-muted-foreground mt-1">Active customer base</p>
+            </div>
+            <div className="p-3 rounded-lg bg-primary/10">
+              <Users className="h-6 w-6 text-primary" />
+            </div>
+          </div>
         </CardContent>
       </Card>
 
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1 sm:pb-2">
-          <CardTitle className="text-xs sm:text-sm font-medium">High Risk</CardTitle>
-          <AlertTriangle className="h-3 w-3 sm:h-4 sm:w-4 text-red-500" />
-        </CardHeader>
-        <CardContent className="pt-1 sm:pt-2">
-          <div className="text-lg sm:text-2xl font-bold text-red-600">🔴 {stats.high}</div>
-          <p className="text-xs text-muted-foreground hidden sm:block">
-            Immediate attention needed
-          </p>
+      <Card className="border-0 shadow-sm bg-gradient-to-br from-red-50 to-red-100/50">
+        <CardContent className="p-6">
+          <div className="flex items-center justify-between">
+            <div className="flex-1">
+              <p className="text-sm font-medium text-muted-foreground mb-2">High Risk</p>
+              <p className="text-3xl font-bold text-red-600">{stats.high}</p>
+              <p className="text-xs text-muted-foreground mt-1">Immediate attention needed</p>
+            </div>
+            <div className="p-3 rounded-lg bg-red-100">
+              <AlertTriangle className="h-6 w-6 text-red-600" />
+            </div>
+          </div>
         </CardContent>
       </Card>
 
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1 sm:pb-2">
-          <CardTitle className="text-xs sm:text-sm font-medium">Medium Risk</CardTitle>
-          <TrendingUp className="h-3 w-3 sm:h-4 sm:w-4 text-yellow-500" />
-        </CardHeader>
-        <CardContent className="pt-1 sm:pt-2">
-          <div className="text-lg sm:text-2xl font-bold text-yellow-600">🟡 {stats.medium}</div>
-          <p className="text-xs text-muted-foreground hidden sm:block">
-            Monitor closely
-          </p>
+      <Card className="border-0 shadow-sm bg-gradient-to-br from-amber-50 to-amber-100/50">
+        <CardContent className="p-6">
+          <div className="flex items-center justify-between">
+            <div className="flex-1">
+              <p className="text-sm font-medium text-muted-foreground mb-2">Medium Risk</p>
+              <p className="text-3xl font-bold text-amber-600">{stats.medium}</p>
+              <p className="text-xs text-muted-foreground mt-1">Monitor closely</p>
+            </div>
+            <div className="p-3 rounded-lg bg-amber-100">
+              <TrendingUp className="h-6 w-6 text-amber-600" />
+            </div>
+          </div>
         </CardContent>
       </Card>
 
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1 sm:pb-2">
-          <CardTitle className="text-xs sm:text-sm font-medium">Low Risk</CardTitle>
-          <Shield className="h-3 w-3 sm:h-4 sm:w-4 text-green-500" />
-        </CardHeader>
-        <CardContent className="pt-1 sm:pt-2">
-          <div className="text-lg sm:text-2xl font-bold text-green-600">🟢 {stats.low}</div>
-          <p className="text-xs text-muted-foreground hidden sm:block">
-            Healthy customers
-          </p>
+      <Card className="border-0 shadow-sm bg-gradient-to-br from-green-50 to-green-100/50">
+        <CardContent className="p-6">
+          <div className="flex items-center justify-between">
+            <div className="flex-1">
+              <p className="text-sm font-medium text-muted-foreground mb-2">Low Risk</p>
+              <p className="text-3xl font-bold text-green-600">{stats.low}</p>
+              <p className="text-xs text-muted-foreground mt-1">Healthy customers</p>
+            </div>
+            <div className="p-3 rounded-lg bg-green-100">
+              <Shield className="h-6 w-6 text-green-600" />
+            </div>
+          </div>
         </CardContent>
       </Card>
     </div>

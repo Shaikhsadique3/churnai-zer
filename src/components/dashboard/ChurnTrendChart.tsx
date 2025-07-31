@@ -13,13 +13,13 @@ const mockChartData = [
 
 export const ChurnTrendChart = () => {
   return (
-    <Card className="border-2 hover:border-primary/20 transition-colors">
-      <CardHeader>
-        <CardTitle className="text-foreground flex items-center gap-2 text-base sm:text-lg">
-          <div className="w-3 h-3 bg-accent rounded-full"></div>
+    <Card className="border-0 shadow-sm hover:shadow-md transition-all duration-200 bg-gradient-to-br from-white to-purple-50/30">
+      <CardHeader className="pb-4">
+        <CardTitle className="text-foreground flex items-center gap-3 text-lg font-semibold">
+          <div className="w-2 h-8 bg-primary rounded-full"></div>
           Churn Score Over Time
         </CardTitle>
-        <p className="text-xs sm:text-sm text-muted-foreground">Weekly trend analysis</p>
+        <p className="text-sm text-muted-foreground">Weekly trend analysis</p>
       </CardHeader>
       <CardContent>
         <div className="h-[200px] sm:h-[300px] w-full">
@@ -51,8 +51,9 @@ export const ChurnTrendChart = () => {
                 dataKey="churnScore" 
                 stroke="hsl(var(--primary))" 
                 strokeWidth={3}
-                dot={{ fill: "hsl(var(--primary))", strokeWidth: 2, r: 4 }}
-                activeDot={{ r: 6, fill: "hsl(var(--accent))" }}
+                dot={{ fill: "hsl(var(--primary))", strokeWidth: 2, r: 5 }}
+                activeDot={{ r: 7, fill: "hsl(var(--primary))", stroke: "white", strokeWidth: 2 }}
+                filter="drop-shadow(0 2px 4px rgba(0,0,0,0.1))"
               />
             </LineChart>
           </ResponsiveContainer>

@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.50.2';
+import { Resend } from "npm:resend@2.0.0";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -88,35 +89,116 @@ serve(async (req) => {
       );
     }
 
-    // Trigger AI email generation and sending
+    // Send retention email directly using Resend
     try {
-      const emailResponse = await supabase.functions.invoke('generate-and-send-email', {
-        body: {
-          user_id: requestData.user_id,
-          customer_email: requestData.customer_email,
-          customer_name: requestData.customer_name,
-          subscription_plan: requestData.subscription_plan || 'Free',
-          churn_score: requestData.churn_score || 0.8,
-          risk_level: requestData.risk_level,
-          churn_reason: requestData.churn_reason || 'High churn risk detected by AI analysis',
-          psychologyStyle: 'urgency', // Use urgency for high-risk users
-          customMessage: `Our AI has detected concerning patterns in your account activity. Let's make sure you're getting the most value from your subscription.`
-        }
+      const resendApiKey = Deno.env.get('RESEND_API_KEY');
+      
+      if (!resendApiKey) {
+        throw new Error('Resend API key not configured');
+      }
+
+      const resend = new Resend(resendApiKey);
+      
+      // Create retention email content
+      const customerName = requestData.customer_name || requestData.customer_email.split('@')[0];
+      const subject = `${customerName}, let's make sure you're getting the most value`;
+      const emailBody = `
+        <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+          <h2 style="color: #7c3aed; margin-bottom: 20px;">We've noticed some changes in your account activity</h2>
+          
+          <p>Hi ${customerName},</p>
+          
+          <p>Our AI system has detected some concerning patterns in your account activity. We want to make sure you're getting the most value from your ${requestData.subscription_plan || 'subscription'}.</p>
+          
+          <div style="background: #f8fafc; padding: 15px; border-radius: 8px; margin: 20px 0;">
+            <p style="margin: 0; color: #64748b;"><strong>Current Status:</strong></p>
+            <p style="margin: 5px 0; color: #dc2626;">Risk Level: ${requestData.risk_level}</p>
+            <p style="margin: 5px 0; color: #64748b;">Churn Score: ${Math.round((requestData.churn_score || 0.8) * 100)}%</p>
+          </div>
+          
+          <p>We're here to help! Here are some quick actions you can take:</p>
+          
+          <ul style="color: #475569;">
+            <li>Check out our latest features and updates</li>
+            <li>Review your dashboard and analytics</li>
+            <li>Reach out to our support team if you need assistance</li>
+          </ul>
+          
+          <div style="text-align: center; margin: 30px 0;">
+            <a href="https://churnaizer.com/dashboard" style="background: #7c3aed; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;">Access Your Dashboard</a>
+          </div>
+          
+          <p style="color: #64748b; font-size: 14px;">If you have any questions or need help, simply reply to this email. We're here to ensure your success!</p>
+          
+          <p style="margin-top: 30px;">Best regards,<br>The Churnaizer Team</p>
+          
+          <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 30px 0;">
+          <p style="color: #94a3b8; font-size: 12px; text-align: center;">
+            This email was sent because our AI detected concerning patterns in your account activity.
+            <br>If you no longer wish to receive these emails, please contact support.
+          </p>
+        </div>
+      `;
+
+      // Send email
+      console.log(`Sending retention email to: ${requestData.customer_email}`);
+      const emailResponse = await resend.emails.send({
+        from: 'Churnaizer Team <support@churnaizer.com>',
+        to: [requestData.customer_email],
+        subject: subject,
+        html: emailBody,
       });
 
       if (emailResponse.error) {
-        console.error('Email generation failed:', emailResponse.error);
+        console.error('Email sending failed:', emailResponse.error);
         throw new Error(emailResponse.error.message);
       }
 
-      console.log('Email automation triggered successfully:', emailResponse.data);
+      console.log('Retention email sent successfully:', emailResponse.data);
+
+      // Log to database - For SDK calls, we need to find the owner user_id
+      const { data: userData } = await supabase
+        .from('user_data')
+        .select('owner_id')
+        .eq('user_id', requestData.user_id)
+        .limit(1)
+        .maybeSingle();
+
+      const ownerUserId = userData?.owner_id || null;
+
+      if (ownerUserId) {
+        const { error: logError } = await supabase
+          .from('email_logs')
+          .insert({
+            user_id: ownerUserId, // The dashboard owner
+            target_email: requestData.customer_email,
+            target_user_id: requestData.user_id, // The tracked customer
+            email_data: {
+              subject,
+              body: emailBody,
+              psychology_style: 'urgency',
+              churn_score: requestData.churn_score,
+              risk_level: requestData.risk_level,
+              automation_triggered: true
+            },
+            status: 'sent',
+            sent_at: new Date().toISOString()
+          });
+
+        if (logError) {
+          console.error('Error logging email to database:', logError);
+        }
+      } else {
+        console.log('No owner found for user_id, skipping email log');
+      }
 
       return new Response(
         JSON.stringify({ 
           message: 'Email automation triggered successfully',
           triggered: true,
           user_id: requestData.user_id,
-          email_result: emailResponse.data
+          email_id: emailResponse.data?.id,
+          email_subject: subject
         }),
         { 
           status: 200, 
@@ -126,6 +208,33 @@ serve(async (req) => {
 
     } catch (emailError) {
       console.error('Failed to trigger email automation:', emailError);
+      
+      // Log failed attempt - For SDK calls, we need to find the owner user_id
+      const { data: userData } = await supabase
+        .from('user_data')
+        .select('owner_id')
+        .eq('user_id', requestData.user_id)
+        .limit(1)
+        .maybeSingle();
+
+      const ownerUserId = userData?.owner_id || null;
+
+      if (ownerUserId) {
+        await supabase
+          .from('email_logs')
+          .insert({
+            user_id: ownerUserId, // The dashboard owner
+            target_email: requestData.customer_email,
+            target_user_id: requestData.user_id, // The tracked customer
+            email_data: {
+              subject: 'Failed to send retention email',
+              error: emailError.message,
+              automation_triggered: true
+            },
+            status: 'failed',
+            error_message: emailError.message
+          }).catch(err => console.error('Error logging failed email:', err));
+      }
       
       return new Response(
         JSON.stringify({ 

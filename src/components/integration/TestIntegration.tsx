@@ -118,9 +118,15 @@ export const TestIntegration = () => {
       
       setTestResult(successResult);
       
+      // Check if email automation was triggered
+      const emailTriggered = result.risk_level === 'high';
+      const description = emailTriggered 
+        ? `Risk Level: ${result.risk_level} | Churn Probability: ${Math.round(result.churn_probability * 100)}% | ✉️ Email sent!`
+        : `Risk Level: ${result.risk_level} | Churn Probability: ${Math.round(result.churn_probability * 100)}%`;
+
       showSuccessToast(
         "SDK Integration Successful",
-        `Risk Level: ${result.risk_level} | Churn Probability: ${Math.round(result.churn_probability * 100)}%`
+        description
       );
 
     } catch (error) {
@@ -207,6 +213,12 @@ export const TestIntegration = () => {
                     <p><strong>Churn Probability:</strong> {Math.round((testResult.churn_probability || 0) * 100)}%</p>
                     <p><strong>Understanding Score:</strong> {testResult.understanding_score}</p>
                     <p><strong>Reason:</strong> {testResult.reason}</p>
+                    {testResult.risk_level === 'high' && (
+                      <div className="mt-2 p-2 bg-primary/10 rounded border border-primary/20">
+                        <p className="text-primary font-medium text-xs">✉️ Email Automation Triggered</p>
+                        <p className="text-xs text-muted-foreground">A retention email was automatically sent to this user.</p>
+                      </div>
+                    )}
                   </div>
                 ) : (
                   <p className="mt-1 text-xs md:text-sm text-destructive">

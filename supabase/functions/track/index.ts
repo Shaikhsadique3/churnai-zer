@@ -167,31 +167,15 @@ serve(async (req) => {
       console.log('Processing tracking request for user:', user_id);
 
       try {
-        // Check if this is a test API key for mock response
-        const isTestKey = apiKey.startsWith('cg_');
-        
-        if (isTestKey) {
-          console.log('Test API key detected, returning mock response for user:', user_id);
-          results.push({
-            status: 'ok',
-            user_id,
-            churn_probability: 0.93,
-            reason: "Low engagement and failed payments",
-            message: "User is showing signs of disengagement and may churn soon.",
-            understanding_score: 87,
-            risk_level: "high",
-            shouldTriggerEmail: true,
-            recommended_tone: "empathetic"
-          });
-          continue;
-        }
+        console.log('Processing prediction for user:', user_id);
 
-        // Call external churn prediction API with fallback
-        const churnApiUrl = Deno.env.get('CHURN_API_URL');
+        // Always attempt real API call to external churn prediction model
+        const churnApiUrl = Deno.env.get('CHURN_API_URL') || 'https://ai-model-rumc.onrender.com/api/v1/predict';
         const churnApiKey = Deno.env.get('CHURN_API_KEY');
 
-        let churnScore = 0.5; // Default fallback score
-        let churnReason = 'Fallback prediction - external API unavailable';
+        let churnScore = null;
+        let churnReason = 'AI prediction failed - external API unavailable';
+        let riskLevel: 'low' | 'medium' | 'high' | 'unknown' = 'unknown';
         
         if (churnApiUrl && churnApiKey) {
           try {
@@ -240,7 +224,6 @@ serve(async (req) => {
         }
 
         // Enhanced lifecycle-aware analysis
-        let riskLevel: 'low' | 'medium' | 'high';
         let understandingScore = 0;
         let statusTag = '';
         let actionRecommended = '';
@@ -252,13 +235,17 @@ serve(async (req) => {
           understandingScore = Math.min(40, days_since_signup * 5 + 10);
           statusTag = 'new_user';
           daysUntilMature = 7 - days_since_signup;
-          churnReason = 'Too early to predict churn accurately – Need at least 7 days of behavior data.';
+          if (churnScore === null) {
+            churnReason = 'Too early to predict churn accurately – Need at least 7 days of behavior data.';
+          }
           actionRecommended = 'Keep tracking. Reliable insights coming soon.';
         } else if (days_since_signup < 15) {
           // Growing User
           understandingScore = 40 + ((days_since_signup - 7) * 2.5);
           statusTag = 'growing_user';
-          churnReason = 'Prediction getting stronger. More behavior signals are now available.';
+          if (churnScore === null) {
+            churnReason = 'Prediction getting stronger. More behavior signals are now available.';
+          }
           actionRecommended = 'Monitor usage daily. Prediction is moderately accurate.';
         } else {
           // Mature User
@@ -266,8 +253,11 @@ serve(async (req) => {
           statusTag = 'mature_user';
         }
 
-        // Calculate risk level
-        if (churnScore >= 0.7) {
+        // Calculate risk level based on churn score
+        if (churnScore === null) {
+          riskLevel = 'unknown';
+          console.log('AI prediction failed - setting risk level to unknown');
+        } else if (churnScore >= 0.7) {
           riskLevel = 'high';
         } else if (churnScore >= 0.4) {
           riskLevel = 'medium';
@@ -277,7 +267,10 @@ serve(async (req) => {
 
         // Enhanced status tags and actions based on risk + maturity
         if (days_since_signup >= 15) {
-          if (churnScore < 0.3) {
+          if (churnScore === null) {
+            statusTag = 'mature_unknown';
+            actionRecommended = 'AI prediction failed. Manual review recommended for mature user.';
+          } else if (churnScore < 0.3) {
             statusTag = 'mature_safe';
             actionRecommended = 'Low risk of churn. Consider upsell or referral opportunities.';
           } else if (churnScore >= 0.5) {

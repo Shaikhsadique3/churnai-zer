@@ -8,14 +8,16 @@ const corsHeaders = {
 };
 
 interface AutoEmailRequest {
-  user_id: string;
-  customer_email: string;
+  user_id?: string;
+  customer_email?: string;
+  email?: string; // fallback field
   customer_name?: string;
   churn_score?: number;
   risk_level?: string;
   churn_reason?: string;
   subscription_plan?: string;
   shouldTriggerEmail?: boolean;
+  recommended_tone?: string;
 }
 
 serve(async (req) => {
@@ -36,13 +38,14 @@ serve(async (req) => {
     let requestData: AutoEmailRequest;
     try {
       const body = await req.text();
-      console.log('Request body:', body);
+      console.log('Request body received:', body.substring(0, 200) + '...'); // Truncate for security
       
       if (!body || body.trim() === '') {
         throw new Error('Request body is empty');
       }
       
       requestData = JSON.parse(body);
+      console.log('Parsed request data fields:', Object.keys(requestData));
     } catch (parseError) {
       console.error('JSON parsing error:', parseError);
       return new Response(
@@ -54,11 +57,30 @@ serve(async (req) => {
       );
     }
 
-    // Validate required fields
-    if (!requestData.user_id || !requestData.customer_email) {
-      console.error('Missing required fields: user_id and customer_email');
+    // Apply fallbacks for email field
+    const customerEmail = requestData.customer_email || requestData.email || null;
+    const userId = requestData.user_id || null;
+
+    // Debug logging for field validation
+    console.log('Field validation:', {
+      user_id: userId ? 'present' : 'missing',
+      customer_email: customerEmail ? 'present' : 'missing',
+      risk_level: requestData.risk_level || 'not provided'
+    });
+
+    // Validate required fields after fallbacks
+    if (!userId || !customerEmail) {
+      const missingFields = [];
+      if (!userId) missingFields.push('user_id');
+      if (!customerEmail) missingFields.push('customer_email');
+      
+      console.error('Missing required fields after fallback:', missingFields);
       return new Response(
-        JSON.stringify({ error: 'Missing required fields: user_id and customer_email' }),
+        JSON.stringify({ 
+          error: `Missing required fields: ${missingFields.join(', ')}`,
+          received_fields: Object.keys(requestData),
+          fallback_attempted: true
+        }),
         { 
           status: 400, 
           headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
@@ -66,14 +88,20 @@ serve(async (req) => {
       );
     }
 
+    // Update requestData with fallback values
+    requestData.customer_email = customerEmail;
+    requestData.user_id = userId;
+
     // Only trigger for high-risk users
     if (requestData.risk_level !== 'high') {
-      console.log('User not high-risk, skipping email automation');
+      console.log(`User not high-risk (${requestData.risk_level}), skipping email automation`);
       return new Response(
         JSON.stringify({ 
-          message: 'Email automation only triggers for high-risk users',
+          success: true,
+          message: 'No email needed for non-high risk',
           triggered: false,
-          risk_level: requestData.risk_level 
+          risk_level: requestData.risk_level,
+          user_id: requestData.user_id
         }),
         { 
           status: 200, 
@@ -125,7 +153,12 @@ serve(async (req) => {
       
       let aiEmailContent;
       try {
-        // Call AI model to generate personalized email
+        console.log('Calling AI model for email generation...');
+        
+        // Call AI model to generate personalized email with timeout
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+        
         const aiResponse = await fetch('https://ai-model-rumc.onrender.com/generate-email', {
           method: 'POST',
           headers: {
@@ -139,10 +172,13 @@ serve(async (req) => {
             risk_level: requestData.risk_level,
             churn_reason: requestData.churn_reason,
             subscription_plan: requestData.subscription_plan,
-            tone: 'empathetic',
+            tone: requestData.recommended_tone || 'empathetic',
             style: 'retention'
           }),
+          signal: controller.signal
         });
+        
+        clearTimeout(timeoutId);
         
         if (!aiResponse.ok) {
           throw new Error(`AI API responded with status: ${aiResponse.status}`);
@@ -152,7 +188,7 @@ serve(async (req) => {
         console.log('AI email content generated successfully');
         
       } catch (aiError) {
-        console.error('AI email generation failed, using fallback:', aiError);
+        console.error('AI email generation failed, using fallback template:', aiError.message);
         // Fallback to default content if AI fails
         aiEmailContent = {
           subject: `${customerName}, let's make sure you're getting the most value`,
@@ -254,8 +290,10 @@ serve(async (req) => {
 
       return new Response(
         JSON.stringify({ 
-          message: 'Email automation triggered successfully',
+          success: true,
+          message: 'Email sent',
           triggered: true,
+          tracking_id: emailResponse.data?.id || `auto-${Date.now()}`,
           user_id: requestData.user_id,
           email_id: emailResponse.data?.id,
           email_subject: subject

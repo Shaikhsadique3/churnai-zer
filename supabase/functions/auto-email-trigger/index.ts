@@ -146,34 +146,83 @@ serve(async (req) => {
 
       const resend = new Resend(resendApiKey);
       
-      // Generate dynamic email content using AI
+      // Generate AI-powered personalized email content using OpenRouter
       const customerName = requestData.customer_name || requestData.customer_email.split('@')[0];
       
-      console.log('Generating AI-powered email content...');
+      console.log('Generating AI-powered personalized email content...');
       
       let aiEmailContent;
       try {
-        console.log('Calling AI model for email generation...');
+        console.log('Calling OpenRouter AI for email generation...');
         
-        // Call AI model to generate personalized email with timeout
+        const openRouterApiKey = Deno.env.get('OPENROUTER_API_KEY');
+        if (!openRouterApiKey) {
+          throw new Error('OpenRouter API key not configured');
+        }
+        
+        // Create psychology-based prompt based on user data
+        const psychologyStyle = requestData.recommended_tone || 'empathetic_urgency';
+        const churnReason = requestData.churn_reason || 'decreased engagement';
+        const plan = requestData.subscription_plan || 'subscription';
+        const riskScore = Math.round((requestData.churn_score || 0.8) * 100);
+        
+        const psychologyPrompt = `You are an AI retention expert with deep knowledge in SaaS churn psychology, growth, and user behavior. 
+
+USER PROFILE:
+- Name: ${customerName}
+- Plan: ${plan}
+- Risk Level: ${requestData.risk_level}
+- Churn Score: ${riskScore}%
+- Main Issue: ${churnReason}
+- Psychology Style: ${psychologyStyle}
+
+TASK: Write a personalized retention email that feels crafted by a human retention expert. Use persuasive psychology but keep it natural and empathetic.
+
+PSYCHOLOGY TECHNIQUES TO USE:
+- Loss aversion: Remind them what they'll lose
+- Social proof: Mention other successful users
+- Urgency: Create gentle time pressure
+- Value reinforcement: Highlight unique benefits
+- Emotional connection: Personal, warm tone
+
+RULES:
+- DO NOT mention raw churn data, scores, or technical terms
+- Make it feel personal and human, not AI-generated
+- Include specific value propositions based on their plan
+- Use empathetic language that addresses their likely pain points
+- End with a strong but friendly call-to-action
+
+FORMAT: Return JSON with "subject" and "html_content" fields. HTML should be clean, professional, and mobile-friendly.
+
+TONE: ${psychologyStyle === 'urgency' ? 'Gentle urgency with empathy' : psychologyStyle === 'value_reminder' ? 'Helpful and supportive' : 'Warm and understanding'}`;
+
+        // Call OpenRouter API with timeout
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+        const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 second timeout
         
-        const aiResponse = await fetch('https://ai-model-rumc.onrender.com/generate-email', {
+        const aiResponse = await fetch('https://openrouter.ai/api/v1/chat/completions', {
           method: 'POST',
           headers: {
+            'Authorization': `Bearer ${openRouterApiKey}`,
             'Content-Type': 'application/json',
+            'HTTP-Referer': 'https://churnaizer.com',
+            'X-Title': 'Churnaizer Email Automation'
           },
           body: JSON.stringify({
-            customer_name: customerName,
-            customer_email: requestData.customer_email,
-            user_id: requestData.user_id,
-            churn_score: requestData.churn_score,
-            risk_level: requestData.risk_level,
-            churn_reason: requestData.churn_reason,
-            subscription_plan: requestData.subscription_plan,
-            tone: requestData.recommended_tone || 'empathetic',
-            style: 'retention'
+            model: 'mistralai/mixtral-8x7b-instruct',
+            messages: [
+              {
+                role: 'system',
+                content: 'You are an expert SaaS retention specialist who writes highly converting, personalized emails that feel human and empathetic.'
+              },
+              {
+                role: 'user',
+                content: psychologyPrompt
+              }
+            ],
+            temperature: 0.7,
+            max_tokens: 1500,
+            top_p: 0.9
           }),
           signal: controller.signal
         });
@@ -181,53 +230,111 @@ serve(async (req) => {
         clearTimeout(timeoutId);
         
         if (!aiResponse.ok) {
-          throw new Error(`AI API responded with status: ${aiResponse.status}`);
+          throw new Error(`OpenRouter API responded with status: ${aiResponse.status}`);
         }
         
-        aiEmailContent = await aiResponse.json();
-        console.log('AI email content generated successfully');
+        const aiResult = await aiResponse.json();
+        const aiGeneratedContent = aiResult.choices[0]?.message?.content;
+        
+        if (!aiGeneratedContent) {
+          throw new Error('No content generated by AI model');
+        }
+        
+        // Try to parse JSON response from AI
+        try {
+          aiEmailContent = JSON.parse(aiGeneratedContent);
+          console.log('AI email content generated successfully via OpenRouter');
+        } catch (parseError) {
+          // If AI didn't return JSON, create structure manually
+          aiEmailContent = {
+            subject: `${customerName}, we miss you at Churnaizer`,
+            html_content: aiGeneratedContent
+          };
+        }
         
       } catch (aiError) {
-        console.error('AI email generation failed, using fallback template:', aiError.message);
-        // Fallback to default content if AI fails
+        console.error('OpenRouter AI email generation failed, using fallback template:', aiError.message);
+        // Fallback to human-like template if AI fails
+        const fallbackContent = createHumanizedFallbackEmail(customerName, churnReason, plan);
         aiEmailContent = {
-          subject: `${customerName}, let's make sure you're getting the most value`,
+          subject: fallbackContent.subject,
+          html_content: fallbackContent.html_content
+        };
+      }
+      
+      // Helper function to create human-like fallback emails
+      function createHumanizedFallbackEmail(name: string, reason: string, plan: string) {
+        // Choose personalized message based on churn reason
+        let personalizedMessage = '';
+        let urgencyMessage = '';
+        let valueProposition = '';
+        
+        if (reason.includes('low') || reason.includes('usage') || reason.includes('engagement')) {
+          personalizedMessage = `I noticed you haven't been as active in your account lately, and I wanted to personally reach out.`;
+          urgencyMessage = `Don't let all the insights you've built go to waste.`;
+          valueProposition = `Your data is already set up and ready to provide powerful predictions.`;
+        } else if (reason.includes('billing') || reason.includes('payment')) {
+          personalizedMessage = `I see there might be some concerns about your subscription, and I'd love to help sort this out.`;
+          urgencyMessage = `We have several options that might work better for your current situation.`;
+          valueProposition = `Other ${plan} users are seeing 25% reduction in churn with our latest features.`;
+        } else {
+          personalizedMessage = `I've been reviewing accounts that might benefit from our newest features, and yours came up.`;
+          urgencyMessage = `Many users in similar situations see immediate improvements when they re-engage.`;
+          valueProposition = `Our latest AI models are 40% more accurate at predicting and preventing churn.`;
+        }
+        
+        return {
+          subject: `${name}, don't let your progress slip away`,
           html_content: `
-            <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-              <h2 style="color: #7c3aed; margin-bottom: 20px;">We've noticed some changes in your account activity</h2>
-              
-              <p>Hi ${customerName},</p>
-              
-              <p>Our AI system has detected some concerning patterns in your account activity. We want to make sure you're getting the most value from your ${requestData.subscription_plan || 'subscription'}.</p>
-              
-              <div style="background: #f8fafc; padding: 15px; border-radius: 8px; margin: 20px 0;">
-                <p style="margin: 0; color: #64748b;"><strong>Current Status:</strong></p>
-                <p style="margin: 5px 0; color: #dc2626;">Risk Level: ${requestData.risk_level}</p>
-                <p style="margin: 5px 0; color: #64748b;">Churn Score: ${Math.round((requestData.churn_score || 0.8) * 100)}%</p>
-                ${requestData.churn_reason ? `<p style="margin: 5px 0; color: #64748b;">Reason: ${requestData.churn_reason}</p>` : ''}
+            <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; line-height: 1.6;">
+              <div style="text-align: center; margin-bottom: 30px;">
+                <h1 style="color: #7c3aed; font-size: 24px; margin: 0;">Churnaizer</h1>
               </div>
               
-              <p>We're here to help! Here are some quick actions you can take:</p>
+              <p style="font-size: 18px; color: #1f2937; margin-bottom: 25px;">Hi ${name},</p>
               
-              <ul style="color: #475569;">
-                <li>Check out our latest features and updates</li>
-                <li>Review your dashboard and analytics</li>
-                <li>Reach out to our support team if you need assistance</li>
-              </ul>
+              <p style="color: #374151; margin-bottom: 20px;">${personalizedMessage}</p>
               
-              <div style="text-align: center; margin: 30px 0;">
-                <a href="https://churnaizer.com/dashboard" style="background: #7c3aed; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;">Access Your Dashboard</a>
+              <p style="color: #374151; margin-bottom: 20px;">${urgencyMessage} ${valueProposition}</p>
+              
+              <div style="background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%); padding: 20px; border-radius: 12px; margin: 25px 0; border-left: 4px solid #7c3aed;">
+                <p style="margin: 0; color: #6b7280; font-size: 14px; font-weight: 600;">WHAT YOU'RE MISSING:</p>
+                <ul style="color: #374151; margin: 10px 0 0 0; padding-left: 20px;">
+                  <li>Real-time churn insights that could save you customers today</li>
+                  <li>Automated retention campaigns (saving 10+ hours/week)</li>
+                  <li>Advanced predictions that are getting smarter with our latest AI</li>
+                </ul>
               </div>
               
-              <p style="color: #64748b; font-size: 14px;">If you have any questions or need help, simply reply to this email. We're here to ensure your success!</p>
-              
-              <p style="margin-top: 30px;">Best regards,<br>The Churnaizer Team</p>
-              
-              <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 30px 0;">
-              <p style="color: #94a3b8; font-size: 12px; text-align: center;">
-                This email was sent because our AI detected concerning patterns in your account activity.
-                <br>If you no longer wish to receive these emails, please contact support.
+              <p style="color: #374151; margin-bottom: 25px;">
+                <strong>Here's what I suggest:</strong> Take just 5 minutes to check your dashboard. 
+                You might be surprised by what insights are waiting for you.
               </p>
+              
+              <div style="text-align: center; margin: 35px 0;">
+                <a href="https://churnaizer.com/dashboard" style="background: linear-gradient(135deg, #7c3aed 0%, #9333ea 100%); color: white; padding: 14px 28px; text-decoration: none; border-radius: 8px; display: inline-block; font-weight: 600; font-size: 16px; box-shadow: 0 4px 12px rgba(124, 58, 237, 0.3);">Access Your Dashboard →</a>
+              </div>
+              
+              <p style="color: #6b7280; font-size: 14px; margin-bottom: 25px;">
+                <em>P.S. If there's something specific holding you back, just reply to this email. 
+                I read every response personally and often jump on quick calls to help users maximize their results.</em>
+              </p>
+              
+              <div style="margin-top: 40px; padding-top: 20px; border-top: 1px solid #e5e7eb;">
+                <p style="margin: 0; color: #374151;">
+                  Best regards,<br>
+                  <strong>The Churnaizer Team</strong><br>
+                  <span style="color: #6b7280; font-size: 14px;">Helping SaaS businesses reduce churn with AI</span>
+                </p>
+              </div>
+              
+              <div style="margin-top: 30px; text-align: center;">
+                <p style="color: #9ca3af; font-size: 12px; margin: 0;">
+                  You're receiving this because we noticed changes in your account activity.<br>
+                  <a href="#" style="color: #9ca3af; text-decoration: underline;">Unsubscribe</a> | 
+                  <a href="#" style="color: #9ca3af; text-decoration: underline;">Update preferences</a>
+                </p>
+              </div>
             </div>
           `
         };
@@ -239,7 +346,7 @@ serve(async (req) => {
       // Send email
       console.log(`Sending retention email to: ${requestData.customer_email}`);
       const emailResponse = await resend.emails.send({
-        from: 'Churnaizer Team <support@churnaizer.com>',
+        from: 'Churnaizer Team <nexa@churnaizer.com>',
         to: [requestData.customer_email],
         subject: subject,
         html: emailBody,

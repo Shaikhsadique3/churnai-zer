@@ -24,103 +24,36 @@ export const DeveloperGuide = ({ primaryApiKey, onCopyCode }: DeveloperGuideProp
     setCheckedItems(newChecked);
   };
 
-  const htmlIntegration = `<!DOCTYPE html>
-<html>
-<head>
-  <title>My SaaS App</title>
-</head>
-<body>
-  <h1>Welcome, User!</h1>
+  const reactIntegration = `import { useEffect } from 'react';
 
-  <!-- Official Churnaizer SDK v1.0.0 -->
-  <script src="https://churnaizer.com/churnaizer-sdk.js"></script>
-  <script>
-    Churnaizer.track({
-      user_id: "{{user_id}}",
-      customer_name: "{{customer_name}}",
-      customer_email: "{{customer_email}}",
-      days_since_signup: {{days_since_signup}},
-      monthly_revenue: {{monthly_revenue}},
-      subscription_plan: "{{subscription_plan}}",
-      number_of_logins_last30days: {{login_count}},
-      active_features_used: {{feature_count}},
-      support_tickets_opened: {{ticket_count}},
-      last_payment_status: "{{payment_status}}",
-      email_opens_last30days: {{email_opens}},
-      last_login_days_ago: {{last_login}},
-      billing_issue_count: {{billing_issue_count}}
-    }, "${primaryApiKey}", function(result, error) {
-      if (error) return console.error("❌ Churn prediction failed:", error);
-      console.log("✅ Churn prediction:", result);
-      Churnaizer.showBadge('.user-profile', result);
-    });
-  </script>
-</body>
-</html>`;
-
-  const reactIntegration = `// React/Next.js Integration
-import { useEffect } from 'react';
-
-const Dashboard = ({ user, apiKey }) => {
+function useChurnaizerTracking(user) {
   useEffect(() => {
-    // Load official SDK
-    const script = document.createElement('script');
-    script.src = 'https://churnaizer.com/churnaizer-sdk.js';
-    script.async = true;
-    document.body.appendChild(script);
+    if (!user || !window.Churnaizer) return;
 
-    script.onload = () => {
-      window.Churnaizer.track({
-        user_id: user.id,
-        customer_name: user.name,
-        customer_email: user.email,
-        days_since_signup: getDaysSinceSignup(user),
-        monthly_revenue: getMonthlyRevenue(user),
-        subscription_plan: user.plan,
-        number_of_logins_last30days: getLoginCount(user),
-        active_features_used: getFeatureCount(user),
-        support_tickets_opened: getTicketCount(user),
-        last_payment_status: user.lastPaymentStatus,
-        email_opens_last30days: getEmailOpens(user),
-        last_login_days_ago: getDaysSinceLastLogin(user),
-        billing_issue_count: getBillingIssues(user)
-      }, "${primaryApiKey}", function(result, error) {
-        if (error) return console.error("❌ Churn prediction failed:", error);
-        console.log("✅ Churn prediction:", result);
-        window.Churnaizer.showBadge('.user-profile', result);
-      });
-    };
-  }, [user, apiKey]);
-
-  return <div>Welcome, {user.name}</div>;
-};`;
-
-const batchIntegration = `// Batch Processing for Multiple Users
-const usersData = getUsersFromDatabase().map(user => ({
-  user_id: user.id,
-  customer_name: user.name,
-  customer_email: user.email,
-  days_since_signup: calculateSignupDays(user),
-  monthly_revenue: user.subscription.amount,
-  subscription_plan: user.subscription.plan,
-  number_of_logins_last30days: user.analytics.logins,
-  active_features_used: user.analytics.features.length,
-  support_tickets_opened: user.support.tickets,
-  last_payment_status: user.billing.lastStatus,
-  email_opens_last30days: user.email.opens,
-  last_login_days_ago: calculateLastLogin(user),
-  billing_issue_count: user.billing.issues
-}));
-
-window.Churnaizer.trackBatch(usersData, "${primaryApiKey}", function(results, error) {
-  if (error) return console.error("❌ Batch tracking failed:", error);
-  
-  results.forEach(result => {
-    if (result.status === 'ok') {
-      console.log(\`✅ User \${result.user_id}: \${result.churn_score}%\`);
-    }
-  });
-});`;
+    window.Churnaizer.track({
+      user_id: user.id,
+      email: user.email,
+      customer_name: user.name || user.full_name,
+      customer_email: user.email,
+      subscription_plan: user.plan || 'free',
+      monthly_revenue: user.monthlyRevenue || 0,
+      loginCount: user.loginCount || 1,
+      dashboardViews: user.dashboardViews || 0,
+      feature_usage: {
+        dashboard: user.dashboardViews || 0,
+        reports: user.reportsGenerated || 0,
+        settings: user.settingsAccessed || 0
+      }
+    }, 'cg_<YOUR_API_KEY>', (error, result) => {
+      if (error) {
+        console.error('Churnaizer tracking failed:', error);
+        return;
+      }
+      console.log('Churnaizer result:', result);
+      // handle risk levels as needed
+    });
+  }, [user]);
+}`;
 
   const checklistItems = [
     "Official Churnaizer SDK v1.0.0 loaded from https://churnaizer.com/churnaizer-sdk.js",
@@ -194,33 +127,10 @@ window.Churnaizer.trackBatch(usersData, "${primaryApiKey}", function(results, er
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <Tabs defaultValue="html" className="w-full">
-            <TabsList className="grid w-full grid-cols-3">
-              <TabsTrigger value="html">🌐 HTML/JS</TabsTrigger>
-              <TabsTrigger value="react">⚛️ React/Next.js</TabsTrigger>
-              <TabsTrigger value="batch">📊 Batch Processing</TabsTrigger>
+          <Tabs defaultValue="react" className="w-full">
+            <TabsList className="grid w-full grid-cols-1">
+              <TabsTrigger value="react">⚛️ Modern Framework Integration (React/Vue/Angular)</TabsTrigger>
             </TabsList>
-            
-            <TabsContent value="html" className="space-y-4">
-              <div className="relative">
-                <pre className="bg-gray-900 text-gray-100 p-4 rounded-lg overflow-x-auto text-sm">
-                  <code>{htmlIntegration}</code>
-                </pre>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="absolute top-2 right-2"
-                  onClick={() => onCopyCode(htmlIntegration)}
-                >
-                  <Copy className="h-4 w-4" />
-                </Button>
-              </div>
-              <div className="bg-blue-50 border border-blue-200 rounded p-3">
-                <p className="text-blue-800 text-sm">
-                  <strong>💡 Perfect for:</strong> Plain HTML websites, landing pages, or vanilla JavaScript apps. Place SDK script before &lt;/body&gt; tag.
-                </p>
-              </div>
-            </TabsContent>
             
             <TabsContent value="react" className="space-y-4">
               <div className="relative">
@@ -238,28 +148,7 @@ window.Churnaizer.trackBatch(usersData, "${primaryApiKey}", function(results, er
               </div>
               <div className="bg-purple-50 border border-purple-200 rounded p-3">
                 <p className="text-purple-800 text-sm">
-                  <strong>⚛️ Perfect for:</strong> React, Next.js, or other modern frontend frameworks.
-                </p>
-              </div>
-            </TabsContent>
-            
-            <TabsContent value="batch" className="space-y-4">
-              <div className="relative">
-                <pre className="bg-gray-900 text-gray-100 p-4 rounded-lg overflow-x-auto text-sm">
-                  <code>{batchIntegration}</code>
-                </pre>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="absolute top-2 right-2"
-                  onClick={() => onCopyCode(batchIntegration)}
-                >
-                  <Copy className="h-4 w-4" />
-                </Button>
-              </div>
-              <div className="bg-orange-50 border border-orange-200 rounded p-3">
-                <p className="text-orange-800 text-sm">
-                  <strong>📊 Perfect for:</strong> Processing multiple users at once, analytics dashboards, or batch jobs.
+                  <strong>⚛️ Perfect for:</strong> React, Vue, Angular, and other modern frontend frameworks.
                 </p>
               </div>
             </TabsContent>

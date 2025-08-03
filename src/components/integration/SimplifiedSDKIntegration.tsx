@@ -189,159 +189,35 @@ export function SimplifiedSDKIntegration() {
     window.addEventListener("message", listener);
   };
 
-  const sdkImplementationCode = `<!-- 1. Add Churnaizer SDK to your website -->
-<script src="${window.location.origin}/churnaizer-sdk.js"></script>
-
-<script>
-// 2. Initialize retention monitoring (optional)
-window.ChurnaizerConfig = {
-  modalEnabled: true,
-  checkInterval: 5000,
-  autoTrigger: true
-};
-
-// 3. Track user activity (call this on login or page load)
-function trackUserActivity(userData) {
-  window.Churnaizer.track({
-    user_id: userData.id,
-    email: userData.email,
-    customer_name: userData.name || userData.full_name,
-    customer_email: userData.email,
-    subscription_plan: userData.plan || 'free',
-    monthly_revenue: userData.monthlyRevenue || 0,
-    loginCount: userData.loginCount || 1,
-    dashboardViews: userData.dashboardViews || 0,
-    feature_usage: {
-      dashboard: userData.dashboardViews || 0,
-      reports: userData.reportsGenerated || 0,
-      settings: userData.settingsAccessed || 0
-    }
-  }, '${apiKey}', function(error, result) {
-    if (error) {
-      console.error('Churnaizer tracking failed:', error);
-      return;
-    }
-    
-    console.log('Churnaizer tracking successful:', result);
-    
-    // Handle high-risk users
-    if (result.risk_level === 'high') {
-      console.log('High-risk user detected!');
-      // Modal will automatically show if enabled
-      // You can also trigger custom retention actions here
-    }
-  });
-}
-
-// 4. Example: Track user on login
-document.addEventListener('DOMContentLoaded', function() {
-  // Get user data from your app's state/API
-  const currentUser = getCurrentUser(); // Your function to get user data
-  
-  if (currentUser) {
-    trackUserActivity(currentUser);
-  }
-});
-</script>`;
-
-  const reactImplementationCode = `// React/Vue/Angular Integration Example
-import { useEffect } from 'react';
+  const reactImplementationCode = `import { useEffect } from 'react';
 
 function useChurnaizerTracking(user) {
   useEffect(() => {
     if (!user || !window.Churnaizer) return;
-    
-    const trackUserActivity = () => {
-      window.Churnaizer.track({
-        user_id: user.id,
-        email: user.email,
-        customer_name: user.name || user.full_name,
-        customer_email: user.email,
-        subscription_plan: user.plan || 'free',
-        monthly_revenue: user.monthlyRevenue || 0,
-        loginCount: user.loginCount || 1,
-        dashboardViews: user.dashboardViews || 0,
-        feature_usage: {
-          dashboard: user.dashboardViews || 0,
-          reports: user.reportsGenerated || 0,
-          settings: user.settingsAccessed || 0
-        }
-      }, '${apiKey}', (error, result) => {
-        if (error) {
-          console.error('Churnaizer tracking failed:', error);
-          return;
-        }
-        
-        console.log('Churnaizer result:', result);
-        
-        // Handle different risk levels
-        switch(result.risk_level) {
-          case 'high':
-            // Trigger retention campaigns
-            showRetentionOffer();
-            break;
-          case 'medium':
-            // Send engagement emails
-            scheduleFollowUp();
-            break;
-          default:
-            // Continue normal flow
-            break;
-        }
-      });
-    };
 
-    // Track immediately and then periodically
-    trackUserActivity();
-    
-    // Optional: Track on specific user actions
-    const trackOnActivity = () => trackUserActivity();
-    window.addEventListener('focus', trackOnActivity);
-    
-    return () => {
-      window.removeEventListener('focus', trackOnActivity);
-    };
+    window.Churnaizer.track({
+      user_id: user.id,
+      email: user.email,
+      customer_name: user.name || user.full_name,
+      customer_email: user.email,
+      subscription_plan: user.plan || 'free',
+      monthly_revenue: user.monthlyRevenue || 0,
+      loginCount: user.loginCount || 1,
+      dashboardViews: user.dashboardViews || 0,
+      feature_usage: {
+        dashboard: user.dashboardViews || 0,
+        reports: user.reportsGenerated || 0,
+        settings: user.settingsAccessed || 0
+      }
+    }, 'cg_<YOUR_API_KEY>', (error, result) => {
+      if (error) {
+        console.error('Churnaizer tracking failed:', error);
+        return;
+      }
+      console.log('Churnaizer result:', result);
+      // handle risk levels as needed
+    });
   }, [user]);
-}
-
-// Usage in your component
-function App() {
-  const user = useCurrentUser();
-  useChurnaizerTracking(user);
-  
-  return <YourAppContent />;
-}`;
-
-  const advancedConfigCode = `// Advanced Configuration Options
-window.ChurnaizerConfig = {
-  // Retention modal settings
-  modalEnabled: true,
-  checkInterval: 5000, // Check for inactivity every 5 seconds
-  autoTrigger: true,   // Automatically show retention modal for high-risk users
-  
-  // Custom retention modal callback
-  customModalCallback: function(riskData) {
-    // Your custom retention modal logic
-    showCustomRetentionModal(riskData);
-  }
-};
-
-// Initialize retention monitoring
-window.Churnaizer.initRetentionMonitoring(window.ChurnaizerConfig);
-
-// Custom retention modal example
-function showCustomRetentionModal(riskData) {
-  const modal = document.createElement('div');
-  modal.innerHTML = \`
-    <div class="custom-retention-modal">
-      <h3>We're here to help! 👋</h3>
-      <p>Risk Level: \${riskData.risk_level}</p>
-      <p>Score: \${Math.round(riskData.churn_score * 100)}%</p>
-      <button onclick="requestHelp()">Get Support</button>
-      <button onclick="dismissModal()">Continue</button>
-    </div>
-  \`;
-  document.body.appendChild(modal);
 }`;
 
   if (loading) {
@@ -367,7 +243,7 @@ function showCustomRetentionModal(riskData) {
         {/* Primary CTA */}
         <div className="flex flex-col sm:flex-row gap-3">
           <Button 
-            onClick={() => copyToClipboard(sdkImplementationCode)}
+            onClick={() => copyToClipboard(reactImplementationCode)}
             disabled={!apiKey}
             className="w-full sm:w-auto"
           >
@@ -462,38 +338,14 @@ function showCustomRetentionModal(riskData) {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <Tabs defaultValue="basic" className="w-full">
-            <TabsList className="grid w-full grid-cols-3 text-xs md:text-sm">
-              <TabsTrigger value="basic" className="text-xs md:text-sm">Basic Setup</TabsTrigger>
-              <TabsTrigger value="react" className="text-xs md:text-sm">React/Vue/Angular</TabsTrigger>
-              <TabsTrigger value="advanced" className="text-xs md:text-sm">Advanced Config</TabsTrigger>
+          <Tabs defaultValue="react" className="w-full">
+            <TabsList className="grid w-full grid-cols-1">
+              <TabsTrigger value="react" className="text-xs md:text-sm">Modern Framework Integration (React/Vue/Angular)</TabsTrigger>
             </TabsList>
-            
-            <TabsContent value="basic" className="space-y-4">
-              <div>
-                <h3 className="text-lg font-semibold mb-2">Basic HTML/JavaScript Integration</h3>
-                <p className="text-sm text-muted-foreground mb-4">
-                  Add this code to your website to start tracking user behavior and preventing churn.
-                </p>
-                <div className="relative">
-                  <pre className="p-3 md:p-4 bg-muted rounded-lg text-xs md:text-sm overflow-auto max-h-60 md:max-h-96">
-                    <code>{sdkImplementationCode}</code>
-                  </pre>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="absolute top-2 right-2"
-                    onClick={() => copyToClipboard(sdkImplementationCode)}
-                  >
-                    <Copy className="h-3 w-3 md:h-4 md:w-4" />
-                  </Button>
-                </div>
-              </div>
-            </TabsContent>
             
             <TabsContent value="react" className="space-y-4">
               <div>
-                <h3 className="text-lg font-semibold mb-2">Modern Framework Integration</h3>
+                <h3 className="text-lg font-semibold mb-2">Modern Framework Integration (React/Vue/Angular)</h3>
                 <p className="text-sm text-muted-foreground mb-4">
                   Integration example for React, Vue, Angular, and other modern frameworks.
                 </p>
@@ -506,28 +358,6 @@ function showCustomRetentionModal(riskData) {
                     size="sm"
                     className="absolute top-2 right-2"
                     onClick={() => copyToClipboard(reactImplementationCode)}
-                  >
-                    <Copy className="h-3 w-3 md:h-4 md:w-4" />
-                  </Button>
-                </div>
-              </div>
-            </TabsContent>
-            
-            <TabsContent value="advanced" className="space-y-4">
-              <div>
-                <h3 className="text-lg font-semibold mb-2">Advanced Configuration</h3>
-                <p className="text-sm text-muted-foreground mb-4">
-                  Customize retention monitoring and modal behavior for your specific needs.
-                </p>
-                <div className="relative">
-                  <pre className="p-3 md:p-4 bg-muted rounded-lg text-xs md:text-sm overflow-auto max-h-60 md:max-h-96">
-                    <code>{advancedConfigCode}</code>
-                  </pre>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="absolute top-2 right-2"
-                    onClick={() => copyToClipboard(advancedConfigCode)}
                   >
                     <Copy className="h-3 w-3 md:h-4 md:w-4" />
                   </Button>

@@ -14,6 +14,7 @@ interface TrackingData {
   usage: number
   feature_usage: Record<string, any>
   metadata: Record<string, any>
+  trace_id?: string
 }
 
 Deno.serve(async (req) => {
@@ -44,7 +45,12 @@ Deno.serve(async (req) => {
     // Get API key from header
     const apiKey = req.headers.get('x-churnaizer-api-key')
     if (!apiKey) {
-      return new Response(JSON.stringify({ error: 'API key required' }), {
+      const temp_trace_id = crypto.randomUUID()
+      console.error(`[TRACE ERROR | trace_id: ${temp_trace_id}] API key required`)
+      return new Response(JSON.stringify({ 
+        error: 'API key required',
+        trace_id: temp_trace_id 
+      }), {
         status: 401,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       })
@@ -61,9 +67,13 @@ Deno.serve(async (req) => {
       .single()
 
     if (apiKeyError || !apiKeyData) {
-      console.error('API key validation error:', apiKeyError)
-      console.log('Invalid API key provided:', apiKey?.substring(0, 10) + '...')
-      return new Response(JSON.stringify({ error: 'Invalid API key' }), {
+      const trace_id = trackingData?.trace_id || crypto.randomUUID()
+      console.error(`[TRACE ERROR | trace_id: ${trace_id}] API key validation error:`, apiKeyError)
+      console.log(`[TRACE ERROR | trace_id: ${trace_id}] Invalid API key provided:`, apiKey?.substring(0, 10) + '...')
+      return new Response(JSON.stringify({ 
+        error: 'Invalid API key',
+        trace_id: trace_id 
+      }), {
         status: 401,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       })
@@ -75,8 +85,7 @@ Deno.serve(async (req) => {
     const trackingData: TrackingData = await req.json()
     
     // Extract or generate trace_id
-    const trace_id = trackingData.trace_id || 
-      (Date.now().toString() + Math.random().toString(36).substr(2, 9))
+    const trace_id = trackingData.trace_id || crypto.randomUUID()
     
     if (!trackingData.trace_id) {
       console.warn(`[TRACE WARNING | trace_id: ${trace_id}] No trace_id provided in request, auto-generated`)
@@ -135,13 +144,17 @@ Deno.serve(async (req) => {
 
     // Validate required fields for real tracking
     if (!trackingData.user_id || !trackingData.email) {
-      return new Response(JSON.stringify({ error: 'user_id and email are required' }), {
+      console.error(`[TRACE ERROR | trace_id: ${trace_id}] Missing required fields: user_id=${!!trackingData.user_id}, email=${!!trackingData.email}`)
+      return new Response(JSON.stringify({ 
+        error: 'user_id and email are required',
+        trace_id: trace_id 
+      }), {
         status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       })
     }
 
-    console.log('Processing tracking data for user:', trackingData.user_id)
+    console.log(`[TRACE INFO | trace_id: ${trace_id}] Processing tracking data for user:`, trackingData.user_id)
 
     // Call AI model for churn prediction
     const churnApiKey = Deno.env.get('CHURN_API_KEY')
@@ -192,7 +205,7 @@ Deno.serve(async (req) => {
           api_key_configured: !!churnApiKey
         })
 
-        console.log('🤖 Calling AI model with data:', transformedData)
+        console.log(`[TRACE INFO | trace_id: ${trace_id}] 🤖 Calling AI model with data:`, transformedData)
 
         const response = await fetch('https://ai-model-rumc.onrender.com/api/v1/predict', {
           method: 'POST',
@@ -234,7 +247,7 @@ Deno.serve(async (req) => {
           shouldTriggerEmail = churnScore >= 0.7
           recommendedTone = churnScore >= 0.7 ? 'empathetic' : churnScore >= 0.4 ? 'supportive' : 'friendly'
           
-          console.log('✅ AI prediction successful:', { churnScore, churnReason, shouldTriggerEmail })
+          console.log(`[TRACE SUCCESS | trace_id: ${trace_id}] ✅ AI prediction successful:`, { churnScore, churnReason, shouldTriggerEmail })
         } else {
           console.warn(`[FALLBACK TRIGGERED | trace_id: ${trace_id}] AI API failed with status:`, response.status)
           console.log(`[TRACE 4 | trace_id: ${trace_id}] AI Model Response`, {
@@ -299,7 +312,7 @@ Deno.serve(async (req) => {
       source: 'sdk'
     }
 
-    console.log('Prepared user data for database:', userData)
+    console.log(`[TRACE INFO | trace_id: ${trace_id}] Prepared user data for database:`, userData)
 
     // Upsert user data
     const { data: existingUser } = await supabase
@@ -313,7 +326,7 @@ Deno.serve(async (req) => {
 
     let upsertResult
     if (existingUser) {
-      console.log('Updating existing user:', existingUser.id)
+      console.log(`[TRACE INFO | trace_id: ${trace_id}] Updating existing user:`, existingUser.id)
       upsertResult = await supabase
         .from('user_data')
         .update({
@@ -322,26 +335,27 @@ Deno.serve(async (req) => {
         })
         .eq('id', existingUser.id)
     } else {
-      console.log('Inserting new user data')
+      console.log(`[TRACE INFO | trace_id: ${trace_id}] Inserting new user data`)
       upsertResult = await supabase
         .from('user_data')
         .insert(userData)
     }
 
-    console.log('Upsert result:', upsertResult)
+    console.log(`[TRACE INFO | trace_id: ${trace_id}] Upsert result:`, upsertResult)
 
     if (upsertResult.error) {
-      console.error('Database error details:', {
+      console.error(`[TRACE ERROR | trace_id: ${trace_id}] Database error details:`, {
         code: upsertResult.error.code,
         message: upsertResult.error.message,
         details: upsertResult.error.details,
         hint: upsertResult.error.hint
       })
-      console.error('Failed userData:', userData)
+      console.error(`[TRACE ERROR | trace_id: ${trace_id}] Failed userData:`, userData)
       return new Response(JSON.stringify({ 
         error: 'Failed to save user data',
         details: upsertResult.error.message,
-        code: upsertResult.error.code
+        code: upsertResult.error.code,
+        trace_id: trace_id
       }), {
         status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -388,7 +402,7 @@ Deno.serve(async (req) => {
 
     // Trigger automated actions for high-risk users
     if (riskLevel === 'high') {
-      console.log(`High-risk user detected: ${trackingData.user_id} (score: ${churnScore})`)
+      console.log(`[TRACE INFO | trace_id: ${trace_id}] High-risk user detected: ${trackingData.user_id} (score: ${churnScore})`)
       
       // Log churn trigger
       await supabase.from('churn_trigger_logs').insert({
@@ -401,7 +415,7 @@ Deno.serve(async (req) => {
       })
     }
 
-    console.log('Successfully processed tracking data:', {
+    console.log(`[TRACE SUCCESS | trace_id: ${trace_id}] Successfully processed tracking data:`, {
       user_id: trackingData.user_id,
       risk_level: riskLevel,
       churn_score: churnScore
@@ -412,8 +426,9 @@ Deno.serve(async (req) => {
     })
 
   } catch (error) {
-    console.error('Error in sdk-track function:', error)
-    console.error('Error details:', {
+    const trace_id = crypto.randomUUID() // Generate fallback trace_id for errors
+    console.error(`[TRACE ERROR | trace_id: ${trace_id}] Error in sdk-track function:`, error)
+    console.error(`[TRACE ERROR | trace_id: ${trace_id}] Error details:`, {
       name: error.name,
       message: error.message,
       stack: error.stack
@@ -421,7 +436,8 @@ Deno.serve(async (req) => {
     return new Response(JSON.stringify({ 
       error: 'Internal server error',
       message: error.message,
-      details: error.name 
+      details: error.name,
+      trace_id: trace_id
     }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },

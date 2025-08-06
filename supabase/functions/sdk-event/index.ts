@@ -39,20 +39,23 @@ serve(async (req) => {
     const eventData: EventData = await req.json();
     
     // Extract or generate trace_id
-    const trace_id = eventData.trace_id || 
-      (Date.now().toString() + Math.random().toString(36).substr(2, 9))
+    const trace_id = eventData.trace_id || crypto.randomUUID()
     
     if (!eventData.trace_id) {
       console.warn(`[TRACE WARNING | trace_id: ${trace_id}] No trace_id provided in SDK event request, auto-generated`)
     }
 
-    console.log(`[TRACE 5 | trace_id: ${trace_id}] SDK Event received:`, eventData);
+    console.log(`[TRACE 2 | trace_id: ${trace_id}] SDK Event received:`, eventData);
 
     // Get API key from headers
     const apiKey = req.headers.get('x-churnaizer-api-key');
     if (!apiKey) {
+      console.error(`[TRACE ERROR | trace_id: ${trace_id}] Missing API key in headers`)
       return new Response(
-        JSON.stringify({ error: 'Missing API key in headers' }),
+        JSON.stringify({ 
+          error: 'Missing API key in headers',
+          trace_id: trace_id 
+        }),
         { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
@@ -71,9 +74,12 @@ serve(async (req) => {
       .single();
 
     if (apiKeyError || !apiKeyData) {
-      console.error('Invalid API key:', apiKey);
+      console.error(`[TRACE ERROR | trace_id: ${trace_id}] Invalid API key:`, apiKey);
       return new Response(
-        JSON.stringify({ error: 'Invalid or inactive API key' }),
+        JSON.stringify({ 
+          error: 'Invalid or inactive API key',
+          trace_id: trace_id 
+        }),
         { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
@@ -84,8 +90,12 @@ serve(async (req) => {
     const requiredFields = ['event', 'user_id', 'email'];
     for (const field of requiredFields) {
       if (!eventData[field]) {
+        console.error(`[TRACE ERROR | trace_id: ${trace_id}] Missing required field:`, field)
         return new Response(
-          JSON.stringify({ error: `Missing required field: ${field}` }),
+          JSON.stringify({ 
+            error: `Missing required field: ${field}`,
+            trace_id: trace_id 
+          }),
           { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
       }
@@ -103,9 +113,13 @@ serve(async (req) => {
       });
 
     if (activityError) {
-      console.error('Failed to save user activity:', activityError);
+      console.error(`[TRACE ERROR | trace_id: ${trace_id}] Failed to save user activity:`, activityError);
       return new Response(
-        JSON.stringify({ error: 'Failed to save activity', details: activityError.message }),
+        JSON.stringify({ 
+          error: 'Failed to save activity', 
+          details: activityError.message,
+          trace_id: trace_id 
+        }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
@@ -144,7 +158,7 @@ serve(async (req) => {
           .eq('owner_id', ownerId);
 
         if (updateError) {
-          console.error('Failed to update user status:', updateError);
+          console.error(`[TRACE ERROR | trace_id: ${trace_id}] Failed to update user status:`, updateError);
         }
 
         // Insert recovery log
@@ -160,10 +174,10 @@ serve(async (req) => {
           });
 
         if (recoveryError) {
-          console.error('Failed to save recovery log:', recoveryError);
+          console.error(`[TRACE ERROR | trace_id: ${trace_id}] Failed to save recovery log:`, recoveryError);
         }
 
-        console.log(`Recovery triggered for user ${eventData.user_id}: ${recoveryReason}, Revenue saved: ${revenueSaved}`);
+        console.log(`[TRACE SUCCESS | trace_id: ${trace_id}] Recovery triggered for user ${eventData.user_id}: ${recoveryReason}, Revenue saved: ${revenueSaved}`);
       }
     }
 
@@ -174,7 +188,8 @@ serve(async (req) => {
         event: eventData.event,
         user_id: eventData.user_id,
         recovery_triggered: recoveryTriggered,
-        recovery_reason: recoveryTriggered ? recoveryReason : null
+        recovery_reason: recoveryTriggered ? recoveryReason : null,
+        trace_id: trace_id
       }),
       { 
         status: 200, 
@@ -183,9 +198,14 @@ serve(async (req) => {
     );
 
   } catch (error) {
-    console.error('SDK Event error:', error);
+    const trace_id = crypto.randomUUID() // Generate fallback trace_id for errors
+    console.error(`[TRACE ERROR | trace_id: ${trace_id}] SDK Event error:`, error);
     return new Response(
-      JSON.stringify({ error: 'Internal server error', details: error.message }),
+      JSON.stringify({ 
+        error: 'Internal server error', 
+        details: error.message,
+        trace_id: trace_id 
+      }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }

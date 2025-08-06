@@ -1,12 +1,11 @@
 import React from 'react';
-import { UserPredictionsTable } from "@/components/dashboard/UserPredictionsTable";
+import { RecoveredUsersTable } from "@/components/dashboard/RecoveredUsersTable";
 import { RecoveryMetricsCards } from "@/components/dashboard/RecoveryMetricsCards";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
-import { Code, Users } from "lucide-react";
+import { Code, CheckCircle } from "lucide-react";
 
-export const UploadedUsersPage = () => {
+export const RecoveredUsersPage = () => {
   return (
     <div className="space-y-6">
       {/* Page Header */}
@@ -14,10 +13,10 @@ export const UploadedUsersPage = () => {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
-              <Users className="h-6 w-6" />
-              User Predictions
+              <CheckCircle className="h-6 w-6 text-green-600" />
+              Churn Recovery Tracking
             </h1>
-            <p className="text-muted-foreground">Real-time churn predictions from your SDK data</p>
+            <p className="text-muted-foreground">Track recovered users and measure revenue saved from churn prevention</p>
           </div>
           <Button variant="outline" asChild>
             <Link to="/integration">
@@ -28,10 +27,11 @@ export const UploadedUsersPage = () => {
         </div>
       </div>
 
-      {/* Recovery Metrics */}
+      {/* Metrics Cards */}
       <RecoveryMetricsCards />
 
-      <UserPredictionsTable />
+      {/* Recovered Users Table */}
+      <RecoveredUsersTable />
     </div>
   );
 };

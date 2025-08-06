@@ -27,6 +27,7 @@ import BlogIndex from "./pages/blog/BlogIndex";
 import BlogPost from "./pages/blog/BlogPost";
 // Dashboard pages
 import { UploadedUsersPage } from "./pages/dashboard/UploadedUsersPage";
+import { RecoveredUsersPage } from "./pages/dashboard/RecoveredUsersPage";
 import { EmailAutomationPage } from "./pages/EmailAutomationPage";
 import { UserDetailPage } from "./pages/dashboard/UserDetailPage";
 // Admin pages
@@ -133,15 +134,25 @@ const App = () => {
                  } 
                />
                <Route 
-                 path="/users/:userId" 
+                 path="/recovery" 
                  element={
                    <ProtectedRoute>
                      <DashboardLayout>
-                       <UserDetailPage />
+                       <RecoveredUsersPage />
                      </DashboardLayout>
                    </ProtectedRoute>
                  } 
                />
+                <Route 
+                  path="/users/:userId" 
+                  element={
+                    <ProtectedRoute>
+                      <DashboardLayout>
+                        <UserDetailPage />
+                      </DashboardLayout>
+                    </ProtectedRoute>
+                  } 
+                />
               {/* Redirect dashboard to integration for backwards compatibility */}
               <Route 
                 path="/dashboard" 

@@ -104,8 +104,64 @@
         sdk_version: SDK_VERSION
       };
 
+      // Send tracking request with callback wrapper to also track login event
+      const wrappedCallback = (result, error) => {
+        if (!error && result) {
+          // Also track login event after successful prediction
+          this.trackEvent({
+            event: 'login',
+            user_id: userData.user_id,
+            email: userData.email || userData.customer_email,
+            customer_name: userData.customer_name,
+            monthly_revenue: userData.monthly_revenue || 0
+          }, apiKey);
+        }
+        if (callback) callback(result, error);
+      };
+
       // Send tracking request
-      this._sendTrackingRequest(trackingData, apiKey, callback);
+      this._sendTrackingRequest(trackingData, apiKey, wrappedCallback);
+    },
+
+    // New trackEvent function for recovery tracking
+    trackEvent: function(eventData, apiKey, callback) {
+      // Validate required parameters
+      if (!eventData || !apiKey) {
+        const error = 'Missing required parameters: eventData and apiKey are required';
+        if (callback) callback(null, error);
+        logError(error);
+        return;
+      }
+
+      // Validate required event fields
+      const requiredFields = ['event', 'user_id', 'email'];
+      const missingFields = requiredFields.filter(field => !eventData[field]);
+      
+      if (missingFields.length > 0) {
+        const error = `Missing required event fields: ${missingFields.join(', ')}`;
+        if (callback) callback(null, error);
+        logError(error);
+        return;
+      }
+
+      log('Tracking event:', eventData.event, 'for user:', eventData.user_id);
+
+      // Prepare event data
+      const trackingEventData = {
+        event: eventData.event,
+        user_id: eventData.user_id,
+        email: eventData.email,
+        customer_name: eventData.customer_name || eventData.email?.split('@')[0] || 'Unknown',
+        monthly_revenue: eventData.monthly_revenue || 0,
+        timestamp: new Date().toISOString(),
+        session_id: this._generateSessionId(),
+        user_agent: navigator.userAgent,
+        url: window.location.href,
+        sdk_version: SDK_VERSION
+      };
+
+      // Send event tracking request
+      this._sendEventRequest(trackingEventData, apiKey, callback);
     },
 
     // Batch tracking for multiple users
@@ -269,6 +325,41 @@
       };
 
       xhr.send(JSON.stringify(data));
+    },
+
+    _sendEventRequest: function(eventData, apiKey, callback) {
+      const xhr = new XMLHttpRequest();
+      
+      xhr.open('POST', `${API_BASE_URL}/sdk-event`, true);
+      xhr.setRequestHeader('Content-Type', 'application/json');
+      xhr.setRequestHeader('x-churnaizer-api-key', apiKey);
+      xhr.setRequestHeader('X-SDK-Version', SDK_VERSION);
+      
+      xhr.onreadystatechange = function() {
+        if (xhr.readyState === 4) {
+          try {
+            const response = JSON.parse(xhr.responseText);
+            
+            if (xhr.status === 200 || xhr.status === 201) {
+              log('Event tracking successful:', response);
+              if (callback) callback(response, null);
+            } else {
+              logError('Event tracking failed:', response);
+              if (callback) callback(null, response.error || 'Event tracking failed');
+            }
+          } catch (e) {
+            logError('Invalid event response format:', e);
+            if (callback) callback(null, 'Invalid response format');
+          }
+        }
+      };
+
+      xhr.onerror = function() {
+        logError('Network error during event tracking request');
+        if (callback) callback(null, 'Network error');
+      };
+
+      xhr.send(JSON.stringify(eventData));
     },
 
     _syncToDashboard: async function(userData, result) {

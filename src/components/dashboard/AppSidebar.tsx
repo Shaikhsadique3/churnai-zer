@@ -8,7 +8,8 @@ import {
   Mail,
   BarChart3,
   BookOpen,
-  ExternalLink
+  ExternalLink,
+  CheckCircle
 } from "lucide-react";
 import {
   Sidebar,
@@ -38,6 +39,11 @@ const navigationItems = [
     title: "User Predictions",
     url: "/users",
     icon: Users
+  },
+  {
+    title: "Churn Recovery",
+    url: "/recovery",
+    icon: CheckCircle
   },
   {
     title: "Email Automation",

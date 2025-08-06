@@ -728,6 +728,33 @@ export type Database = {
         }
         Relationships: []
       }
+      recovery_logs: {
+        Row: {
+          id: string
+          owner_id: string
+          recovered_at: string
+          recovery_reason: string
+          revenue_saved: number | null
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          owner_id: string
+          recovered_at?: string
+          recovery_reason: string
+          revenue_saved?: number | null
+          user_id: string
+        }
+        Update: {
+          id?: string
+          owner_id?: string
+          recovered_at?: string
+          recovery_reason?: string
+          revenue_saved?: number | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       retention_emails: {
         Row: {
           clicked_at: string | null
@@ -901,6 +928,36 @@ export type Database = {
         }
         Relationships: []
       }
+      user_activity: {
+        Row: {
+          created_at: string
+          email: string
+          event: string
+          id: string
+          monthly_revenue: number | null
+          owner_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          event: string
+          id?: string
+          monthly_revenue?: number | null
+          owner_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          event?: string
+          id?: string
+          monthly_revenue?: number | null
+          owner_id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_data: {
         Row: {
           action_recommended: string | null
@@ -914,8 +971,10 @@ export type Database = {
           monthly_revenue: number | null
           owner_id: string
           plan: Database["public"]["Enums"]["plan_type"] | null
+          recovered_at: string | null
           risk_level: Database["public"]["Enums"]["risk_level"] | null
           source: string | null
+          status: Database["public"]["Enums"]["user_prediction_status"] | null
           understanding_score: number | null
           updated_at: string | null
           usage: number | null
@@ -934,8 +993,10 @@ export type Database = {
           monthly_revenue?: number | null
           owner_id: string
           plan?: Database["public"]["Enums"]["plan_type"] | null
+          recovered_at?: string | null
           risk_level?: Database["public"]["Enums"]["risk_level"] | null
           source?: string | null
+          status?: Database["public"]["Enums"]["user_prediction_status"] | null
           understanding_score?: number | null
           updated_at?: string | null
           usage?: number | null
@@ -954,8 +1015,10 @@ export type Database = {
           monthly_revenue?: number | null
           owner_id?: string
           plan?: Database["public"]["Enums"]["plan_type"] | null
+          recovered_at?: string | null
           risk_level?: Database["public"]["Enums"]["risk_level"] | null
           source?: string | null
+          status?: Database["public"]["Enums"]["user_prediction_status"] | null
           understanding_score?: number | null
           updated_at?: string | null
           usage?: number | null
@@ -1094,6 +1157,7 @@ export type Database = {
     Enums: {
       plan_type: "Free" | "Pro" | "Enterprise"
       risk_level: "low" | "medium" | "high"
+      user_prediction_status: "at_risk" | "recovered"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1223,6 +1287,7 @@ export const Constants = {
     Enums: {
       plan_type: ["Free", "Pro", "Enterprise"],
       risk_level: ["low", "medium", "high"],
+      user_prediction_status: ["at_risk", "recovered"],
     },
   },
 } as const

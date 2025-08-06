@@ -42,6 +42,8 @@ serve(async (req) => {
 
     // Parse request body with error handling
     let requestData: AutoEmailRequest;
+    let trace_id: string; // Declare trace_id outside try block
+    
     try {
       const body = await req.text();
       console.log('Request body received:', body.substring(0, 200) + '...'); // Truncate for security
@@ -53,7 +55,7 @@ serve(async (req) => {
       requestData = JSON.parse(body);
       
       // Extract or generate trace_id
-      const trace_id = requestData.trace_id || crypto.randomUUID()
+      trace_id = requestData.trace_id || crypto.randomUUID();
       
       if (!requestData.trace_id) {
         console.warn(`[TRACE WARNING | trace_id: ${trace_id}] No trace_id provided in email trigger request, auto-generated`)

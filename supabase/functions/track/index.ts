@@ -462,7 +462,7 @@ serve(async (req) => {
                 },
                 body: JSON.stringify({
                   user_id: ownerId,
-                  user_email: userData.email || userData.customer_email,
+                  customer_email: userData.email || userData.customer_email, // Fixed field name
                   target_user_id: user_id,
                   churn_score: churnScore || 0.5,
                   risk_level: riskLevel,

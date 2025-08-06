@@ -79,10 +79,8 @@
 
       log('Tracking user data for:', userData.user_id);
 
-      // Generate unique trace session ID for end-to-end logging
-      const trace_id = (typeof crypto !== 'undefined' && crypto.randomUUID) 
-        ? crypto.randomUUID() 
-        : Date.now().toString() + Math.random().toString(36).substr(2, 9);
+      // Generate unique trace session ID for end-to-end logging (support backward compatibility)
+      const traceId = userData.trace_id || (crypto?.randomUUID?.() || `${Date.now()}-${Math.random().toString(16).slice(2)}`);
 
       // Prepare tracking data with all expected fields
       const trackingData = {
@@ -100,7 +98,7 @@
         email_opens_last30days: userData.email_opens_last30days || 0,
         last_login_days_ago: userData.last_login_days_ago || 0,
         billing_issue_count: userData.billing_issue_count || 0,
-        trace_id: trace_id, // Add trace session ID
+        trace_id: traceId, // Add trace session ID
         
         // Additional metadata
         timestamp: new Date().toISOString(),
@@ -111,7 +109,7 @@
       };
 
       // *** TRACE LOG 1: SDK PAYLOAD ***
-      console.log(`[TRACE 1 | trace_id: ${trace_id}] SDK Payload`, {
+      console.log(`[TRACE 1 | trace_id: ${traceId}] SDK Payload:`, {
         payload: trackingData,
         original_user_data: userData,
         required_fields_present: {
@@ -121,7 +119,7 @@
           subscription_plan: trackingData.subscription_plan,
           billing_issue_count: trackingData.billing_issue_count,
           number_of_logins_last30days: trackingData.number_of_logins_last30days,
-          trace_id: !!trace_id
+          trace_id: !!traceId
         }
       });
 
@@ -135,7 +133,7 @@
             email: userData.email || userData.customer_email,
             customer_name: userData.customer_name,
             monthly_revenue: userData.monthly_revenue || 0,
-            trace_id: trace_id // Propagate trace_id to event tracking
+            trace_id: traceId // Propagate trace_id to event tracking
           }, apiKey);
         }
         if (callback) callback(result, error);
@@ -166,10 +164,8 @@
         return;
       }
 
-      // Generate trace_id if not provided
-      const trace_id = eventData.trace_id || (typeof crypto !== 'undefined' && crypto.randomUUID) 
-        ? crypto.randomUUID() 
-        : Date.now().toString() + Math.random().toString(36).substr(2, 9);
+      // Generate trace_id if not provided (backward compatibility)
+      const traceId = eventData.trace_id || (crypto?.randomUUID?.() || `${Date.now()}-${Math.random().toString(16).slice(2)}`);
       
       log('Tracking event:', eventData.event, 'for user:', eventData.user_id);
 
@@ -180,7 +176,7 @@
         email: eventData.email,
         customer_name: eventData.customer_name || eventData.email?.split('@')[0] || 'Unknown',
         monthly_revenue: eventData.monthly_revenue || 0,
-        trace_id: trace_id,
+        trace_id: traceId,
         timestamp: new Date().toISOString(),
         session_id: this._generateSessionId(),
         user_agent: navigator.userAgent,
@@ -188,7 +184,7 @@
         sdk_version: SDK_VERSION
       };
 
-      console.log(`[TRACE 5 | trace_id: ${trace_id}] SDK Event Payload`, trackingEventData);
+      console.log(`[TRACE 1 | trace_id: ${traceId}] SDK Event Payload:`, trackingEventData);
 
       // Send event tracking request
       this._sendEventRequest(trackingEventData, apiKey, callback);
@@ -398,7 +394,8 @@
           ...userData,
           ...result,
           shouldTriggerEmail: result.risk_level === 'high',
-          synced_at: new Date().toISOString()
+          synced_at: new Date().toISOString(),
+          trace_id: userData.trace_id // Propagate trace_id to dashboard sync
         };
 
         const response = await fetch(DASHBOARD_SYNC_URL, {

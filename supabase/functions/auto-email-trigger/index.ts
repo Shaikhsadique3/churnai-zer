@@ -22,8 +22,8 @@ interface AutoEmailRequest {
   shouldTriggerEmail?: boolean;
   recommended_tone?: string;
   trigger_email?: boolean;
-  force_email_test?: boolean; // Force email test mode
-  trace_id?: string; // Add trace_id support
+  trace_id?: string;
+  is_fallback?: boolean;
 }
 
 serve(async (req) => {
@@ -43,7 +43,6 @@ serve(async (req) => {
     // Parse request body with error handling
     let requestData: AutoEmailRequest;
     let trace_id: string; // Declare trace_id outside try block
-    let forceEmailTest = false; // Declare forceEmailTest outside try block
     
     try {
       const body = await req.text();
@@ -62,13 +61,7 @@ serve(async (req) => {
         console.warn(`[TRACE WARNING | trace_id: ${trace_id}] No trace_id provided in email trigger request, auto-generated`)
       }
       
-      // Handle force email test mode
-      forceEmailTest = requestData.force_email_test === true || requestData.force_email_test === 'true';
-      if (forceEmailTest) {
-        console.log(`[TRACE TEST MODE | trace_id: ${trace_id}] Force email test mode enabled - overriding risk level to high`);
-        requestData.risk_level = 'high';
-        requestData.shouldTriggerEmail = true;
-      }
+      // Use real data - no force test mode needed
       
       // *** TRACE LOG 5: EMAIL TRIGGER PAYLOAD ***
       console.log(`[TRACE 5 | trace_id: ${trace_id}] Email Trigger Payload`, {
@@ -104,8 +97,8 @@ serve(async (req) => {
       );
     }
 
-    // Apply fallbacks for email field
-    const customerEmail = requestData.customer_email || requestData.email || null;
+    // Apply fallbacks for email field - ensure customer_email is properly mapped
+    const customerEmail = requestData.customer_email || requestData.user_email || requestData.email || null;
     const userId = requestData.user_id || null;
 
     // Debug logging for field validation
@@ -142,14 +135,19 @@ serve(async (req) => {
     // Debug trigger conditions
     console.log(`[TRACE DEBUG | trace_id: ${trace_id}] Email Trigger Decision`, {
       risk_level: requestData.risk_level,
-      force_email_test: forceEmailTest,
       shouldTriggerEmail: requestData.shouldTriggerEmail,
-      trigger_email: requestData.trigger_email
+      trigger_email: requestData.trigger_email,
+      is_fallback: requestData.is_fallback
     });
 
-    // Only trigger for high-risk users (or in force test mode)
-    if (requestData.risk_level !== 'high' && !forceEmailTest) {
-      console.log(`[TRACE SKIP | trace_id: ${trace_id}] User not high-risk (${requestData.risk_level}) and not in test mode, skipping email automation`);
+    // Only trigger for high-risk users or when explicitly requested
+    const shouldTrigger = requestData.risk_level === 'high' || 
+                         requestData.trigger_email === true || 
+                         requestData.shouldTriggerEmail === true ||
+                         (requestData.is_fallback && requestData.risk_level === 'medium'); // Allow medium risk for fallback scenarios
+    
+    if (!shouldTrigger) {
+      console.log(`[TRACE SKIP | trace_id: ${trace_id}] User not high-risk (${requestData.risk_level}) and trigger not explicitly requested, skipping email automation`);
       return new Response(
         JSON.stringify({ 
           success: true,
@@ -169,43 +167,38 @@ serve(async (req) => {
 
     console.log(`[TRACE PROCEED | trace_id: ${trace_id}] Triggering email automation for user:`, requestData.user_id);
 
-    // Check if email was already sent recently (avoid spam) - skip in force test mode
-    let cooldownPassed = true;
-    if (!forceEmailTest) {
-      const { data: recentEmails } = await supabase
-        .from('email_logs')
-        .select('created_at')
-        .eq('target_user_id', requestData.user_id)
-        .eq('status', 'sent')
-        .gte('created_at', new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()) // Last 24 hours
-        .limit(1);
+    // Check if email was already sent recently (avoid spam)
+    const { data: recentEmails } = await supabase
+      .from('email_logs')
+      .select('created_at')
+      .eq('target_user_id', requestData.target_user_id || requestData.user_id)
+      .eq('status', 'sent')
+      .gte('created_at', new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()) // Last 24 hours
+      .limit(1);
 
-      cooldownPassed = !recentEmails || recentEmails.length === 0;
-      
-      console.log(`[TRACE COOLDOWN | trace_id: ${trace_id}] Cooldown check:`, {
-        cooldownPassed,
-        recentEmailsCount: recentEmails?.length || 0,
-        lastEmailDate: recentEmails?.[0]?.created_at || null
-      });
+    const cooldownPassed = !recentEmails || recentEmails.length === 0;
+    
+    console.log(`[TRACE COOLDOWN | trace_id: ${trace_id}] Cooldown check:`, {
+      cooldownPassed,
+      recentEmailsCount: recentEmails?.length || 0,
+      lastEmailDate: recentEmails?.[0]?.created_at || null
+    });
 
-      if (!cooldownPassed) {
-        console.log(`[TRACE SKIP | trace_id: ${trace_id}] Email already sent to this user in the last 24 hours, skipping`);
-        return new Response(
-          JSON.stringify({ 
-            message: 'Email already sent to this user recently',
-            triggered: false,
-            last_email: recentEmails[0].created_at,
-            skip_reason: 'cooldown_active',
-            trace_id: trace_id
-          }),
-          { 
-            status: 200, 
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-          }
-        );
-      }
-    } else {
-      console.log(`[TRACE TEST MODE | trace_id: ${trace_id}] Skipping cooldown check for force email test`);
+    if (!cooldownPassed) {
+      console.log(`[TRACE SKIP | trace_id: ${trace_id}] Email already sent to this user in the last 24 hours, skipping`);
+      return new Response(
+        JSON.stringify({ 
+          message: 'Email already sent to this user recently',
+          triggered: false,
+          last_email: recentEmails[0].created_at,
+          skip_reason: 'cooldown_active',
+          trace_id: trace_id
+        }),
+        { 
+          status: 200, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      );
     }
 
     // Send retention email directly using Resend

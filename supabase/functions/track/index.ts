@@ -329,6 +329,40 @@ serve(async (req) => {
 
         console.log('Enhanced analysis:', { riskLevel, understandingScore, statusTag, daysUntilMature });
 
+        // Check for forced test mode
+        const forceEmailTest = rawUserData.force_email_test === true || rawUserData.force_email_test === 'true';
+        const allowMediumRiskEmails = Deno.env.get('ALLOW_MEDIUM_RISK_EMAILS') === 'true';
+        
+        // Email triggering logic with debug logging
+        let shouldTriggerEmail = false;
+        let emailSkipReason = '';
+        
+        if (forceEmailTest) {
+          // Override for test mode
+          riskLevel = 'high';
+          shouldTriggerEmail = true;
+          console.log('🧪 FORCE EMAIL TEST MODE: Overriding riskLevel to high, triggering email');
+        } else if (riskLevel === 'high') {
+          shouldTriggerEmail = true;
+          console.log('📧 Email trigger: HIGH risk user detected');
+        } else if (riskLevel === 'medium' && allowMediumRiskEmails) {
+          shouldTriggerEmail = true;
+          console.log('📧 Email trigger: MEDIUM risk user (allowed by env var)');
+        } else {
+          emailSkipReason = `Risk level ${riskLevel} does not meet email trigger criteria`;
+          console.log('❌ Email skipped:', emailSkipReason);
+        }
+
+        // Debug logging for email trigger conditions
+        console.log('📊 Email Trigger Debug:', {
+          user_id,
+          riskLevel,
+          shouldTriggerEmail,
+          forceEmailTest,
+          allowMediumRiskEmails,
+          emailSkipReason
+        });
+
         // Map subscription_plan to database plan enum
         const planMapping: { [key: string]: 'Free' | 'Pro' | 'Enterprise' } = {
           'Free Trial': 'Free',
@@ -375,6 +409,75 @@ serve(async (req) => {
 
         console.log('Successfully saved user data for:', user_id);
 
+        // Email sending logic
+        let emailAttempted = false;
+        let emailSent = false;
+        let emailError = null;
+        
+        if (shouldTriggerEmail) {
+          emailAttempted = true;
+          console.log('📧 Attempting to send retention email to:', userData.email || userData.customer_email);
+          
+          // Check cooldown (skip in force test mode)
+          let cooldownPassed = false;
+          if (forceEmailTest) {
+            cooldownPassed = true;
+            console.log('🧪 Skipping cooldown check for test mode');
+          } else {
+            const { data: recentEmails } = await supabase
+              .from('email_logs')
+              .select('sent_at')
+              .eq('user_id', ownerId)
+              .eq('target_user_id', user_id)
+              .gte('sent_at', new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString())
+              .order('sent_at', { ascending: false })
+              .limit(1);
+              
+            cooldownPassed = !recentEmails || recentEmails.length === 0;
+            console.log('⏰ Cooldown check:', { cooldownPassed, recentEmailsCount: recentEmails?.length || 0 });
+          }
+          
+          if (cooldownPassed) {
+            try {
+              // Call auto-email-trigger function
+              const emailResponse = await fetch(`${supabaseUrl}/functions/v1/auto-email-trigger`, {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                  'Authorization': `Bearer ${supabaseKey}`,
+                },
+                body: JSON.stringify({
+                  user_id: ownerId,
+                  user_email: userData.email || userData.customer_email,
+                  target_user_id: user_id,
+                  churn_score: churnScore || 0.5,
+                  risk_level: riskLevel,
+                  insight: churnReason,
+                  recommended_tone: riskLevel === 'high' ? 'empathetic' : 'friendly',
+                  trigger_email: true,
+                  trace_id: `email_${user_id}_${Date.now()}`
+                })
+              });
+              
+              if (emailResponse.ok) {
+                const emailResult = await emailResponse.json();
+                emailSent = true;
+                console.log('✅ Email sent successfully:', emailResult);
+              } else {
+                const errorText = await emailResponse.text();
+                emailError = `Email API failed: ${emailResponse.status} - ${errorText}`;
+                console.error('❌ Email send failed:', emailError);
+              }
+            } catch (emailSendError) {
+              emailError = `Email send error: ${emailSendError.message}`;
+              console.error('❌ Email send exception:', emailSendError);
+            }
+          } else {
+            emailSkipReason = 'Email cooldown period active (24 hours)';
+            console.log('⏰ Email skipped due to cooldown');
+          }
+        }
+
         // Log SDK health data
         try {
           const { data: apiKeyData } = await supabase
@@ -416,11 +519,16 @@ serve(async (req) => {
           message: actionRecommended,
           risk_level: riskLevel,
           understanding_score: understandingScore,
-          shouldTriggerEmail: riskLevel === 'high',
+          shouldTriggerEmail,
           recommended_tone: riskLevel === 'high' ? 'empathetic' : 'friendly',
           status_tag: statusTag,
           action_recommended: actionRecommended,
-          days_until_mature: daysUntilMature
+          days_until_mature: daysUntilMature,
+          // Email debug info
+          email_attempted: emailAttempted,
+          email_sent: emailSent,
+          email_skip_reason: emailSkipReason || null,
+          email_error: emailError
         });
 
       } catch (userError) {

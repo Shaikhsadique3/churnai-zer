@@ -120,67 +120,68 @@ Deno.serve(async (req) => {
 
     console.log('Processing tracking data for user:', trackingData.user_id)
 
-    // Calculate usage score based on activity
-    const baseUsage = trackingData.usage || 1
-    const lastLoginDate = new Date(trackingData.last_login)
-    const daysSinceLogin = Math.floor((Date.now() - lastLoginDate.getTime()) / (1000 * 60 * 60 * 24))
-    
-    // Calculate churn score based on multiple factors
-    let churnScore = 0.1 // Base score
+    // Call AI model for churn prediction
+    const churnApiKey = Deno.env.get('CHURN_API_KEY')
+    let churnScore = 0.5 // Fallback score
+    let churnReason = 'Fallback prediction - external AI unavailable'
+    let understandingScore = 50
+    let shouldTriggerEmail = false
+    let recommendedTone = 'friendly'
 
-    // Usage patterns
-    if (baseUsage < 3) churnScore += 0.4
-    else if (baseUsage < 8) churnScore += 0.2
-    else if (baseUsage > 20) churnScore -= 0.1
+    if (churnApiKey) {
+      try {
+        // Transform tracking data to match AI model requirements
+        const lastLoginDate = new Date(trackingData.last_login)
+        const daysSinceLogin = Math.floor((Date.now() - lastLoginDate.getTime()) / (1000 * 60 * 60 * 24))
+        
+        const transformedData = {
+          user_id: trackingData.user_id,
+          email: trackingData.email,
+          support_tickets: 0, // Default for SDK tracking
+          usage_score: trackingData.usage || 1,
+          monthly_revenue: trackingData.metadata?.monthly_revenue || 0,
+          signup_date: trackingData.metadata?.signup_date || new Date(Date.now() - (30 * 24 * 60 * 60 * 1000)).toISOString(),
+          last_active_date: trackingData.last_login,
+          plan: trackingData.subscription_plan || 'free',
+          billing_status: trackingData.metadata?.billing_status || 'active',
+          email_opens_last30days: trackingData.metadata?.email_opens || 5,
+          number_of_logins_last30days: Math.max(1, 30 - daysSinceLogin)
+        }
 
-    // Plan type
-    if (trackingData.subscription_plan === 'free') churnScore += 0.2
-    else if (trackingData.subscription_plan === 'premium') churnScore -= 0.2
+        console.log('🤖 Calling AI model with data:', transformedData)
 
-    // Last login recency
-    if (daysSinceLogin > 30) churnScore += 0.3
-    else if (daysSinceLogin > 7) churnScore += 0.1
-    else if (daysSinceLogin === 0) churnScore -= 0.1
+        const response = await fetch('https://ai-model-rumc.onrender.com/api/v1/predict', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${churnApiKey}`,
+          },
+          body: JSON.stringify(transformedData)
+        })
 
-    // Feature usage diversity
-    const featureCount = Object.keys(trackingData.feature_usage || {}).length
-    if (featureCount < 2) churnScore += 0.2
-    else if (featureCount > 5) churnScore -= 0.1
-
-    // Ensure score is between 0 and 1
-    churnScore = Math.max(0, Math.min(1, churnScore))
+        if (response.ok) {
+          const result = await response.json()
+          churnScore = result.churn_probability || result.churn_score || 0.5
+          churnReason = result.reason || result.churn_reason || 'AI-powered prediction based on user behavior'
+          understandingScore = result.understanding_score || Math.max(30, Math.min(100, 85 - (churnScore * 50)))
+          shouldTriggerEmail = churnScore >= 0.7
+          recommendedTone = churnScore >= 0.7 ? 'empathetic' : churnScore >= 0.4 ? 'supportive' : 'friendly'
+          
+          console.log('✅ AI prediction successful:', { churnScore, churnReason, shouldTriggerEmail })
+        } else {
+          console.warn('❌ AI API failed, using fallback:', response.status)
+        }
+      } catch (error) {
+        console.warn('❌ AI API error, using fallback:', error.message)
+      }
+    } else {
+      console.warn('❌ CHURN_API_KEY not configured, using fallback')
+    }
 
     // Determine risk level
     let riskLevel = 'low'
     if (churnScore >= 0.7) riskLevel = 'high'
     else if (churnScore >= 0.4) riskLevel = 'medium'
-
-    // Generate insights
-    const churnReasons = []
-    const recommendedActions = []
-
-    if (baseUsage < 3) {
-      churnReasons.push('Very low platform engagement')
-      recommendedActions.push('Send onboarding sequence')
-    }
-    if (daysSinceLogin > 7) {
-      churnReasons.push('Infrequent login pattern')
-      recommendedActions.push('Re-engagement email campaign')
-    }
-    if (trackingData.subscription_plan === 'free') {
-      churnReasons.push('Free plan user - no revenue commitment')
-      recommendedActions.push('Upgrade promotion sequence')
-    }
-    if (featureCount < 2) {
-      churnReasons.push('Limited feature adoption')
-      recommendedActions.push('Feature education campaign')
-    }
-
-    const churnReason = churnReasons.length > 0 ? churnReasons.join('; ') : 'User showing healthy engagement patterns'
-    const actionRecommended = recommendedActions.length > 0 ? recommendedActions.join('; ') : 'Continue standard engagement strategy'
-
-    // Calculate understanding score
-    const understandingScore = Math.max(30, Math.min(100, 85 - (churnScore * 50)))
 
     // Map subscription plan to database enum values
     let mappedPlan = 'Free' // Default
@@ -199,14 +200,14 @@ Deno.serve(async (req) => {
       owner_id: ownerId,
       user_id: trackingData.user_id,
       plan: mappedPlan,
-      usage: baseUsage,
+      usage: trackingData.usage || 1,
       last_login: trackingData.last_login,
       churn_score: churnScore,
       risk_level: riskLevel as 'low' | 'medium' | 'high',
       churn_reason: churnReason,
-      action_recommended: actionRecommended,
+      action_recommended: shouldTriggerEmail ? 'Send retention email immediately' : 'Continue monitoring',
       understanding_score: Math.round(understandingScore),
-      user_stage: daysSinceLogin <= 7 ? 'active' : daysSinceLogin <= 30 ? 'at_risk' : 'inactive',
+      user_stage: new Date(trackingData.last_login) > new Date(Date.now() - 7*24*60*60*1000) ? 'active' : 'at_risk',
       source: 'sdk'
     }
 
@@ -269,23 +270,30 @@ Deno.serve(async (req) => {
       user_agent: req.headers.get('user-agent')
     })
 
-    // Prepare response
+    // Prepare response with all required SDK fields
     const response = {
       success: true,
       user_id: trackingData.user_id,
       churn_score: churnScore,
+      churn_probability: churnScore, // Add for compatibility
       risk_level: riskLevel,
       understanding_score: Math.round(understandingScore),
+      reason: churnReason,
+      churn_reason: churnReason, // Add for compatibility
+      message: shouldTriggerEmail ? 'High risk user - immediate attention needed' : 'User engagement is stable',
+      shouldTriggerEmail: shouldTriggerEmail, // Required SDK field
+      recommended_tone: recommendedTone, // Required SDK field
       insights: {
         churn_reason: churnReason,
-        recommended_actions: actionRecommended,
-        risk_factors: churnReasons,
+        recommended_actions: shouldTriggerEmail ? 'Send retention email immediately' : 'Continue monitoring',
+        risk_factors: churnScore >= 0.4 ? ['Elevated churn risk detected'] : [],
         protective_factors: churnScore < 0.3 ? ['Regular engagement', 'Recent activity'] : []
       },
       metadata: {
         processed_at: new Date().toISOString(),
         sdk_version: '1.0.0',
-        api_version: 'v1'
+        api_version: 'v1',
+        ai_prediction: churnApiKey ? true : false
       }
     }
 

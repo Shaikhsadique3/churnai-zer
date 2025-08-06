@@ -255,8 +255,8 @@ serve(async (req) => {
 
         // Calculate risk level based on churn score
         if (churnScore === null) {
-          riskLevel = 'unknown';
-          console.log('AI prediction failed - setting risk level to unknown');
+          riskLevel = 'medium'; // Use medium as fallback instead of unknown
+          console.log('AI prediction failed - setting risk level to medium as fallback');
         } else if (churnScore >= 0.7) {
           riskLevel = 'high';
         } else if (churnScore >= 0.4) {

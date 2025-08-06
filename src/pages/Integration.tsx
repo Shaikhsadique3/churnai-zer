@@ -11,6 +11,16 @@ const Integration = () => {
   const { user } = useAuth();
   const [apiKey, setApiKey] = useState<string>("");
 
+  // Debug domain information
+  useEffect(() => {
+    console.log('[DEBUG] Current location:', {
+      hostname: window.location.hostname,
+      href: window.location.href,
+      origin: window.location.origin,
+      pathname: window.location.pathname
+    });
+  }, []);
+
   useEffect(() => {
     fetchApiKey();
   }, [user]);

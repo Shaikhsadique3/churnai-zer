@@ -4,6 +4,7 @@ import { Shield, LogOut, Menu } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useState } from "react";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { NotificationBell } from "@/components/common/NotificationBell";
 
 interface DashboardHeaderProps {
   userEmail: string;
@@ -30,6 +31,7 @@ const DashboardHeader = ({ userEmail, onLogout }: DashboardHeaderProps) => {
             <span className="text-sm text-muted-foreground truncate max-w-[200px]">
               Welcome, {userEmail}
             </span>
+            <NotificationBell />
             <Button variant="outline" size="sm" onClick={onLogout}>
               <LogOut className="h-4 w-4 mr-2" />
               Logout
@@ -55,6 +57,10 @@ const DashboardHeader = ({ userEmail, onLogout }: DashboardHeaderProps) => {
               <span className="text-sm text-muted-foreground truncate">
                 Welcome, {userEmail}
               </span>
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-medium">Notifications</span>
+                <NotificationBell />
+              </div>
               <Button 
                 variant="outline" 
                 size="sm" 

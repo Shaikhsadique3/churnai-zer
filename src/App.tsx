@@ -28,6 +28,7 @@ import BlogPost from "./pages/blog/BlogPost";
 // Dashboard pages
 import { UploadedUsersPage } from "./pages/dashboard/UploadedUsersPage";
 import { RecoveredUsersPage } from "./pages/dashboard/RecoveredUsersPage";
+import { NotificationsPage } from "./pages/dashboard/NotificationsPage";
 import { EmailAutomationPage } from "./pages/EmailAutomationPage";
 import { UserDetailPage } from "./pages/dashboard/UserDetailPage";
 // Admin pages
@@ -139,6 +140,16 @@ const App = () => {
                    <ProtectedRoute>
                      <DashboardLayout>
                        <RecoveredUsersPage />
+                     </DashboardLayout>
+                   </ProtectedRoute>
+                 } 
+               />
+               <Route 
+                 path="/notifications" 
+                 element={
+                   <ProtectedRoute>
+                     <DashboardLayout>
+                       <NotificationsPage />
                      </DashboardLayout>
                    </ProtectedRoute>
                  } 

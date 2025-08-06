@@ -125,7 +125,7 @@
 
       // Send tracking request with callback wrapper to also track login event
       const wrappedCallback = (result, error) => {
-        if (!error && result) {
+        if (!error && result && result.status === 'ok') {
           // Also track login event after successful prediction
           this.trackEvent({
             event: 'login',
@@ -312,7 +312,7 @@
               log('Extracted result:', result);
               
               // Validate required fields for SDK response
-              const requiredFields = ['churn_probability', 'reason', 'message', 'understanding_score', 'risk_level', 'shouldTriggerEmail', 'recommended_tone'];
+              const requiredFields = ['churn_score', 'churn_reason', 'risk_level'];
               const missingFields = requiredFields.filter(field => result[field] === undefined && result[field] !== null);
               
               if (missingFields.length > 0) {

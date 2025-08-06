@@ -8,9 +8,11 @@ import { showErrorToast, showSuccessToast, showSDKErrorToast, errorMessages } fr
 interface TestResult {
   success: boolean;
   churn_probability?: number;
+  churn_score?: number;
   risk_level?: string;
   understanding_score?: number;
   reason?: string;
+  churn_reason?: string;
   message?: string;
   error?: string;
 }
@@ -96,10 +98,10 @@ export const TestIntegration = () => {
           reject(new Error('SDK request timeout'));
         }, 10000);
 
-        window.Churnaizer.track(userData, apiKey, (error: any, result: any) => {
+        window.Churnaizer.track(userData, apiKey, (result: any, error: any) => {
           clearTimeout(timeout);
           if (error) {
-            reject(new Error(error.message || 'SDK tracking request failed'));
+            reject(new Error(error.message || error || 'SDK tracking request failed'));
           } else {
             resolve(result);
           }
@@ -107,8 +109,8 @@ export const TestIntegration = () => {
       });
 
       // 6. Validate response
-      if (!result.churn_probability || !result.risk_level) {
-        throw new Error('Invalid response from SDK');
+      if (!result.churn_score && !result.risk_level) {
+        throw new Error('Invalid response from SDK: ' + JSON.stringify(result));
       }
 
       const successResult = {
@@ -120,9 +122,10 @@ export const TestIntegration = () => {
       
       // Check if email automation was triggered
       const emailTriggered = result.risk_level === 'high';
+      const churnScore = result.churn_score || result.churn_probability || 0;
       const description = emailTriggered 
-        ? `Risk Level: ${result.risk_level} | Churn Probability: ${Math.round(result.churn_probability * 100)}% | ✉️ Email sent!`
-        : `Risk Level: ${result.risk_level} | Churn Probability: ${Math.round(result.churn_probability * 100)}%`;
+        ? `Risk Level: ${result.risk_level} | Churn Score: ${Math.round(churnScore * 100)}% | ✉️ Email sent!`
+        : `Risk Level: ${result.risk_level} | Churn Score: ${Math.round(churnScore * 100)}%`;
 
       showSuccessToast(
         "SDK Integration Successful",
@@ -210,9 +213,9 @@ export const TestIntegration = () => {
                 {testResult.success ? (
                   <div className="mt-2 text-xs md:text-sm text-secondary space-y-1">
                     <p><strong>Risk Level:</strong> {testResult.risk_level}</p>
-                    <p><strong>Churn Probability:</strong> {Math.round((testResult.churn_probability || 0) * 100)}%</p>
+                    <p><strong>Churn Score:</strong> {Math.round(((testResult.churn_score || testResult.churn_probability) || 0) * 100)}%</p>
                     <p><strong>Understanding Score:</strong> {testResult.understanding_score}</p>
-                    <p><strong>Reason:</strong> {testResult.reason}</p>
+                    <p><strong>Reason:</strong> {testResult.churn_reason || testResult.reason}</p>
                     {testResult.risk_level === 'high' && (
                       <div className="mt-2 p-2 bg-primary/10 rounded border border-primary/20">
                         <p className="text-primary font-medium text-xs">✉️ Email Automation Triggered</p>

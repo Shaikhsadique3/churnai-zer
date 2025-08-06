@@ -10,7 +10,10 @@ import {
   BookOpen,
   ExternalLink,
   CheckCircle,
-  Bell
+  Bell,
+  FileText,
+  User,
+  Book
 } from "lucide-react";
 import {
   Sidebar,
@@ -55,15 +58,32 @@ const navigationItems = [
     title: "Notifications",
     url: "/notifications",
     icon: Bell
+  },
+  {
+    title: "Profile",
+    url: "/profile",
+    icon: User
   }
 ];
 
-const externalLinks = [
+const resourceItems = [
+  {
+    title: "Developer Documentation",
+    url: "/docs",
+    icon: FileText,
+    external: false
+  },
+  {
+    title: "API Reference",
+    url: "/integration",
+    icon: Code,
+    external: false
+  },
   {
     title: "Blog",
-    url: "https://churnaizer.com/blog",
+    url: "/blog",
     icon: BookOpen,
-    external: true
+    external: false
   }
 ];
 
@@ -137,18 +157,25 @@ export function AppSidebar() {
           </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu className="space-y-2">
-              {externalLinks.map((item) => (
+              {resourceItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton asChild className="w-full justify-start text-muted-foreground hover:text-foreground hover:bg-accent/50 transition-all duration-200 rounded-lg px-3 py-2.5">
-                    <a href={item.url} target="_blank" rel="noopener noreferrer">
-                      <item.icon className="h-5 w-5" />
-                      {!collapsed && (
-                        <>
-                          <span className="ml-3 font-medium">{item.title}</span>
-                          <ExternalLink className="h-3 w-3 ml-auto" />
-                        </>
-                      )}
-                    </a>
+                  <SidebarMenuButton asChild className={getNavClassName(item.url)}>
+                    {item.external ? (
+                      <a href={item.url} target="_blank" rel="noopener noreferrer" className="rounded-lg px-3 py-2.5">
+                        <item.icon className="h-5 w-5" />
+                        {!collapsed && (
+                          <>
+                            <span className="ml-3 font-medium">{item.title}</span>
+                            <ExternalLink className="h-3 w-3 ml-auto" />
+                          </>
+                        )}
+                      </a>
+                    ) : (
+                      <NavLink to={item.url} className="rounded-lg px-3 py-2.5">
+                        <item.icon className="h-5 w-5" />
+                        {!collapsed && <span className="ml-3 font-medium">{item.title}</span>}
+                      </NavLink>
+                    )}
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               ))}

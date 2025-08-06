@@ -27,6 +27,9 @@ const Index = () => {
               <h1 className="text-2xl font-bold text-foreground">Churnaizer</h1>
             </div>
             <div className="flex items-center space-x-4">
+              <Link to="/docs" className="hidden md:inline-block text-foreground/70 hover:text-foreground font-medium">
+                Docs
+              </Link>
               <Link to="/blog" className="hidden md:inline-block text-foreground/70 hover:text-foreground font-medium">
                 Blog
               </Link>
@@ -36,6 +39,9 @@ const Index = () => {
                 </Link>
               ) : (
                 <>
+                  <Link to="/docs" className="hidden md:inline-block">
+                    <Button variant="ghost">Documentation</Button>
+                  </Link>
                   <Link to="/integration" className="hidden md:inline-block">
                     <Button variant="ghost">View SDK Setup</Button>
                   </Link>

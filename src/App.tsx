@@ -32,6 +32,7 @@ import { RecoveredUsersPage } from "./pages/dashboard/RecoveredUsersPage";
 import { NotificationsPage } from "./pages/dashboard/NotificationsPage";
 import { EmailAutomationPage } from "./pages/EmailAutomationPage";
 import { UserDetailPage } from "./pages/dashboard/UserDetailPage";
+import FounderProfile from "./pages/dashboard/FounderProfile";
 // Admin pages
 import AdminPanel from "./pages/AdminPanel";
 import AdminLogin from "./pages/AdminLogin";
@@ -165,7 +166,17 @@ const App = () => {
                       </DashboardLayout>
                     </ProtectedRoute>
                   } 
-                />
+              />
+              <Route 
+                path="/profile" 
+                element={
+                  <ProtectedRoute>
+                    <DashboardLayout>
+                      <FounderProfile />
+                    </DashboardLayout>
+                  </ProtectedRoute>
+                } 
+              />
               {/* Redirect dashboard to integration for backwards compatibility */}
               <Route 
                 path="/dashboard" 

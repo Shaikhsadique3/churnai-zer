@@ -19,6 +19,7 @@ import Privacy from "./pages/Privacy";
 import RefundPolicy from "./pages/RefundPolicy";
 import Pricing from "./pages/Pricing";
 import Contact from "./pages/Contact";
+import Documentation from "./pages/Documentation";
 import NotFound from "./pages/NotFound";
 import { DashboardLayout } from "./components/layout/DashboardLayout";
 import { AdminLayout } from "./components/layout/AdminLayout";
@@ -62,6 +63,7 @@ const App = () => {
               <Route path="/refund-policy" element={<RefundPolicy />} />
               <Route path="/pricing" element={<Pricing />} />
               <Route path="/contact" element={<Contact />} />
+              <Route path="/docs" element={<Documentation />} />
               {/* Blog routes */}
               <Route path="/blog" element={<BlogIndex />} />
               <Route path="/blog/:slug" element={<BlogPost />} />

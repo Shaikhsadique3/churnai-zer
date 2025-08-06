@@ -9,54 +9,80 @@ const Pricing = () => {
   const plans = [
     {
       name: "Free",
-      price: "₹0",
-      period: "forever",
-      description: "Perfect for getting started with churn prediction",
+      price: "$0",
+      period: "month",
+      description: "Perfect for testing & very early SaaS companies",
       features: [
-        "Up to 100 customers",
-        "Basic churn predictions",
-        "Weekly email reports",
-        "CSV upload",
-        "Basic analytics dashboard"
+        "100 predictions/month",
+        "Basic churn prediction",
+        "3 email templates", 
+        "Dashboard access",
+        "Community support",
+        "Basic analytics"
       ],
-      cta: "Get Started Free",
-      popular: false
+      cta: "Start Free Trial",
+      popular: false,
+      savings: null,
+      roi: null
     },
     {
-      name: "Pro",
-      price: "₹3,999",
-      period: "per month",
-      description: "Advanced features for growing businesses",
+      name: "Starter",
+      price: "$49",
+      period: "month",
+      description: "For early-stage SaaS (1-50 customers, $5k-20k MRR)",
       features: [
-        "Up to 10,000 customers",
-        "AI-powered predictions",
-        "Real-time alerts",
-        "API access",
-        "Custom playbooks",
-        "Email automation",
-        "Advanced analytics",
-        "Priority support"
+        "1,000 predictions/month",
+        "Custom email sequences",
+        "Webhook integrations",
+        "Priority email support",
+        "Recovery analytics",
+        "A/B testing",
+        "Real-time alerts"
       ],
-      cta: "Start Pro Trial",
-      popular: true
+      cta: "Start Growing",
+      popular: true,
+      savings: "$251/month",
+      roi: "4-6x ROI"
+    },
+    {
+      name: "Professional", 
+      price: "$149",
+      period: "month",
+      description: "For growing SaaS (50-500 customers, $20k-200k MRR)",
+      features: [
+        "10,000 predictions/month",
+        "Advanced AI models",
+        "Custom integrations",
+        "Priority support",
+        "Revenue attribution",
+        "Cohort analysis",
+        "Team collaboration",
+        "White-label emails"
+      ],
+      cta: "Scale Your Business",
+      popular: false,
+      savings: "$2,371/month",
+      roi: "10-15x ROI"
     },
     {
       name: "Enterprise",
       price: "Custom",
       period: "contact us",
-      description: "Tailored solutions for large organizations",
+      description: "For large SaaS (500+ customers, $200k+ MRR)",
       features: [
-        "Unlimited customers",
-        "Custom integrations",
-        "Dedicated support",
+        "Unlimited predictions",
+        "Custom AI model training", 
+        "Dedicated success manager",
+        "Phone support",
         "SLA guarantees",
-        "On-premise deployment",
         "Custom reporting",
-        "Team training",
-        "White-label options"
+        "Advanced security features",
+        "Multi-team access"
       ],
       cta: "Contact Sales",
-      popular: false
+      popular: false,
+      savings: "$10k-20k/month",
+      roi: "20-40x ROI"
     }
   ];
 
@@ -80,10 +106,33 @@ const Pricing = () => {
 
       {/* Hero Section */}
       <div className="container mx-auto px-4 py-16 text-center">
-        <h1 className="text-4xl font-bold mb-4">Simple, Transparent Pricing</h1>
-        <p className="text-xl text-muted-foreground mb-8 max-w-2xl mx-auto">
-          Choose the plan that fits your business needs. Start free and scale as you grow.
+        <div className="inline-flex items-center gap-2 bg-primary/10 text-primary px-4 py-2 rounded-full text-sm font-medium mb-6">
+          💰 Save 10-20x Your Subscription Cost
+        </div>
+        <h1 className="text-4xl lg:text-5xl font-bold mb-6">Pricing Built for Growing SaaS</h1>
+        <p className="text-xl text-muted-foreground mb-8 max-w-3xl mx-auto leading-relaxed">
+          Start free and only pay when Churnaizer saves you customers. Our pricing scales with your business growth, 
+          with each tier typically saving 10-20x its cost in prevented churn.
         </p>
+        
+        {/* ROI Calculator Preview */}
+        <div className="bg-card border border-border rounded-lg p-6 max-w-2xl mx-auto mb-8">
+          <div className="text-sm text-muted-foreground mb-2">ROI Calculator</div>
+          <div className="grid grid-cols-3 gap-4 text-center">
+            <div>
+              <div className="text-2xl font-bold text-primary">$49</div>
+              <div className="text-xs text-muted-foreground">Monthly Cost</div>
+            </div>
+            <div>
+              <div className="text-2xl font-bold text-success">$300</div>
+              <div className="text-xs text-muted-foreground">Revenue Saved</div>
+            </div>
+            <div>
+              <div className="text-2xl font-bold text-foreground">6x</div>
+              <div className="text-xs text-muted-foreground">Return on Investment</div>
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* Pricing Cards */}
@@ -112,7 +161,7 @@ const Pricing = () => {
               </CardHeader>
               
               <CardContent>
-                <ul className="space-y-3 mb-8">
+                <ul className="space-y-3 mb-6">
                   {plan.features.map((feature, index) => (
                     <li key={index} className="flex items-center">
                       <Check className="h-4 w-4 text-primary mr-3 flex-shrink-0" />
@@ -120,6 +169,15 @@ const Pricing = () => {
                     </li>
                   ))}
                 </ul>
+                
+                {/* ROI Information */}
+                {plan.savings && (
+                  <div className="bg-muted/50 rounded-lg p-3 mb-6 text-center">
+                    <div className="text-sm font-medium text-primary">Typical Customer Saves</div>
+                    <div className="text-lg font-bold text-foreground">{plan.savings}</div>
+                    <div className="text-xs text-muted-foreground">{plan.roi}</div>
+                  </div>
+                )}
                 
                 <Button 
                   className="w-full" 
@@ -136,49 +194,68 @@ const Pricing = () => {
 
       {/* FAQ Section */}
       <div className="container mx-auto px-4 py-16 border-t">
-        <div className="max-w-3xl mx-auto">
+        <div className="max-w-4xl mx-auto">
           <h2 className="text-3xl font-bold text-center mb-12">Frequently Asked Questions</h2>
           
-          <div className="space-y-8">
+          <div className="grid md:grid-cols-2 gap-8">
             <div>
-              <h3 className="text-lg font-semibold mb-2">Can I change plans at any time?</h3>
+              <h3 className="text-lg font-semibold mb-2">How accurate are the churn predictions?</h3>
               <p className="text-muted-foreground">
-                Yes, you can upgrade or downgrade your plan at any time. Changes take effect immediately, 
-                and we'll prorate any billing adjustments.
+                Our AI models achieve 94% accuracy by analyzing user behavior patterns, engagement metrics, and billing data. 
+                The more data you provide, the more accurate predictions become.
               </p>
             </div>
             
             <div>
-              <h3 className="text-lg font-semibold mb-2">Is there a free trial?</h3>
+              <h3 className="text-lg font-semibold mb-2">How long does it take to see results?</h3>
               <p className="text-muted-foreground">
-                Our Free plan lets you try Churnaizer with up to 100 customers. Pro plan includes a 
-                14-day free trial with full access to all features.
+                Most customers see their first at-risk user alerts within 24 hours of integration. 
+                Significant retention improvements typically occur within 30-60 days.
               </p>
             </div>
             
             <div>
-              <h3 className="text-lg font-semibold mb-2">What payment methods do you accept?</h3>
+              <h3 className="text-lg font-semibold mb-2">Is my data secure?</h3>
               <p className="text-muted-foreground">
-                We accept all major credit cards, PayPal, and bank transfers. Enterprise customers 
-                can arrange for invoice-based billing.
+                Yes. We're SOC 2 compliant and use bank-level encryption. Your data is never shared with third parties 
+                and we follow strict privacy protocols.
               </p>
             </div>
             
             <div>
-              <h3 className="text-lg font-semibold mb-2">Do you offer refunds?</h3>
+              <h3 className="text-lg font-semibold mb-2">What if I have a custom tech stack?</h3>
               <p className="text-muted-foreground">
-                Yes, we offer a 30-day money-back guarantee for all paid plans. See our refund policy 
-                for full details.
+                Our SDK works with any JavaScript-based application. We also provide REST APIs and webhooks 
+                for custom integrations with any platform.
               </p>
             </div>
             
             <div>
-              <h3 className="text-lg font-semibold mb-2">Can I cancel anytime?</h3>
+              <h3 className="text-lg font-semibold mb-2">Can I customize the retention emails?</h3>
               <p className="text-muted-foreground">
-                Absolutely. You can cancel your subscription at any time. Your account will remain 
-                active until the end of your billing period.
+                Absolutely. You can create custom email templates, set up multi-step sequences, and A/B test different approaches. 
+                We also provide proven templates to get you started.
               </p>
             </div>
+            
+            <div>
+              <h3 className="text-lg font-semibold mb-2">Do you integrate with existing tools?</h3>
+              <p className="text-muted-foreground">
+                Yes! We integrate with popular CRMs (Salesforce, HubSpot), email platforms (Mailchimp, SendGrid), 
+                and analytics tools (Mixpanel, Amplitude) via webhooks and APIs.
+              </p>
+            </div>
+          </div>
+          
+          {/* CTA in FAQ */}
+          <div className="text-center mt-12 p-8 bg-primary/5 rounded-lg border border-primary/20">
+            <h3 className="text-xl font-semibold mb-4">Ready to Stop Losing Customers?</h3>
+            <p className="text-muted-foreground mb-6">
+              Join 500+ SaaS founders who trust Churnaizer to protect their revenue. Start with 100 free predictions.
+            </p>
+            <Button size="lg" asChild>
+              <Link to="/auth">Start Your Free Trial</Link>
+            </Button>
           </div>
         </div>
       </div>

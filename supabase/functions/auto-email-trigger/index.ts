@@ -18,6 +18,7 @@ interface AutoEmailRequest {
   subscription_plan?: string;
   shouldTriggerEmail?: boolean;
   recommended_tone?: string;
+  trace_id?: string; // Add trace_id support
 }
 
 serve(async (req) => {
@@ -46,8 +47,16 @@ serve(async (req) => {
       
       requestData = JSON.parse(body);
       
+      // Extract or generate trace_id
+      const trace_id = requestData.trace_id || 
+        (Date.now().toString() + Math.random().toString(36).substr(2, 9))
+      
+      if (!requestData.trace_id) {
+        console.warn(`[TRACE WARNING | trace_id: ${trace_id}] No trace_id provided in email trigger request, auto-generated`)
+      }
+      
       // *** TRACE LOG 5: EMAIL TRIGGER PAYLOAD ***
-      console.log('[TRACE 5 - Email Trigger Payload]', {
+      console.log(`[TRACE 5 | trace_id: ${trace_id}] Email Trigger Payload`, {
         email_trigger_payload: requestData,
         payload_fields: Object.keys(requestData),
         critical_email_fields: {
@@ -171,6 +180,19 @@ serve(async (req) => {
       
       // Generate AI-powered personalized email content using OpenRouter
       const customerName = requestData.customer_name || requestData.customer_email.split('@')[0];
+      
+      // *** TRACE LOG 6: EMAIL GENERATION REQUEST ***
+      console.log(`[TRACE 6 | trace_id: ${trace_id}] Email Generation`, {
+        email_generation_request: {
+          customer_name: customerName,
+          risk_level: requestData.risk_level,
+          churn_score: requestData.churn_score,
+          recommended_tone: requestData.recommended_tone,
+          churn_reason: requestData.churn_reason
+        },
+        ai_api_configured: !!Deno.env.get('OPENROUTER_API_KEY'),
+        fallback_available: true
+      });
       
       console.log('Generating AI-powered personalized email content...');
       

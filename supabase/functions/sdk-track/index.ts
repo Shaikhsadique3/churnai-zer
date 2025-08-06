@@ -73,9 +73,17 @@ Deno.serve(async (req) => {
 
     // Parse tracking data
     const trackingData: TrackingData = await req.json()
+    
+    // Extract or generate trace_id
+    const trace_id = trackingData.trace_id || 
+      (Date.now().toString() + Math.random().toString(36).substr(2, 9))
+    
+    if (!trackingData.trace_id) {
+      console.warn(`[TRACE WARNING | trace_id: ${trace_id}] No trace_id provided in request, auto-generated`)
+    }
 
     // *** TRACE LOG 2: BACKEND RECEIVED PAYLOAD ***
-    console.log('[TRACE 2 - Backend Received Payload]', {
+    console.log(`[TRACE 2 | trace_id: ${trace_id}] Backend Received Payload`, {
       received_payload: trackingData,
       payload_fields: Object.keys(trackingData),
       critical_fields_present: {
@@ -164,7 +172,7 @@ Deno.serve(async (req) => {
         }
 
         // *** TRACE LOG 3: AI MODEL INPUT PAYLOAD ***
-        console.log('[TRACE 3 - AI Model Input Payload]', {
+        console.log(`[TRACE 3 | trace_id: ${trace_id}] AI Model Input Payload`, {
           ai_model_url: 'https://ai-model-rumc.onrender.com/api/v1/predict',
           input_payload: transformedData,
           field_mapping: {
@@ -192,14 +200,17 @@ Deno.serve(async (req) => {
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${churnApiKey}`,
           },
-          body: JSON.stringify(transformedData)
+          body: JSON.stringify({
+            ...transformedData,
+            trace_id: trace_id
+          })
         })
 
         if (response.ok) {
           const result = await response.json()
           
           // *** TRACE LOG 4: AI MODEL RESPONSE ***
-          console.log('[TRACE 4 - AI Model Response]', {
+          console.log(`[TRACE 4 | trace_id: ${trace_id}] AI Model Response`, {
             raw_ai_response: result,
             response_status: response.status,
             response_fields: Object.keys(result),
@@ -225,8 +236,8 @@ Deno.serve(async (req) => {
           
           console.log('✅ AI prediction successful:', { churnScore, churnReason, shouldTriggerEmail })
         } else {
-          console.warn('[FALLBACK TRIGGERED] AI API failed with status:', response.status)
-          console.log('[TRACE 4 - AI Model Response]', {
+          console.warn(`[FALLBACK TRIGGERED | trace_id: ${trace_id}] AI API failed with status:`, response.status)
+          console.log(`[TRACE 4 | trace_id: ${trace_id}] AI Model Response`, {
             raw_ai_response: null,
             response_status: response.status,
             ai_api_used: false,
@@ -235,8 +246,8 @@ Deno.serve(async (req) => {
           })
         }
       } catch (error) {
-        console.warn('[FALLBACK TRIGGERED] AI API error:', error.message)
-        console.log('[TRACE 4 - AI Model Response]', {
+        console.warn(`[FALLBACK TRIGGERED | trace_id: ${trace_id}] AI API error:`, error.message)
+        console.log(`[TRACE 4 | trace_id: ${trace_id}] AI Model Response`, {
           raw_ai_response: null,
           response_status: 'error',
           ai_api_used: false,
@@ -245,8 +256,8 @@ Deno.serve(async (req) => {
         })
       }
     } else {
-      console.warn('[FALLBACK TRIGGERED] CHURN_API_KEY not configured')
-      console.log('[TRACE 4 - AI Model Response]', {
+      console.warn(`[FALLBACK TRIGGERED | trace_id: ${trace_id}] CHURN_API_KEY not configured`)
+      console.log(`[TRACE 4 | trace_id: ${trace_id}] AI Model Response`, {
         raw_ai_response: null,
         response_status: 'no_api_key',
         ai_api_used: false,
@@ -370,7 +381,8 @@ Deno.serve(async (req) => {
         processed_at: new Date().toISOString(),
         sdk_version: '1.0.0',
         api_version: 'v1',
-        ai_prediction: churnApiKey ? true : false
+        ai_prediction: churnApiKey ? true : false,
+        trace_id: trace_id
       }
     }
 

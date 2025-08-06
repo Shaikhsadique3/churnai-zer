@@ -17,6 +17,7 @@ interface EventData {
   user_agent?: string;
   url?: string;
   sdk_version?: string;
+  trace_id?: string; // Add trace_id support
 }
 
 serve(async (req) => {
@@ -36,7 +37,16 @@ serve(async (req) => {
 
     // Parse request body
     const eventData: EventData = await req.json();
-    console.log('SDK Event received:', eventData);
+    
+    // Extract or generate trace_id
+    const trace_id = eventData.trace_id || 
+      (Date.now().toString() + Math.random().toString(36).substr(2, 9))
+    
+    if (!eventData.trace_id) {
+      console.warn(`[TRACE WARNING | trace_id: ${trace_id}] No trace_id provided in SDK event request, auto-generated`)
+    }
+
+    console.log(`[TRACE 5 | trace_id: ${trace_id}] SDK Event received:`, eventData);
 
     // Get API key from headers
     const apiKey = req.headers.get('x-churnaizer-api-key');

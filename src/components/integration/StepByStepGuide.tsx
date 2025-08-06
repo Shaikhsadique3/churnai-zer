@@ -68,18 +68,16 @@ function trackUserWithChurnaizer(userData) {
 
   window.Churnaizer.track({
     user_id: userData.id,
-    email: userData.email,
-    customer_name: userData.name,
-    customer_email: userData.email,
-    subscription_plan: userData.plan || 'free',
+    days_since_signup: userData.daysSinceSignup || 30,
     monthly_revenue: userData.monthlyRevenue || 0,
-    loginCount: userData.loginCount || 1,
-    dashboardViews: userData.dashboardViews || 0,
-    feature_usage: {
-      dashboard: userData.dashboardViews || 0,
-      reports: userData.reportsGenerated || 0,
-      settings: userData.settingsAccessed || 0
-    }
+    subscription_plan: userData.plan || 'Free',
+    number_of_logins_last30days: userData.loginCount || 1,
+    active_features_used: userData.featuresUsed || 1,
+    support_tickets_opened: userData.supportTickets || 0,
+    last_payment_status: userData.paymentStatus || 'Success',
+    email_opens_last30days: userData.emailOpens || 0,
+    last_login_days_ago: userData.lastLoginDaysAgo || 1,
+    billing_issue_count: userData.billingIssues || 0
   }, '${apiKey}', function(result, error) {
     if (error) {
       console.error('Churnaizer tracking failed:', error);
@@ -117,12 +115,16 @@ function onUserLogin(user) {
   // Track with Churnaizer
   trackUserWithChurnaizer({
     id: user.id,
-    email: user.email,
-    name: user.full_name || user.name,
-    plan: user.subscription_plan,
-    monthlyRevenue: user.monthly_revenue,
-    loginCount: user.login_count,
-    dashboardViews: user.dashboard_views
+    daysSinceSignup: user.days_since_signup || 30,
+    monthlyRevenue: user.monthly_revenue || 0,
+    plan: user.subscription_plan || 'Free',
+    loginCount: user.login_count || 1,
+    featuresUsed: user.features_used || 1,
+    supportTickets: user.support_tickets || 0,
+    paymentStatus: user.payment_status || 'Success',
+    emailOpens: user.email_opens || 0,
+    lastLoginDaysAgo: user.last_login_days_ago || 1,
+    billingIssues: user.billing_issues || 0
   });
 }
 
@@ -196,12 +198,16 @@ trackUserAction('support_contact', {
         function testTracking() {
             const testUser = {
                 id: 'test_user_123',
-                email: 'test@example.com',
-                name: 'Test User',
-                plan: 'free',
-                monthlyRevenue: 0,
-                loginCount: 5,
-                dashboardViews: 10
+                daysSinceSignup: 45,
+                monthlyRevenue: 29.99,
+                plan: 'Free',
+                loginCount: 15,
+                featuresUsed: 3,
+                supportTickets: 1,
+                paymentStatus: 'Success',
+                emailOpens: 8,
+                lastLoginDaysAgo: 2,
+                billingIssues: 0
             };
             
             trackUserWithChurnaizer(testUser);
@@ -232,11 +238,16 @@ export function useChurnaizer(user, options = {}) {
 
     window.Churnaizer.track({
       user_id: user.id,
-      email: user.email,
-      customer_name: user.name,
-      subscription_plan: user.plan || 'free',
+      days_since_signup: user.daysSinceSignup || 30,
       monthly_revenue: user.monthlyRevenue || 0,
-      // Add more user data as needed
+      subscription_plan: user.plan || 'Free',
+      number_of_logins_last30days: user.loginCount || 1,
+      active_features_used: user.featuresUsed || 1,
+      support_tickets_opened: user.supportTickets || 0,
+      last_payment_status: user.paymentStatus || 'Success',
+      email_opens_last30days: user.emailOpens || 0,
+      last_login_days_ago: user.lastLoginDaysAgo || 1,
+      billing_issue_count: user.billingIssues || 0
     }, '${apiKey}', (result, error) => {
       if (error) {
         console.error('Churnaizer error:', error);
@@ -276,10 +287,16 @@ export function useChurnaizer(user) {
     
     window.Churnaizer.track({
       user_id: newUser.id,
-      email: newUser.email,
-      customer_name: newUser.name,
-      subscription_plan: newUser.plan || 'free',
+      days_since_signup: newUser.daysSinceSignup || 30,
       monthly_revenue: newUser.monthlyRevenue || 0,
+      subscription_plan: newUser.plan || 'Free',
+      number_of_logins_last30days: newUser.loginCount || 1,
+      active_features_used: newUser.featuresUsed || 1,
+      support_tickets_opened: newUser.supportTickets || 0,
+      last_payment_status: newUser.paymentStatus || 'Success',
+      email_opens_last30days: newUser.emailOpens || 0,
+      last_login_days_ago: newUser.lastLoginDaysAgo || 1,
+      billing_issue_count: newUser.billingIssues || 0
     }, '${apiKey}', (result, error) => {
       if (error) {
         console.error('Churnaizer error:', error);
@@ -327,10 +344,16 @@ export class ChurnaizerService {
     
     window.Churnaizer.track({
       user_id: user.id,
-      email: user.email,
-      customer_name: user.name,
-      subscription_plan: user.plan || 'free',
+      days_since_signup: user.daysSinceSignup || 30,
       monthly_revenue: user.monthlyRevenue || 0,
+      subscription_plan: user.plan || 'Free',
+      number_of_logins_last30days: user.loginCount || 1,
+      active_features_used: user.featuresUsed || 1,
+      support_tickets_opened: user.supportTickets || 0,
+      last_payment_status: user.paymentStatus || 'Success',
+      email_opens_last30days: user.emailOpens || 0,
+      last_login_days_ago: user.lastLoginDaysAgo || 1,
+      billing_issue_count: user.billingIssues || 0
     }, '${apiKey}', (result: any, error: any) => {
       if (error) {
         console.error('Churnaizer error:', error);

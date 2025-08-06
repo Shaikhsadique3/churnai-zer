@@ -9,15 +9,20 @@ const corsHeaders = {
 
 interface AutoEmailRequest {
   user_id?: string;
+  user_email?: string;
+  target_user_id?: string;
   customer_email?: string;
   email?: string; // fallback field
   customer_name?: string;
   churn_score?: number;
   risk_level?: string;
   churn_reason?: string;
+  insight?: string;
   subscription_plan?: string;
   shouldTriggerEmail?: boolean;
   recommended_tone?: string;
+  trigger_email?: boolean;
+  force_email_test?: boolean; // Force email test mode
   trace_id?: string; // Add trace_id support
 }
 
@@ -48,11 +53,18 @@ serve(async (req) => {
       requestData = JSON.parse(body);
       
       // Extract or generate trace_id
-      const trace_id = requestData.trace_id || 
-        (Date.now().toString() + Math.random().toString(36).substr(2, 9))
+      const trace_id = requestData.trace_id || crypto.randomUUID()
       
       if (!requestData.trace_id) {
         console.warn(`[TRACE WARNING | trace_id: ${trace_id}] No trace_id provided in email trigger request, auto-generated`)
+      }
+      
+      // Handle force email test mode
+      const forceEmailTest = requestData.force_email_test === true || requestData.force_email_test === 'true';
+      if (forceEmailTest) {
+        console.log(`[TRACE TEST MODE | trace_id: ${trace_id}] Force email test mode enabled - overriding risk level to high`);
+        requestData.risk_level = 'high';
+        requestData.shouldTriggerEmail = true;
       }
       
       // *** TRACE LOG 5: EMAIL TRIGGER PAYLOAD ***
@@ -124,16 +136,26 @@ serve(async (req) => {
     requestData.customer_email = customerEmail;
     requestData.user_id = userId;
 
-    // Only trigger for high-risk users
-    if (requestData.risk_level !== 'high') {
-      console.log(`User not high-risk (${requestData.risk_level}), skipping email automation`);
+    // Debug trigger conditions
+    console.log(`[TRACE DEBUG | trace_id: ${trace_id}] Email Trigger Decision`, {
+      risk_level: requestData.risk_level,
+      force_email_test: forceEmailTest,
+      shouldTriggerEmail: requestData.shouldTriggerEmail,
+      trigger_email: requestData.trigger_email
+    });
+
+    // Only trigger for high-risk users (or in force test mode)
+    if (requestData.risk_level !== 'high' && !forceEmailTest) {
+      console.log(`[TRACE SKIP | trace_id: ${trace_id}] User not high-risk (${requestData.risk_level}) and not in test mode, skipping email automation`);
       return new Response(
         JSON.stringify({ 
           success: true,
           message: 'No email needed for non-high risk',
           triggered: false,
           risk_level: requestData.risk_level,
-          user_id: requestData.user_id
+          user_id: requestData.user_id,
+          skip_reason: 'not_high_risk',
+          trace_id: trace_id
         }),
         { 
           status: 200, 
@@ -142,30 +164,45 @@ serve(async (req) => {
       );
     }
 
-    console.log('Triggering email automation for high-risk user:', requestData.user_id);
+    console.log(`[TRACE PROCEED | trace_id: ${trace_id}] Triggering email automation for user:`, requestData.user_id);
 
-    // Check if email was already sent recently (avoid spam)
-    const { data: recentEmails } = await supabase
-      .from('email_logs')
-      .select('created_at')
-      .eq('target_user_id', requestData.user_id)
-      .eq('status', 'sent')
-      .gte('created_at', new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()) // Last 24 hours
-      .limit(1);
+    // Check if email was already sent recently (avoid spam) - skip in force test mode
+    let cooldownPassed = true;
+    if (!forceEmailTest) {
+      const { data: recentEmails } = await supabase
+        .from('email_logs')
+        .select('created_at')
+        .eq('target_user_id', requestData.user_id)
+        .eq('status', 'sent')
+        .gte('created_at', new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()) // Last 24 hours
+        .limit(1);
 
-    if (recentEmails && recentEmails.length > 0) {
-      console.log('Email already sent to this user in the last 24 hours, skipping');
-      return new Response(
-        JSON.stringify({ 
-          message: 'Email already sent to this user recently',
-          triggered: false,
-          last_email: recentEmails[0].created_at
-        }),
-        { 
-          status: 200, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-        }
-      );
+      cooldownPassed = !recentEmails || recentEmails.length === 0;
+      
+      console.log(`[TRACE COOLDOWN | trace_id: ${trace_id}] Cooldown check:`, {
+        cooldownPassed,
+        recentEmailsCount: recentEmails?.length || 0,
+        lastEmailDate: recentEmails?.[0]?.created_at || null
+      });
+
+      if (!cooldownPassed) {
+        console.log(`[TRACE SKIP | trace_id: ${trace_id}] Email already sent to this user in the last 24 hours, skipping`);
+        return new Response(
+          JSON.stringify({ 
+            message: 'Email already sent to this user recently',
+            triggered: false,
+            last_email: recentEmails[0].created_at,
+            skip_reason: 'cooldown_active',
+            trace_id: trace_id
+          }),
+          { 
+            status: 200, 
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+          }
+        );
+      }
+    } else {
+      console.log(`[TRACE TEST MODE | trace_id: ${trace_id}] Skipping cooldown check for force email test`);
     }
 
     // Send retention email directly using Resend
@@ -449,6 +486,13 @@ TONE: ${psychologyStyle === 'urgency' ? 'Gentle urgency with empathy' : psycholo
         console.log('No owner found for user_id, skipping email log');
       }
 
+      console.log(`[TRACE SUCCESS | trace_id: ${trace_id}] Email sent successfully`, {
+        email_id: emailResponse.data?.id,
+        recipient: requestData.customer_email,
+        subject: subject,
+        force_test_mode: forceEmailTest
+      });
+
       return new Response(
         JSON.stringify({ 
           success: true,
@@ -456,8 +500,14 @@ TONE: ${psychologyStyle === 'urgency' ? 'Gentle urgency with empathy' : psycholo
           triggered: true,
           tracking_id: emailResponse.data?.id || `auto-${Date.now()}`,
           user_id: requestData.user_id,
+          target_user_id: requestData.target_user_id,
           email_id: emailResponse.data?.id,
-          email_subject: subject
+          email_subject: subject,
+          trace_id: trace_id,
+          email_attempted: true,
+          email_sent: true,
+          skip_reason: null,
+          email_error: null
         }),
         { 
           status: 200, 
@@ -495,11 +545,18 @@ TONE: ${psychologyStyle === 'urgency' ? 'Gentle urgency with empathy' : psycholo
           }).catch(err => console.error('Error logging failed email:', err));
       }
       
+      console.log(`[TRACE ERROR | trace_id: ${trace_id}] Email sending failed:`, emailError.message);
+      
       return new Response(
         JSON.stringify({ 
           error: 'Failed to trigger email automation',
           details: emailError.message,
-          triggered: false
+          triggered: false,
+          trace_id: trace_id,
+          email_attempted: true,
+          email_sent: false,
+          skip_reason: null,
+          email_error: emailError.message
         }),
         { 
           status: 500, 

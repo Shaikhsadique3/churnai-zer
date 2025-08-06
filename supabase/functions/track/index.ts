@@ -333,7 +333,10 @@ serve(async (req) => {
         const forceEmailTest = rawUserData.force_email_test === true || rawUserData.force_email_test === 'true';
         const allowMediumRiskEmails = Deno.env.get('ALLOW_MEDIUM_RISK_EMAILS') === 'true';
         
-        // Email triggering logic with debug logging
+        // Check if this is a fallback scenario (AI failed)
+        const isAiFallback = churnScore === null;
+        
+        // Email triggering logic with enhanced medium risk support
         let shouldTriggerEmail = false;
         let emailSkipReason = '';
         
@@ -345,9 +348,18 @@ serve(async (req) => {
         } else if (riskLevel === 'high') {
           shouldTriggerEmail = true;
           console.log('📧 Email trigger: HIGH risk user detected');
-        } else if (riskLevel === 'medium' && allowMediumRiskEmails) {
-          shouldTriggerEmail = true;
-          console.log('📧 Email trigger: MEDIUM risk user (allowed by env var)');
+        } else if (riskLevel === 'medium') {
+          if (isAiFallback && !allowMediumRiskEmails) {
+            // AI failed and we're in fallback mode - still trigger email for potential risk
+            shouldTriggerEmail = true;
+            console.log('📧 Email trigger: MEDIUM risk from AI fallback - sending retention email for safety');
+          } else if (allowMediumRiskEmails) {
+            shouldTriggerEmail = true;
+            console.log('📧 Email trigger: MEDIUM risk user (allowed by env var)');
+          } else {
+            emailSkipReason = 'Medium risk level requires ALLOW_MEDIUM_RISK_EMAILS=true or AI fallback scenario';
+            console.log('❌ Email skipped:', emailSkipReason);
+          }
         } else {
           emailSkipReason = `Risk level ${riskLevel} does not meet email trigger criteria`;
           console.log('❌ Email skipped:', emailSkipReason);
@@ -360,6 +372,7 @@ serve(async (req) => {
           shouldTriggerEmail,
           forceEmailTest,
           allowMediumRiskEmails,
+          isAiFallback,
           emailSkipReason
         });
 
@@ -416,7 +429,8 @@ serve(async (req) => {
         
         if (shouldTriggerEmail) {
           emailAttempted = true;
-          console.log('📧 Attempting to send retention email to:', userData.email || userData.customer_email);
+          const emailType = isAiFallback && riskLevel === 'medium' ? 'fallback_medium' : riskLevel;
+          console.log(`📧 Attempting to send retention email (${emailType}) to:`, userData.email || userData.customer_email);
           
           // Check cooldown (skip in force test mode)
           let cooldownPassed = false;
@@ -455,7 +469,9 @@ serve(async (req) => {
                   insight: churnReason,
                   recommended_tone: riskLevel === 'high' ? 'empathetic' : 'friendly',
                   trigger_email: true,
-                  trace_id: `email_${user_id}_${Date.now()}`
+                  trace_id: `email_${user_id}_${Date.now()}`,
+                  force_email_test: forceEmailTest,
+                  is_fallback: isAiFallback
                 })
               });
               
@@ -528,7 +544,8 @@ serve(async (req) => {
           email_attempted: emailAttempted,
           email_sent: emailSent,
           email_skip_reason: emailSkipReason || null,
-          email_error: emailError
+          email_error: emailError,
+          reason: isAiFallback && riskLevel === 'medium' ? 'fallback_medium' : (emailSkipReason ? emailSkipReason.toLowerCase().replace(/\s+/g, '_') : null)
         });
 
       } catch (userError) {

@@ -293,7 +293,7 @@ const Documentation = () => {
                       <li>• <code>POST /predict</code> - Single user prediction</li>
                       <li>• <code>POST /predict/batch</code> - Multiple users</li>
                       <li>• <code>POST /events</code> - Track user events</li>
-                      <li>• <code>GET /users/{id}/predictions</code> - History</li>
+                      <li>• <code>GET /users/&#123;id&#125;/predictions</code> - History</li>
                     </ul>
                   </div>
                 </CardContent>

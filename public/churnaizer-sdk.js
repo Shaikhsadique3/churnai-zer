@@ -104,6 +104,20 @@
         sdk_version: SDK_VERSION
       };
 
+      // *** TRACE LOG 1: SDK PAYLOAD ***
+      console.log('[TRACE 1 - SDK Payload]', {
+        payload: trackingData,
+        original_user_data: userData,
+        required_fields_present: {
+          user_id: !!trackingData.user_id,
+          email: !!trackingData.email,
+          monthly_revenue: trackingData.monthly_revenue,
+          subscription_plan: trackingData.subscription_plan,
+          billing_issue_count: trackingData.billing_issue_count,
+          number_of_logins_last30days: trackingData.number_of_logins_last30days
+        }
+      });
+
       // Send tracking request with callback wrapper to also track login event
       const wrappedCallback = (result, error) => {
         if (!error && result) {

@@ -74,6 +74,21 @@ Deno.serve(async (req) => {
     // Parse tracking data
     const trackingData: TrackingData = await req.json()
 
+    // *** TRACE LOG 2: BACKEND RECEIVED PAYLOAD ***
+    console.log('[TRACE 2 - Backend Received Payload]', {
+      received_payload: trackingData,
+      payload_fields: Object.keys(trackingData),
+      critical_fields_present: {
+        user_id: !!trackingData.user_id,
+        email: !!trackingData.email,
+        monthly_revenue: trackingData.metadata?.monthly_revenue,
+        subscription_plan: trackingData.subscription_plan,
+        usage: trackingData.usage,
+        last_login: trackingData.last_login
+      },
+      api_key_type: apiKey?.startsWith('cg_') ? 'test' : 'production'
+    })
+
     console.log('Received tracking data:', trackingData)
 
     // Handle test/mock API keys (starting with cg_)
@@ -148,6 +163,27 @@ Deno.serve(async (req) => {
           number_of_logins_last30days: Math.max(1, 30 - daysSinceLogin)
         }
 
+        // *** TRACE LOG 3: AI MODEL INPUT PAYLOAD ***
+        console.log('[TRACE 3 - AI Model Input Payload]', {
+          ai_model_url: 'https://ai-model-rumc.onrender.com/api/v1/predict',
+          input_payload: transformedData,
+          field_mapping: {
+            original_user_id: trackingData.user_id,
+            transformed_user_id: transformedData.user_id,
+            original_email: trackingData.email,
+            transformed_email: transformedData.email,
+            original_usage: trackingData.usage,
+            transformed_usage_score: transformedData.usage_score,
+            original_monthly_revenue: trackingData.metadata?.monthly_revenue,
+            transformed_monthly_revenue: transformedData.monthly_revenue,
+            original_plan: trackingData.subscription_plan,
+            transformed_plan: transformedData.plan,
+            days_since_login: daysSinceLogin,
+            billing_status: transformedData.billing_status
+          },
+          api_key_configured: !!churnApiKey
+        })
+
         console.log('🤖 Calling AI model with data:', transformedData)
 
         const response = await fetch('https://ai-model-rumc.onrender.com/api/v1/predict', {
@@ -161,6 +197,26 @@ Deno.serve(async (req) => {
 
         if (response.ok) {
           const result = await response.json()
+          
+          // *** TRACE LOG 4: AI MODEL RESPONSE ***
+          console.log('[TRACE 4 - AI Model Response]', {
+            raw_ai_response: result,
+            response_status: response.status,
+            response_fields: Object.keys(result),
+            expected_fields_present: {
+              churn_probability: !!result.churn_probability,
+              churn_score: !!result.churn_score,
+              reason: !!result.reason,
+              churn_reason: !!result.churn_reason,
+              understanding_score: !!result.understanding_score,
+              risk_level: !!result.risk_level,
+              shouldTriggerEmail: !!result.shouldTriggerEmail,
+              recommended_tone: !!result.recommended_tone
+            },
+            ai_api_used: true,
+            fallback_triggered: false
+          })
+          
           churnScore = result.churn_probability || result.churn_score || 0.5
           churnReason = result.reason || result.churn_reason || 'AI-powered prediction based on user behavior'
           understandingScore = result.understanding_score || Math.max(30, Math.min(100, 85 - (churnScore * 50)))
@@ -169,13 +225,34 @@ Deno.serve(async (req) => {
           
           console.log('✅ AI prediction successful:', { churnScore, churnReason, shouldTriggerEmail })
         } else {
-          console.warn('❌ AI API failed, using fallback:', response.status)
+          console.warn('[FALLBACK TRIGGERED] AI API failed with status:', response.status)
+          console.log('[TRACE 4 - AI Model Response]', {
+            raw_ai_response: null,
+            response_status: response.status,
+            ai_api_used: false,
+            fallback_triggered: true,
+            fallback_reason: `AI API returned status ${response.status}`
+          })
         }
       } catch (error) {
-        console.warn('❌ AI API error, using fallback:', error.message)
+        console.warn('[FALLBACK TRIGGERED] AI API error:', error.message)
+        console.log('[TRACE 4 - AI Model Response]', {
+          raw_ai_response: null,
+          response_status: 'error',
+          ai_api_used: false,
+          fallback_triggered: true,
+          fallback_reason: `AI API error: ${error.message}`
+        })
       }
     } else {
-      console.warn('❌ CHURN_API_KEY not configured, using fallback')
+      console.warn('[FALLBACK TRIGGERED] CHURN_API_KEY not configured')
+      console.log('[TRACE 4 - AI Model Response]', {
+        raw_ai_response: null,
+        response_status: 'no_api_key',
+        ai_api_used: false,
+        fallback_triggered: true,
+        fallback_reason: 'CHURN_API_KEY not configured'
+      })
     }
 
     // Determine risk level

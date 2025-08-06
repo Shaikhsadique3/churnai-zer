@@ -45,6 +45,29 @@ serve(async (req) => {
       }
       
       requestData = JSON.parse(body);
+      
+      // *** TRACE LOG 5: EMAIL TRIGGER PAYLOAD ***
+      console.log('[TRACE 5 - Email Trigger Payload]', {
+        email_trigger_payload: requestData,
+        payload_fields: Object.keys(requestData),
+        critical_email_fields: {
+          user_id: !!requestData.user_id,
+          customer_email: !!requestData.customer_email,
+          email: !!requestData.email,
+          risk_level: requestData.risk_level,
+          churn_score: requestData.churn_score,
+          shouldTriggerEmail: requestData.shouldTriggerEmail,
+          recommended_tone: requestData.recommended_tone,
+          churn_reason: requestData.churn_reason
+        },
+        ai_outputs_present: {
+          risk_level_from_ai: requestData.risk_level !== undefined,
+          churn_score_from_ai: requestData.churn_score !== undefined,
+          trigger_flag_from_ai: requestData.shouldTriggerEmail !== undefined,
+          tone_from_ai: requestData.recommended_tone !== undefined
+        }
+      });
+      
       console.log('Parsed request data fields:', Object.keys(requestData));
     } catch (parseError) {
       console.error('JSON parsing error:', parseError);
@@ -253,7 +276,16 @@ TONE: ${psychologyStyle === 'urgency' ? 'Gentle urgency with empathy' : psycholo
         }
         
       } catch (aiError) {
-        console.error('OpenRouter AI email generation failed, using fallback template:', aiError.message);
+        console.warn('[FALLBACK EMAIL TEMPLATE USED] AI email generation failed:', aiError.message);
+        console.log('[TRACE 6 - Email Generation]', {
+          ai_email_generation_used: false,
+          fallback_template_used: true,
+          fallback_reason: aiError.message,
+          customer_name: customerName,
+          churn_reason: churnReason,
+          recommended_tone: requestData.recommended_tone
+        });
+        
         // Fallback to human-like template if AI fails
         const fallbackContent = createHumanizedFallbackEmail(customerName, churnReason, plan);
         aiEmailContent = {

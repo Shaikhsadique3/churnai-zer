@@ -33,6 +33,7 @@ import { NotificationsPage } from "./pages/dashboard/NotificationsPage";
 import { EmailAutomationPage } from "./pages/EmailAutomationPage";
 import { UserDetailPage } from "./pages/dashboard/UserDetailPage";
 import FounderProfile from "./pages/dashboard/FounderProfile";
+import OnboardingForm from "./pages/dashboard/OnboardingForm";
 // Admin pages
 import AdminPanel from "./pages/AdminPanel";
 import AdminLogin from "./pages/AdminLogin";
@@ -65,6 +66,7 @@ const App = () => {
               <Route path="/pricing" element={<Pricing />} />
               <Route path="/contact" element={<Contact />} />
               <Route path="/docs" element={<Documentation />} />
+              <Route path="/onboarding" element={<OnboardingForm />} />
               {/* Blog routes */}
               <Route path="/blog" element={<BlogIndex />} />
               <Route path="/blog/:slug" element={<BlogPost />} />

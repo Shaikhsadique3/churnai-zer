@@ -431,6 +431,81 @@ export type Database = {
         }
         Relationships: []
       }
+      founder_profile: {
+        Row: {
+          biggest_retention_challenge: string | null
+          company_name: string
+          company_size: string
+          company_website: string | null
+          completed_at: string | null
+          created_at: string
+          current_churn_rate: number | null
+          existing_retention_tools: string | null
+          founded_year: number | null
+          id: string
+          industry: string
+          location: string
+          main_competitors: string | null
+          monthly_revenue: number | null
+          onboarding_completed: boolean | null
+          pricing_model: string
+          product_description: string
+          revenue_model: string
+          success_metrics: string | null
+          target_market: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          biggest_retention_challenge?: string | null
+          company_name: string
+          company_size: string
+          company_website?: string | null
+          completed_at?: string | null
+          created_at?: string
+          current_churn_rate?: number | null
+          existing_retention_tools?: string | null
+          founded_year?: number | null
+          id?: string
+          industry: string
+          location: string
+          main_competitors?: string | null
+          monthly_revenue?: number | null
+          onboarding_completed?: boolean | null
+          pricing_model: string
+          product_description: string
+          revenue_model: string
+          success_metrics?: string | null
+          target_market: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          biggest_retention_challenge?: string | null
+          company_name?: string
+          company_size?: string
+          company_website?: string | null
+          completed_at?: string | null
+          created_at?: string
+          current_churn_rate?: number | null
+          existing_retention_tools?: string | null
+          founded_year?: number | null
+          id?: string
+          industry?: string
+          location?: string
+          main_competitors?: string | null
+          monthly_revenue?: number | null
+          onboarding_completed?: boolean | null
+          pricing_model?: string
+          product_description?: string
+          revenue_model?: string
+          success_metrics?: string | null
+          target_market?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       inbound_emails: {
         Row: {
           attachments: Json | null

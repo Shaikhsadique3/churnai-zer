@@ -34,6 +34,7 @@ import { EmailAutomationPage } from "./pages/EmailAutomationPage";
 import { UserDetailPage } from "./pages/dashboard/UserDetailPage";
 import FounderProfile from "./pages/dashboard/FounderProfile";
 import OnboardingForm from "./pages/dashboard/OnboardingForm";
+import DashboardDocumentation from "./pages/dashboard/DashboardDocumentation";
 // Admin pages
 import AdminPanel from "./pages/AdminPanel";
 import AdminLogin from "./pages/AdminLogin";
@@ -178,7 +179,17 @@ const App = () => {
                     </DashboardLayout>
                   </ProtectedRoute>
                 } 
-              />
+               />
+               <Route 
+                 path="/dashboard/docs" 
+                 element={
+                   <ProtectedRoute>
+                     <DashboardLayout>
+                       <DashboardDocumentation />
+                     </DashboardLayout>
+                   </ProtectedRoute>
+                 } 
+               />
               {/* Redirect dashboard to integration for backwards compatibility */}
               <Route 
                 path="/dashboard" 

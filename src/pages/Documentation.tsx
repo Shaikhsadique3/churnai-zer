@@ -16,12 +16,19 @@ const Documentation = () => {
             <Logo size="md" />
             <h1 className="text-2xl font-bold text-foreground">Churnaizer</h1>
           </Link>
-          <Link to="/">
-            <Button variant="outline">
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Back to Home
-            </Button>
-          </Link>
+          <div className="flex items-center gap-4">
+            <Link to="/">
+              <Button variant="outline">
+                <ArrowLeft className="h-4 w-4 mr-2" />
+                Back to Home
+              </Button>
+            </Link>
+            <Link to="/integration">
+              <Button>
+                Get Started
+              </Button>
+            </Link>
+          </div>
         </div>
       </header>
 

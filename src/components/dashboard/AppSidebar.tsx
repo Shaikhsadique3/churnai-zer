@@ -69,7 +69,7 @@ const navigationItems = [
 const resourceItems = [
   {
     title: "Developer Documentation",
-    url: "/docs",
+    url: "/dashboard/docs",
     icon: FileText,
     external: false
   },

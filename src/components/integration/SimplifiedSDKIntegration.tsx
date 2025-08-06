@@ -191,7 +191,7 @@ export function SimplifiedSDKIntegration() {
 
   const reactImplementationCode = `import { useEffect } from 'react';
 
-function useChurnaizerTracking(user) {
+function useChurnaizerTracking(user, options = {}) {
   useEffect(() => {
     if (!user || !window.Churnaizer) return;
 
@@ -208,17 +208,29 @@ function useChurnaizerTracking(user) {
         dashboard: user.dashboardViews || 0,
         reports: user.reportsGenerated || 0,
         settings: user.settingsAccessed || 0
-      }
-    }, 'cg_<YOUR_API_KEY>', (error, result) => {
+      },
+      // Optional: Pass custom trace_id for end-to-end debugging
+      trace_id: options.traceId // Auto-generated if not provided
+    }, '${apiKey}', (result, error) => {
       if (error) {
         console.error('Churnaizer tracking failed:', error);
         return;
       }
-      console.log('Churnaizer result:', result);
-      // handle risk levels as needed
+      
+      console.log('[TRACE] Client received result:', result);
+      
+      // Handle churn predictions
+      if (result.risk_level === 'high') {
+        console.log('High churn risk detected:', result.churn_reason);
+        // Trigger retention UI, send to analytics, etc.
+      }
     });
-  }, [user]);
-}`;
+  }, [user, options.traceId]);
+}
+
+// Usage Examples:
+// Basic: useChurnaizerTracking(currentUser);
+// With trace ID: useChurnaizerTracking(currentUser, { traceId: sessionId });`;
 
   if (loading) {
     return (

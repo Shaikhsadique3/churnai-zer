@@ -26,7 +26,7 @@ export const DeveloperGuide = ({ primaryApiKey, onCopyCode }: DeveloperGuideProp
 
   const reactIntegration = `import { useEffect } from 'react';
 
-function useChurnaizerTracking(user) {
+function useChurnaizerTracking(user, options = {}) {
   useEffect(() => {
     if (!user || !window.Churnaizer) return;
 
@@ -43,17 +43,28 @@ function useChurnaizerTracking(user) {
         dashboard: user.dashboardViews || 0,
         reports: user.reportsGenerated || 0,
         settings: user.settingsAccessed || 0
-      }
-    }, 'cg_<YOUR_API_KEY>', (error, result) => {
+      },
+      // Optional: Pass custom trace_id for debugging (backward compatible)
+      trace_id: options.traceId // Will auto-generate if not provided
+    }, 'cg_<YOUR_API_KEY>', (result, error) => {
       if (error) {
         console.error('Churnaizer tracking failed:', error);
         return;
       }
       console.log('Churnaizer result:', result);
-      // handle risk levels as needed
+      
+      // Handle churn risk levels
+      if (result.risk_level === 'high') {
+        // Trigger retention modal or custom UI
+        console.log('High churn risk detected:', result.churn_reason);
+      }
     });
-  }, [user]);
-}`;
+  }, [user, options.traceId]);
+}
+
+// Usage examples:
+// Basic usage: useChurnaizerTracking(currentUser);
+// With custom trace ID: useChurnaizerTracking(currentUser, { traceId: 'custom-session-123' });`;
 
   const checklistItems = [
     "Official Churnaizer SDK v1.0.0 loaded from https://churnaizer.com/churnaizer-sdk.js",

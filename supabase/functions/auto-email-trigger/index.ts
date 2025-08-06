@@ -43,6 +43,7 @@ serve(async (req) => {
     // Parse request body with error handling
     let requestData: AutoEmailRequest;
     let trace_id: string; // Declare trace_id outside try block
+    let forceEmailTest = false; // Declare forceEmailTest outside try block
     
     try {
       const body = await req.text();
@@ -62,7 +63,7 @@ serve(async (req) => {
       }
       
       // Handle force email test mode
-      const forceEmailTest = requestData.force_email_test === true || requestData.force_email_test === 'true';
+      forceEmailTest = requestData.force_email_test === true || requestData.force_email_test === 'true';
       if (forceEmailTest) {
         console.log(`[TRACE TEST MODE | trace_id: ${trace_id}] Force email test mode enabled - overriding risk level to high`);
         requestData.risk_level = 'high';

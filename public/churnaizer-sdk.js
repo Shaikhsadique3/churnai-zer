@@ -294,9 +294,9 @@
     _sendTrackingRequest: function(data, apiKey, callback) {
       const xhr = new XMLHttpRequest();
       
-      xhr.open('POST', `${API_BASE_URL}/sdk-track`, true);
+      xhr.open('POST', `${API_BASE_URL}/track`, true);
       xhr.setRequestHeader('Content-Type', 'application/json');
-      xhr.setRequestHeader('x-churnaizer-api-key', apiKey);
+      xhr.setRequestHeader('X-API-Key', apiKey);
       xhr.setRequestHeader('X-SDK-Version', SDK_VERSION);
       
       xhr.onreadystatechange = function() {
@@ -358,7 +358,7 @@
       
       xhr.open('POST', `${API_BASE_URL}/sdk-event`, true);
       xhr.setRequestHeader('Content-Type', 'application/json');
-      xhr.setRequestHeader('x-churnaizer-api-key', apiKey);
+      xhr.setRequestHeader('X-API-Key', apiKey);
       xhr.setRequestHeader('X-SDK-Version', SDK_VERSION);
       
       xhr.onreadystatechange = function() {

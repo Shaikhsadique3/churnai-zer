@@ -59,7 +59,7 @@ serve(async (req) => {
     }
 
     // Get API key from header (case-insensitive) or from request body
-    let apiKey = req.headers.get('X-API-Key') || req.headers.get('x-api-key');
+    let apiKey = req.headers.get('X-API-Key') || req.headers.get('x-api-key') || req.headers.get('x-churnaizer-api-key');
     
     // If no API key in headers, try to get it from request body
     if (!apiKey) {

@@ -19,6 +19,67 @@ interface TrackRequest {
   email_opens_last30days: number;
   last_login_days_ago: number;
   billing_issue_count: number;
+  // Optional extended fields
+  email?: string;
+  customer_name?: string;
+  customer_email?: string;
+  loginCount?: number;
+  dashboardViews?: number;
+  feature_usage?: {
+    dashboard?: number;
+    reports?: number;
+    settings?: number;
+  };
+}
+
+// Utility function to fill missing fields with defaults
+function fillDefaults(userData: any): TrackRequest {
+  const defaults = {
+    user_id: userData.user_id || 'unknown_user',
+    email: userData.email || userData.customer_email || 'unknown@example.com',
+    customer_name: userData.customer_name || 'Unknown Customer',
+    customer_email: userData.customer_email || userData.email || 'unknown@example.com',
+    days_since_signup: userData.days_since_signup ?? 30,
+    monthly_revenue: userData.monthly_revenue ?? 0,
+    subscription_plan: userData.subscription_plan || 'Free Trial',
+    number_of_logins_last30days: userData.number_of_logins_last30days ?? userData.loginCount ?? 5,
+    active_features_used: userData.active_features_used ?? 3,
+    support_tickets_opened: userData.support_tickets_opened ?? 0,
+    last_payment_status: userData.last_payment_status || 'Success',
+    email_opens_last30days: userData.email_opens_last30days ?? 10,
+    last_login_days_ago: userData.last_login_days_ago ?? 1,
+    billing_issue_count: userData.billing_issue_count ?? 0,
+    loginCount: userData.loginCount ?? userData.number_of_logins_last30days ?? 5,
+    dashboardViews: userData.dashboardViews ?? 15,
+    feature_usage: {
+      dashboard: userData.feature_usage?.dashboard ?? 10,
+      reports: userData.feature_usage?.reports ?? 5,
+      settings: userData.feature_usage?.settings ?? 2,
+    }
+  };
+  
+  // Log which fields were filled with defaults
+  const filledFields = [];
+  for (const [key, value] of Object.entries(defaults)) {
+    if (key === 'feature_usage') {
+      // Handle nested feature_usage separately
+      if (!userData.feature_usage) {
+        filledFields.push('feature_usage (entire object)');
+      } else {
+        if (userData.feature_usage.dashboard === undefined) filledFields.push('feature_usage.dashboard');
+        if (userData.feature_usage.reports === undefined) filledFields.push('feature_usage.reports');
+        if (userData.feature_usage.settings === undefined) filledFields.push('feature_usage.settings');
+      }
+    } else if (userData[key] === undefined || userData[key] === null) {
+      filledFields.push(key);
+    }
+  }
+  
+  if (filledFields.length > 0) {
+    console.log(`Auto-filled missing fields for user ${defaults.user_id}:`, filledFields);
+  }
+  
+  return defaults;
 }
 
 interface ChurnResponse {
@@ -127,10 +188,13 @@ serve(async (req) => {
     }
 
     // Handle both single user and batch (array) requests
-    const users: TrackRequest[] = Array.isArray(body) ? body : [body];
+    const rawUsers = Array.isArray(body) ? body : [body];
     const results = [];
 
-    for (const userData of users) {
+    for (const rawUserData of rawUsers) {
+      // Fill defaults for missing fields instead of failing
+      const userData = fillDefaults(rawUserData);
+      
       const { 
         user_id, 
         days_since_signup, 
@@ -144,25 +208,6 @@ serve(async (req) => {
         last_login_days_ago,
         billing_issue_count
       } = userData;
-
-      // Validate all required fields for this user
-      const requiredFields = [
-        'user_id', 'days_since_signup', 'monthly_revenue', 'subscription_plan',
-        'number_of_logins_last30days', 'active_features_used', 'support_tickets_opened',
-        'last_payment_status', 'email_opens_last30days', 'last_login_days_ago', 'billing_issue_count'
-      ];
-      
-      const missingFields = requiredFields.filter(field => userData[field] === undefined || userData[field] === null);
-      
-      if (missingFields.length > 0) {
-        console.error(`Missing required fields for user ${user_id || 'unknown'}:`, missingFields);
-        results.push({
-          status: 'error',
-          user_id: user_id || 'unknown',
-          error: `Missing required fields: ${missingFields.join(', ')}`
-        });
-        continue;
-      }
 
       console.log('Processing tracking request for user:', user_id);
 

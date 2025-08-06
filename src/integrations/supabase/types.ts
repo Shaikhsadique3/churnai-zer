@@ -533,6 +533,36 @@ export type Database = {
         }
         Relationships: []
       }
+      notifications: {
+        Row: {
+          created_at: string | null
+          id: string
+          is_read: boolean | null
+          message: string
+          title: string
+          type: Database["public"]["Enums"]["notification_type"]
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          is_read?: boolean | null
+          message: string
+          title: string
+          type: Database["public"]["Enums"]["notification_type"]
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          is_read?: boolean | null
+          message?: string
+          title?: string
+          type?: Database["public"]["Enums"]["notification_type"]
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       playbook_actions_queue: {
         Row: {
           action_data: Json
@@ -1155,6 +1185,7 @@ export type Database = {
       }
     }
     Enums: {
+      notification_type: "risk" | "recovery" | "email"
       plan_type: "Free" | "Pro" | "Enterprise"
       risk_level: "low" | "medium" | "high"
       user_prediction_status: "at_risk" | "recovered"
@@ -1285,6 +1316,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      notification_type: ["risk", "recovery", "email"],
       plan_type: ["Free", "Pro", "Enterprise"],
       risk_level: ["low", "medium", "high"],
       user_prediction_status: ["at_risk", "recovered"],

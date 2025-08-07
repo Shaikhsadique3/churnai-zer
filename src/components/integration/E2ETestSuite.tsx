@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -17,6 +17,33 @@ export const E2ETestSuite = () => {
   const { user } = useAuth();
   const [isRunning, setIsRunning] = useState(false);
   const [testResults, setTestResults] = useState<TestResult[]>([]);
+  const [sdkLoaded, setSdkLoaded] = useState(false);
+
+  // Load SDK for testing
+  useEffect(() => {
+    const loadSDK = () => {
+      if (window.Churnaizer) {
+        setSdkLoaded(true);
+        return;
+      }
+
+      const script = document.createElement('script');
+      script.src = '/churnaizer-sdk.js';
+      script.async = true;
+      script.onload = () => {
+        // Configure SDK
+        (window as any).ChurnaizerConfig = { debug: true };
+        setSdkLoaded(true);
+      };
+      script.onerror = () => {
+        console.error('Failed to load Churnaizer SDK');
+        setSdkLoaded(false);
+      };
+      document.head.appendChild(script);
+    };
+
+    loadSDK();
+  }, []);
 
   const runE2ETests = async () => {
     setIsRunning(true);
@@ -328,7 +355,7 @@ export const E2ETestSuite = () => {
       <CardContent className="space-y-4">
         <Button 
           onClick={runE2ETests}
-          disabled={isRunning || !user}
+          disabled={isRunning || !user || !sdkLoaded}
           className="w-full"
           size="lg"
         >
@@ -337,6 +364,8 @@ export const E2ETestSuite = () => {
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
               Running E2E Tests...
             </>
+          ) : !sdkLoaded ? (
+            'Loading SDK...'
           ) : (
             'Run Full E2E Test Suite'
           )}

@@ -49,7 +49,7 @@ serve(async (req) => {
     console.log(`[TRACE 2 | trace_id: ${trace_id}] SDK Event received:`, eventData);
 
     // Get API key from headers (check multiple header variations)
-    const apiKey = req.headers.get('x-churnaizer-api-key') || req.headers.get('x-api-key') || req.headers.get('X-API-Key');
+    const apiKey = req.headers.get('x-churnaizer-api-key') || req.headers.get('x-api-key') || req.headers.get('X-API-Key') || req.headers.get('X-Api-Key');
     if (!apiKey) {
       console.error(`[TRACE ERROR | trace_id: ${trace_id}] Missing API key in headers`)
       return new Response(

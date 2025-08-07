@@ -61,8 +61,6 @@ serve(async (req) => {
         console.warn(`[TRACE WARNING | trace_id: ${trace_id}] No trace_id provided in email trigger request, auto-generated`)
       }
       
-      // Use real data - no force test mode needed
-      
       // *** TRACE LOG 5: EMAIL TRIGGER PAYLOAD ***
       console.log(`[TRACE 5 | trace_id: ${trace_id}] Email Trigger Payload`, {
         email_trigger_payload: requestData,
@@ -485,8 +483,7 @@ TONE: ${psychologyStyle === 'urgency' ? 'Gentle urgency with empathy' : psycholo
       console.log(`[TRACE SUCCESS | trace_id: ${trace_id}] Email sent successfully`, {
         email_id: emailResponse.data?.id,
         recipient: requestData.customer_email,
-        subject: subject,
-        force_test_mode: forceEmailTest
+        subject: subject
       });
 
       return new Response(

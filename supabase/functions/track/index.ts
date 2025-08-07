@@ -214,6 +214,20 @@ serve(async (req) => {
       try {
         console.log('Processing prediction for user:', user_id);
 
+        console.log('[TRACK LOG] Processing user data:', { user_id, email: userData.email || userData.customer_email });
+
+        // Validate required fields
+        if (!user_id || (!userData.email && !userData.customer_email)) {
+          return new Response(JSON.stringify({
+            status: 'error',
+            error: 'Missing required fields: user_id or email',
+            details: { user_id: !!user_id, email: !!(userData.email || userData.customer_email) }
+          }), { 
+            status: 400, 
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+          });
+        }
+
         // Always attempt real API call to external churn prediction model
         const churnApiUrl = Deno.env.get('CHURN_API_URL') || 'https://ai-model-rumc.onrender.com/api/v1/predict';
         const churnApiKey = Deno.env.get('CHURN_API_KEY');
@@ -224,25 +238,24 @@ serve(async (req) => {
         
         if (churnApiUrl && churnApiKey) {
           try {
-            // One-hot encode categorical fields
-            const subscription_plan_Pro = subscription_plan === 'Pro' ? 1 : 0;
-            const subscription_plan_FreeTrial = subscription_plan === 'Free Trial' ? 1 : 0;
-            const last_payment_status_Success = last_payment_status === 'Success' ? 1 : 0;
+            console.log('[AI API] Calling external churn prediction API:', churnApiUrl);
             
-            // Prepare data for AI model v5 with one-hot encoding
+            // Prepare data for AI model - proper format expected by the API
             const modelData = {
-              days_since_signup,
-              monthly_revenue,
-              subscription_plan_Pro,
-              subscription_plan_FreeTrial,
-              number_of_logins_last30days,
-              active_features_used,
-              support_tickets_opened,
-              last_payment_status_Success,
-              email_opens_last30days,
-              last_login_days_ago,
-              billing_issue_count
+              user_id: userData.customer_name || userData.email || `user_${Date.now()}`,
+              email: userData.email || userData.customer_email,
+              support_tickets: support_tickets_opened || 0,
+              usage_score: active_features_used || 0,
+              monthly_revenue: monthly_revenue || 0,
+              signup_date: new Date(Date.now() - (days_since_signup * 24 * 60 * 60 * 1000)).toISOString().split('T')[0],
+              last_active_date: new Date(Date.now() - (last_login_days_ago * 24 * 60 * 60 * 1000)).toISOString().split('T')[0],
+              plan: subscription_plan || 'Free',
+              billing_status: last_payment_status || 'active',
+              email_opens_last30days: email_opens_last30days || 0,
+              number_of_logins_last30days: number_of_logins_last30days || 1
             };
+            
+            console.log('[AI API] Sending payload:', modelData);
             
             const churnResponse = await fetch(churnApiUrl, {
               method: 'POST',
@@ -254,15 +267,22 @@ serve(async (req) => {
             });
 
             if (churnResponse.ok) {
-              const churnData: ChurnResponse = await churnResponse.json();
-              churnScore = churnData.churn_score;
-              churnReason = churnData.churn_reason || 'AI model prediction based on user behavior patterns';
-              console.log('Received churn prediction from AI v5:', { churnScore, churnReason });
+              const churnData = await churnResponse.json();
+              console.log('[AI API] Received response:', churnData);
+              
+              // Extract churn data from response (handle multiple possible response formats)
+              churnScore = churnData.churn_probability || churnData.churn_score || churnData.prediction || 0;
+              churnReason = churnData.reason || churnData.churn_reason || churnData.message || 'AI model prediction based on user behavior patterns';
+              
+              console.log('[AI API] Processed prediction:', { churnScore, churnReason, risk_level: riskLevel });
             } else {
-              console.warn('Churn API request failed, using fallback');
+              const errorText = await churnResponse.text();
+              console.error('[AI API] Request failed:', churnResponse.status, errorText);
+              console.log('Churn API request failed, using fallback');
             }
           } catch (apiError) {
-            console.warn('Churn API error, using fallback:', apiError);
+            console.error('[AI API] Error occurred:', apiError.message);
+            console.log('Churn API request failed, using fallback');
           }
         } else {
           console.warn('Missing CHURN_API_URL or CHURN_API_KEY, using fallback score');
@@ -470,7 +490,7 @@ serve(async (req) => {
                   recommended_tone: riskLevel === 'high' ? 'empathetic' : 'friendly',
                   trigger_email: true,
                   trace_id: `email_${user_id}_${Date.now()}`,
-                  force_email_test: forceEmailTest,
+                  
                   is_fallback: isAiFallback
                 })
               });

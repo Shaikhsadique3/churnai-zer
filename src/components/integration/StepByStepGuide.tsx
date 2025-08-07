@@ -38,288 +38,331 @@ export function StepByStepGuide({ apiKey, onCopyCode }: StepByStepGuideProps) {
 
   const steps = [
     {
-      title: "1. Add SDK Script to Your Website",
-      description: "Include the Churnaizer SDK in your HTML head section",
+      title: "1. Include Churnaizer SDK",
+      description: "Add the production SDK script to your HTML",
       framework: "html",
-      code: `<!-- Add this to your HTML <head> section -->
-<script src="https://ntbkydpgjaswmwruegyl.supabase.co/storage/v1/object/public/churnaizer-sdk/churnaizer-sdk.js"></script>
+      code: `<!-- Add to your HTML <head> section -->
+<script src="https://ntbkydpgjaswmwruegyl.supabase.co/functions/v1/churnaizer-sdk.js"></script>
 <script>
-  // Configure the SDK (optional)
+  // Optional SDK configuration
   window.ChurnaizerConfig = {
-    modalEnabled: true,        // Enable retention modals
-    checkInterval: 30000,      // Check every 30 seconds
-    autoTrigger: true,         // Auto-trigger for high-risk users
-    debug: true                // Set to false for production
+    modalEnabled: true,        // Show retention popups for high-risk users
+    checkInterval: 5000,       // Check user activity every 5 seconds
+    autoTrigger: true,         // Auto-start retention monitoring
+    debug: false               // Set to true for development only
   };
 </script>`,
       terminal: null,
-      files: ["index.html", "app.html", "master.html"]
+      files: ["index.html", "app.html"]
     },
     {
       title: "2. Create User Tracking Function",
-      description: "Set up the main tracking function using real production data fields",
+      description: "Set up type-safe user tracking with real production data",
       framework: "javascript",
-      code: `// Create a file: js/churnaizer-tracking.js
+      code: `// Create file: js/churnaizer-tracking.js
 /**
- * Tracks user data with Churnaizer SDK to predict churn risk
- * @param {Object} userData - User data object containing all required fields
+ * Track user data with Churnaizer for churn prediction
+ * @param {Object} userData - User data with required fields
  */
 function trackUserWithChurnaizer(userData) {
   if (!window.Churnaizer) {
-    console.error('Churnaizer SDK not loaded');
+    console.error('❌ Churnaizer SDK not loaded');
     return;
   }
 
-  console.log('[TRACE] Sending user data to Churnaizer:', userData);
+  // Validate required fields
+  if (!userData.id || !userData.email) {
+    console.error('❌ Missing required fields: user_id and email');
+    return;
+  }
 
-  // Prepare payload with all required fields and safe defaults
-  window.Churnaizer.track({
-    // Required user identification fields
-    user_id: userData.id || 'unknown',
-    email: userData.email || 'unknown',
-    customer_name: userData.name || 'unknown',
-    customer_email: userData.email || 'unknown',
-    
-    // Subscription and revenue information
-    subscription_plan: userData.plan || 'free',
-    monthly_revenue: userData.monthlyRevenue || 0,
-    
-    // Usage metrics
-    loginCount: userData.loginCount || 0,
-    dashboardViews: userData.dashboardViews || 0,
-    
-    // Feature usage breakdown
-    feature_usage: {
-      dashboard: userData.dashboardViews || 0,
-      reports: userData.reportsGenerated || 0,
-      settings: userData.settingsAccessed || 0
-    },
-    
-    // Additional required fields with defaults
-    days_since_signup: userData.days_since_signup || 0,
-    number_of_logins_last30days: userData.number_of_logins_last30days || 0,
-    active_features_used: userData.active_features_used || [],
-    support_tickets_opened: userData.support_tickets_opened || 0,
-    last_payment_status: userData.last_payment_status || 'unknown',
-    email_opens_last30days: userData.email_opens_last30days || 0,
-    last_login_days_ago: userData.last_login_days_ago || 0,
-    billing_issue_count: userData.billing_issue_count || 0
-  }, '${apiKey}', function(result, error) {
-    
-    if (error && error.message) {
-      console.error('Churnaizer tracking failed:', error);
+  console.log('[TRACE] Tracking user:', userData.id);
+
+  // Prepare payload with type-safe conversions and real data
+  const trackingData = {
+    user_id: String(userData.id),
+    email: String(userData.email),
+    customer_name: String(userData.name || userData.email.split('@')[0]),
+    customer_email: String(userData.email),
+    days_since_signup: Number(userData.days_since_signup) || 0,
+    monthly_revenue: Number(userData.monthly_revenue) || 0,
+    subscription_plan: String(userData.subscription_plan || 'Free'),
+    number_of_logins_last30days: Number(userData.number_of_logins_last30days) || 1,
+    active_features_used: Number(userData.active_features_used) || 1,
+    support_tickets_opened: Number(userData.support_tickets_opened) || 0,
+    last_payment_status: String(userData.last_payment_status || 'active'),
+    email_opens_last30days: Number(userData.email_opens_last30days) || 0,
+    last_login_days_ago: Number(userData.last_login_days_ago) || 0,
+    billing_issue_count: Number(userData.billing_issue_count) || 0
+  };
+
+  window.Churnaizer.track(trackingData, '${apiKey}', function(result, error) {
+    if (error) {
+      console.error('❌ Churnaizer tracking failed:', error);
       return;
     }
-    
-    console.log('[TRACE] Client received result:', result);
-    
-    // Handle high-risk users 
-    if (result && result.risk_level === 'high') {
+
+    console.log('✅ Churn prediction successful:', result);
+
+    // Handle high-risk users with retention logic
+    if (result.risk_level === 'high') {
       console.log('⚠️ High churn risk detected:', result.churn_reason);
-      // Trigger custom retention actions
       showRetentionOffer(result);
     }
   });
 }
 
 /**
- * Shows a retention offer to high-risk users based on churn prediction data
+ * Show retention offer for high-risk users
+ * Note: Rate-limited to max 2 emails/second on backend
  */
 function showRetentionOffer(churnData) {
-  console.log('Showing retention offer for:', churnData);
+  console.log('📧 Retention email triggered (rate-limited):', churnData);
   
-  const churnProbability = churnData.churn_probability 
-    ? \`\${Math.round(churnData.churn_probability * 100)}%\` 
-    : 'Unknown';
-    
-  const suggestions = churnData.retention_suggestions 
-    ? churnData.retention_suggestions 
-    : { discount: '20%', message: 'We value your business!' };
+  // Show retention modal or notification
+  window.Churnaizer.showBadge(
+    \`We noticed you might need help. Let's connect!\`, 
+    'warning'
+  );
   
-  // Your custom retention UI logic here
-  alert(\`⚠️ Churn Risk: \${churnData.churn_reason} | Probability: \${churnProbability}\`);
+  // Optional: Custom retention UI
+  // showCustomRetentionModal(churnData);
 }`,
       terminal: "touch js/churnaizer-tracking.js",
       files: ["js/churnaizer-tracking.js"]
     },
     {
       title: "3. Track User Login Events",
-      description: "Implement tracking on successful login with real user data",
+      description: "Implement post-authentication tracking with real user data",
       framework: "javascript",
-      code: `// Add this to your login success handler
-// Example: After successful login
+      code: `// Add to your authentication flow
+/**
+ * Track user after successful login
+ * @param {Object} user - Authenticated user object
+ */
 function onUserLogin(user) {
-  // Your existing login logic...
+  console.log('🔐 User logged in:', user.id);
   
-  // Track with Churnaizer
+  // Track with Churnaizer using real user data
   trackUserWithChurnaizer({
     id: user.id,
     email: user.email,
-    name: user.full_name || user.name,
-    daysSinceSignup: user.days_since_signup || 30,
-    monthlyRevenue: user.monthly_revenue || 0,
-    plan: user.subscription_plan || 'Free',
-    loginCount: user.login_count || 1,
-    featuresUsed: user.active_features_used?.length || 1,
-    supportTickets: user.support_tickets_opened || 0,
-    paymentStatus: user.last_payment_status || 'Success',
-    emailOpens: user.email_opens_last30days || 0,
-    lastLoginDaysAgo: user.last_login_days_ago || 1,
-    billingIssues: user.billing_issue_count || 0,
-    dashboardViews: user.dashboard_views || 0
+    name: user.name || user.full_name,
+    days_since_signup: calculateDaysSinceSignup(user.created_at),
+    monthly_revenue: parseFloat(user.current_plan_amount) || 0,
+    subscription_plan: user.subscription_plan || 'Free',
+    number_of_logins_last30days: user.login_count_30days || 1,
+    active_features_used: user.features_used?.length || 1,
+    support_tickets_opened: user.support_tickets || 0,
+    last_payment_status: user.payment_status || 'active',
+    email_opens_last30days: user.email_engagement || 0,
+    last_login_days_ago: calculateDaysSinceLastLogin(user.last_login),
+    billing_issue_count: user.billing_issues || 0
   });
 }
 
-// Example: Track on page load for logged-in users
+/**
+ * Calculate days since user signup
+ */
+function calculateDaysSinceSignup(signupDate) {
+  if (!signupDate) return 0;
+  const signup = new Date(signupDate);
+  const now = new Date();
+  return Math.floor((now - signup) / (1000 * 60 * 60 * 24));
+}
+
+/**
+ * Calculate days since last login
+ */
+function calculateDaysSinceLastLogin(lastLogin) {
+  if (!lastLogin) return 0;
+  const login = new Date(lastLogin);
+  const now = new Date();
+  return Math.floor((now - login) / (1000 * 60 * 60 * 24));
+}
+
+// Auto-track on page load for existing sessions
 document.addEventListener('DOMContentLoaded', function() {
-  // Check if user is logged in
   const currentUser = getCurrentUser(); // Your function to get current user
   
   if (currentUser) {
-    trackUserWithChurnaizer({
-      id: currentUser.id,
-      email: currentUser.email,
-      daysSinceSignup: currentUser.days_since_signup || 30,
-      monthlyRevenue: currentUser.monthly_revenue || 0,
-      plan: currentUser.subscription_plan || 'Free',
-      loginCount: currentUser.login_count || 1,
-      featuresUsed: currentUser.active_features_used?.length || 1,
-      supportTickets: currentUser.support_tickets_opened || 0,
-      paymentStatus: currentUser.last_payment_status || 'Success',
-      emailOpens: currentUser.email_opens_last30days || 0,
-      lastLoginDaysAgo: currentUser.last_login_days_ago || 1,
-      billingIssues: currentUser.billing_issue_count || 0
-    });
+    onUserLogin(currentUser);
   }
 });`,
       terminal: null,
-      files: ["js/auth.js", "js/login.js", "js/app.js"]
+      files: ["js/auth.js", "js/login.js"]
     },
     {
-      title: "4. Track Key User Actions",
-      description: "Monitor user interactions that indicate engagement levels",
+      title: "4. Track User Engagement Events",
+      description: "Monitor user interactions for churn prediction enhancement",
       framework: "javascript",
       code: `/**
- * Track important user actions and interactions that indicate engagement
- * @param {string} actionType - The type of action being tracked
- * @param {object} actionData - Additional data about the action
+ * Track user engagement events
+ * @param {string} eventType - Type of event
+ * @param {Object} eventData - Additional event data
  */
-function trackUserAction(actionType, actionData = {}) {
-  if (!window.Churnaizer) {
-    console.error('Churnaizer SDK not loaded, cannot track user action:', actionType);
+function trackUserEvent(eventType, eventData = {}) {
+  const currentUser = getCurrentUser();
+  
+  if (!currentUser || !window.Churnaizer) {
+    console.warn('Cannot track event: user not logged in or SDK not loaded');
     return;
   }
-  
-  console.log(\`[TRACE] Tracking user action: \${actionType}\`, actionData);
-  
-  window.Churnaizer.trackEvent({
-    event_type: actionType,
-    user_id: getCurrentUserId(), // Your function to get user ID 
-    event_data: actionData,
-    timestamp: new Date().toISOString()
-  }, '${apiKey}');
+
+  const eventPayload = {
+    event: eventType,
+    user_id: String(currentUser.id),
+    email: String(currentUser.email),
+    customer_name: String(currentUser.name || currentUser.email.split('@')[0]),
+    monthly_revenue: Number(currentUser.monthly_revenue) || 0,
+    ...eventData
+  };
+
+  window.Churnaizer.trackEvent(eventPayload, '${apiKey}', function(result, error) {
+    if (error) {
+      console.error('Event tracking failed:', error);
+      return;
+    }
+    console.log('✅ Event tracked:', eventType);
+  });
 }
 
-// Get current user ID helper function
-function getCurrentUserId() {
-  const currentUser = getCurrentUser(); // Your function to get current user
-  return currentUser ? currentUser.id : null;
-}
-
-// Example implementations:
-
-// Track dashboard views
+// Set up automatic event tracking
 document.addEventListener('DOMContentLoaded', function() {
-  trackUserAction('page_view', { 
+  // Track page views
+  trackUserEvent('page_view', { 
     page: window.location.pathname,
     referrer: document.referrer
   });
-});
-
-// Track feature usage with data attributes
-document.querySelectorAll('[data-track="feature"]').forEach(button => {
-  button.addEventListener('click', () => {
-    const feature = button.getAttribute('data-feature');
-    trackUserAction('feature_used', { feature: feature || 'unknown' });
-  });
-});
-
-// Track support contact clicks
-document.querySelectorAll('[data-track="support"]').forEach(link => {
-  link.addEventListener('click', () => {
-    trackUserAction('support_contact', { 
-      type: link.getAttribute('data-contact-type') || 'general',
-      subject: link.getAttribute('data-subject') || 'general_inquiry'
+  
+  // Track feature usage with data attributes
+  document.querySelectorAll('[data-track="feature"]').forEach(element => {
+    element.addEventListener('click', () => {
+      const feature = element.getAttribute('data-feature');
+      trackUserEvent('feature_used', { feature: feature });
     });
   });
-});`,
+  
+  // Track dashboard interactions
+  document.querySelectorAll('[data-track="dashboard"]').forEach(element => {
+    element.addEventListener('click', () => {
+      trackUserEvent('dashboard_view', { 
+        section: element.getAttribute('data-section') || 'main'
+      });
+    });
+  });
+  
+  // Track support interactions
+  document.querySelectorAll('[data-track="support"]').forEach(element => {
+    element.addEventListener('click', () => {
+      trackUserEvent('support_contact', { 
+        type: element.getAttribute('data-contact-type') || 'general'
+      });
+    });
+  });
+});
+
+// Track user recovery events (for recovered users)
+function trackRecoveryEvent(recoveryType, details = {}) {
+  trackUserEvent('user_recovery', {
+    recovery_type: recoveryType,
+    recovery_details: details,
+    timestamp: new Date().toISOString()
+  });
+}`,
       terminal: null,
-      files: ["js/analytics.js", "js/tracking.js"]
+      files: ["js/event-tracking.js", "js/analytics.js"]
     },
     {
-      title: "5. Test Your Integration",
-      description: "Verify SDK is working with your production environment",
+      title: "5. Production Testing & Validation",
+      description: "Test integration with real data and proper error handling",
       framework: "javascript",
-      code: `// Create a test file: test-churnaizer.html
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Churnaizer SDK Production Test</title>
-    <script src="https://ntbkydpgjaswmwruegyl.supabase.co/storage/v1/object/public/churnaizer-sdk/churnaizer-sdk.js"></script>
-</head>
-<body>
-    <h1>Testing Churnaizer SDK</h1>
-    <button onclick="testTracking()">Test User Tracking</button>
-    <button onclick="testFeatureTracking()">Test Feature Tracking</button>
-    <div id="result"></div>
-    
-    <script>
-        // Include your tracking function
-        function trackUserWithChurnaizer(userData) {
-          // ... (copy from step 2)
-        }
-        
-        function testTracking() {
-            // Use realistic production data structure
-            const currentUser = {
-                id: "user_12345",
-                email: "user@yourapp.com",
-                name: "Production User",
-                subscription_plan: "premium",
-                monthly_revenue: 99.99,
-                login_count: 15,
-                dashboard_views: 50,
-                days_since_signup: 300,
-                number_of_logins_last30days: 15,
-                active_features_used: ['dashboard', 'reports'],
-                support_tickets_opened: 2,
-                last_payment_status: 'paid',
-                email_opens_last30days: 10,
-                last_login_days_ago: 5,
-                billing_issue_count: 0
-            };
-            
-            trackUserWithChurnaizer(currentUser);
-            document.getElementById('result').innerHTML = 
-                '<p style="color: green;">✅ Production tracking test sent! Check console and network tab.</p>';
-        }
-        
-        function testFeatureTracking() {
-            window.Churnaizer?.trackEvent({
-                event_type: 'feature_used',
-                user_id: 'user_12345',
-                event_data: { feature: 'integration_test' },
-                timestamp: new Date().toISOString()
-            }, '${apiKey}');
-            
-            document.getElementById('result').innerHTML += 
-                '<br><p style="color: blue;">✅ Feature tracking test sent!</p>';
-        }
-    </script>
-</body>
-</html>`,
-      terminal: "touch test-churnaizer.html",
-      files: ["test-churnaizer.html"]
+      code: `/**
+ * Production-ready integration validation
+ */
+function validateChurnaizerIntegration() {
+  console.log('🔍 Validating Churnaizer integration...');
+  
+  // Check SDK availability
+  if (typeof window.Churnaizer === 'undefined') {
+    console.error('❌ Churnaizer SDK not found. Check script inclusion.');
+    return false;
+  }
+  
+  console.log('✅ SDK loaded, version:', window.Churnaizer.version);
+  
+  // Check API key configuration
+  const apiKey = '${apiKey}';
+  if (!apiKey || apiKey === 'YOUR_API_KEY_HERE') {
+    console.error('❌ API key not configured properly');
+    return false;
+  }
+  
+  console.log('✅ API key configured');
+  
+  // Test with current user if available
+  const currentUser = getCurrentUser();
+  if (!currentUser) {
+    console.warn('⚠️ No user logged in for testing');
+    return true;
+  }
+  
+  // Validate required user fields
+  const requiredFields = ['id', 'email'];
+  const missing = requiredFields.filter(field => !currentUser[field]);
+  
+  if (missing.length > 0) {
+    console.error('❌ Missing required user fields:', missing);
+    return false;
+  }
+  
+  console.log('✅ User data validation passed');
+  
+  // Test actual tracking (only in development/staging)
+  if (window.location.hostname === 'localhost' || 
+      window.location.hostname.includes('staging')) {
+    testUserTracking(currentUser);
+  }
+  
+  return true;
+}
+
+/**
+ * Test user tracking with production data structure
+ */
+function testUserTracking(user) {
+  console.log('🧪 Testing user tracking...');
+  
+  trackUserWithChurnaizer({
+    id: user.id,
+    email: user.email,
+    name: user.name || 'Test User',
+    days_since_signup: calculateDaysSinceSignup(user.created_at) || 30,
+    monthly_revenue: parseFloat(user.current_plan_amount) || 0,
+    subscription_plan: user.subscription_plan || 'Free',
+    number_of_logins_last30days: user.login_count_30days || 1,
+    active_features_used: user.features_used?.length || 1,
+    support_tickets_opened: user.support_tickets || 0,
+    last_payment_status: user.payment_status || 'active',
+    email_opens_last30days: user.email_engagement || 0,
+    last_login_days_ago: calculateDaysSinceLastLogin(user.last_login) || 0,
+    billing_issue_count: user.billing_issues || 0
+  });
+}
+
+// Error handling for AI prediction fallbacks
+window.addEventListener('error', function(e) {
+  if (e.message.includes('Churnaizer')) {
+    console.warn('⚠️ Churnaizer fallback logic active:', e.message);
+    // Fallback logic is handled automatically by the backend
+    // when AI prediction fails (sets risk_level to 'medium')
+  }
+});
+
+// Run validation on page load
+document.addEventListener('DOMContentLoaded', validateChurnaizerIntegration);`,
+      terminal: "touch test-integration.js",
+      files: ["js/integration-test.js", "test-integration.js"]
     }
   ];
 

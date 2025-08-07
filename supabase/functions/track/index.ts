@@ -415,16 +415,16 @@ serve(async (req) => {
             user_id,
             owner_id: ownerId,
             plan: validatedPlan,
-            usage: monthly_revenue, // Store monthly revenue in usage field
+            usage: Math.round(Number(monthly_revenue) || 0), // Convert to integer for usage field
             last_login: lastLoginDate.toISOString(),
-            churn_score: churnScore,
+            churn_score: Number(churnScore) || 0,
             churn_reason: churnReason || "🕵️ No strong signals yet",
             risk_level: riskLevel,
             user_stage: statusTag,
             understanding_score: Math.round(understandingScore),
             days_until_mature: daysUntilMature,
             action_recommended: actionRecommended,
-            monthly_revenue: monthly_revenue,
+            monthly_revenue: Number(monthly_revenue) || 0,
             updated_at: new Date().toISOString(),
           }, {
             onConflict: 'owner_id,user_id'

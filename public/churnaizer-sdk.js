@@ -126,15 +126,24 @@
       // Send tracking request with callback wrapper to also track login event
       const wrappedCallback = (result, error) => {
         if (!error && result && result.status === 'ok') {
-          // Also track login event after successful prediction
-          this.trackEvent({
-            event: 'login',
-            user_id: userData.user_id,
-            email: userData.email || userData.customer_email,
-            customer_name: userData.customer_name,
-            monthly_revenue: userData.monthly_revenue || 0,
-            trace_id: traceId // Propagate trace_id to event tracking
-          }, apiKey);
+          // Also track login event after successful prediction (non-blocking)
+          try {
+            this.trackEvent({
+              event: 'login',
+              user_id: userData.user_id,
+              email: userData.email || userData.customer_email,
+              customer_name: userData.customer_name,
+              monthly_revenue: userData.monthly_revenue || 0,
+              trace_id: traceId // Propagate trace_id to event tracking
+            }, apiKey, function(eventResult, eventError) {
+              // Event tracking is optional - don't fail main flow if it fails
+              if (eventError) {
+                console.warn('Event tracking failed but main flow continues:', eventError);
+              }
+            });
+          } catch (eventError) {
+            console.warn('Event tracking failed but main flow continues:', eventError);
+          }
         }
         if (callback) callback(result, error);
       };

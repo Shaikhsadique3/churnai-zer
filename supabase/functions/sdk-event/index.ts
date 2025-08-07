@@ -3,7 +3,8 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.50.2';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-churnaizer-api-key, X-SDK-Version',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-churnaizer-api-key, x-api-key, X-API-Key, X-SDK-Version',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
 };
 
 interface EventData {
@@ -47,8 +48,8 @@ serve(async (req) => {
 
     console.log(`[TRACE 2 | trace_id: ${trace_id}] SDK Event received:`, eventData);
 
-    // Get API key from headers
-    const apiKey = req.headers.get('x-churnaizer-api-key');
+    // Get API key from headers (check multiple header variations)
+    const apiKey = req.headers.get('x-churnaizer-api-key') || req.headers.get('x-api-key') || req.headers.get('X-API-Key');
     if (!apiKey) {
       console.error(`[TRACE ERROR | trace_id: ${trace_id}] Missing API key in headers`)
       return new Response(

@@ -1,10 +1,19 @@
 
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar"
 import { CleanAppSidebar } from "@/components/dashboard/CleanAppSidebar"
-import { Outlet } from "react-router-dom"
+import { Outlet, useNavigate } from "react-router-dom"
 import DashboardHeader from "@/components/dashboard/DashboardHeader"
+import { useAuth } from "@/contexts/AuthContext"
 
 export function DashboardLayout() {
+  const { user, signOut } = useAuth()
+  const navigate = useNavigate()
+
+  const handleLogout = async () => {
+    await signOut()
+    navigate('/auth')
+  }
+
   return (
     <SidebarProvider>
       <div className="flex h-screen w-full">
@@ -15,7 +24,10 @@ export function DashboardLayout() {
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-4">
                   <SidebarTrigger />
-                  <DashboardHeader />
+                  <DashboardHeader 
+                    userEmail={user?.email || ""}
+                    onLogout={handleLogout}
+                  />
                 </div>
               </div>
             </header>

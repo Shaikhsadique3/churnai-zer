@@ -2,8 +2,7 @@ import { useState, useEffect } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { SimplifiedSDKIntegration } from "@/components/integration/SimplifiedSDKIntegration";
 import { StepByStepGuide } from "@/components/integration/StepByStepGuide";
-import { TestIntegration } from "@/components/integration/TestIntegration";
-import { E2ETestSuite } from "@/components/integration/E2ETestSuite";
+import { SmartIntegrationTest } from "@/components/integration/SmartIntegrationTest";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -61,11 +60,10 @@ const Integration = () => {
       </div>
 
         <Tabs defaultValue="quick-setup" className="w-full">
-          <TabsList className="grid w-full grid-cols-4">
+          <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="quick-setup">Quick Setup</TabsTrigger>
             <TabsTrigger value="step-by-step">Step-by-Step</TabsTrigger>
-            <TabsTrigger value="test-integration">Test</TabsTrigger>
-            <TabsTrigger value="e2e-test">Full E2E Test</TabsTrigger>
+            <TabsTrigger value="test-integration">Live SDK Test</TabsTrigger>
           </TabsList>
         
         <TabsContent value="quick-setup" className="space-y-6">
@@ -77,11 +75,7 @@ const Integration = () => {
         </TabsContent>
         
         <TabsContent value="test-integration" className="space-y-6">
-          <TestIntegration />
-        </TabsContent>
-        
-        <TabsContent value="e2e-test" className="space-y-6">
-          <E2ETestSuite />
+          <SmartIntegrationTest />
         </TabsContent>
       </Tabs>
     </div>

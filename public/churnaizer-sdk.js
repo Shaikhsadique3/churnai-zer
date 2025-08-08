@@ -79,6 +79,9 @@
 
       log('Tracking user data for:', userData.user_id);
 
+      // Expose last used API key for diagnostics
+      try { (window as any).__Churnaizer_lastApiKey = apiKey; } catch (_) {}
+
       // Generate unique trace session ID for end-to-end logging (support backward compatibility)
       const traceId = userData.trace_id || (crypto?.randomUUID?.() || `${Date.now()}-${Math.random().toString(16).slice(2)}`);
 
@@ -177,6 +180,9 @@
       const traceId = eventData.trace_id || (crypto?.randomUUID?.() || `${Date.now()}-${Math.random().toString(16).slice(2)}`);
       
       log('Tracking event:', eventData.event, 'for user:', eventData.user_id);
+
+      // Expose last used API key for diagnostics
+      try { (window as any).__Churnaizer_lastApiKey = apiKey; } catch (_) {}
 
       // Prepare event data
       const trackingEventData = {

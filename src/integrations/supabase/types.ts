@@ -608,6 +608,39 @@ export type Database = {
         }
         Relationships: []
       }
+      integration_test_results: {
+        Row: {
+          api_key: string
+          churn_score: number | null
+          created_at: string
+          domain: string
+          founder_id: string
+          id: string
+          risk_level: string | null
+          updated_at: string
+        }
+        Insert: {
+          api_key: string
+          churn_score?: number | null
+          created_at?: string
+          domain: string
+          founder_id: string
+          id?: string
+          risk_level?: string | null
+          updated_at?: string
+        }
+        Update: {
+          api_key?: string
+          churn_score?: number | null
+          created_at?: string
+          domain?: string
+          founder_id?: string
+          id?: string
+          risk_level?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       notifications: {
         Row: {
           created_at: string | null

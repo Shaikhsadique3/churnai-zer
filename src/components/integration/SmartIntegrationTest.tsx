@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -10,10 +11,13 @@ interface SDKCheckResult {
   status: "idle" | "running" | "success" | "error";
   message: string;
   details?: {
-    installed: boolean;
-    apiKey: string;
     domain: string;
-    version?: string;
+    apiKey: string;
+    churnScore?: number;
+    riskLevel?: string;
+    churnReason?: string;
+    emailSent?: boolean;
+    traceId?: string;
   };
 }
 
@@ -51,7 +55,7 @@ export const SmartIntegrationTest: React.FC = () => {
     }
 
     setRunning(true);
-    setResult({ status: "running", message: "Checking SDK integration on your website..." });
+    setResult({ status: "running", message: "Testing SDK integration with live tracking event..." });
 
     try {
       // Get the founder's website from their profile
@@ -72,66 +76,83 @@ export const SmartIntegrationTest: React.FC = () => {
         checkUrl = 'https://' + checkUrl;
       }
 
-      // Create hidden iframe to check SDK
+      // Generate a unique trace ID for this test
+      const traceId = `sdk_test_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+
+      // Create hidden iframe to test the SDK
       const iframe = document.createElement('iframe');
       iframe.style.display = 'none';
+      iframe.style.width = '1px';
+      iframe.style.height = '1px';
       iframe.src = checkUrl;
       document.body.appendChild(iframe);
 
-      // Set up timeout and message listener
+      // Set up timeout for the entire test
       const timeout = setTimeout(() => {
         document.body.removeChild(iframe);
         setResult({
           status: "error",
-          message: "SDK not found on your website. Please install the Churnaizer SDK."
+          message: "❌ SDK test timeout - SDK script may not be installed or website is unreachable."
         });
         setRunning(false);
-      }, 5000);
+      }, 15000); // 15 second timeout
 
+      // Listen for SDK test completion
       const messageHandler = (event: MessageEvent) => {
-        if (event.data?.__CHURNAIZER_SDK_STATUS__) {
+        if (event.data?.type === 'CHURNAIZER_SDK_TEST_RESULT') {
           clearTimeout(timeout);
           window.removeEventListener("message", messageHandler);
           document.body.removeChild(iframe);
 
-          const status = event.data.__CHURNAIZER_SDK_STATUS__;
+          const testResult = event.data.result;
           
-          if (status.installed) {
-            // Check if API key matches
-            const keyMatch = status.apiKey === apiKey || status.apiKey === 'not-set';
-            
+          if (testResult.success) {
             setResult({
               status: "success",
-              message: `✅ SDK successfully installed on ${status.domain}`,
+              message: `✅ SDK Integration Verified Successfully!`,
               details: {
-                installed: true,
-                apiKey: status.apiKey,
-                domain: status.domain,
-                version: status.version
+                domain: testResult.domain,
+                apiKey: testResult.apiKeyUsed ? 'Configured ✅' : 'Not Set ❌',
+                churnScore: testResult.churnScore,
+                riskLevel: testResult.riskLevel,
+                churnReason: testResult.churnReason,
+                emailSent: testResult.emailSent,
+                traceId: testResult.traceId
               }
             });
 
-            if (!keyMatch && status.apiKey !== 'not-set') {
-              toast.warning("API key mismatch detected. Please verify your integration code.");
-            } else if (status.apiKey === 'not-set') {
-              toast.info("SDK installed but API key not configured. Please follow the integration guide.");
-            } else {
-              toast.success("SDK integration verified successfully!");
-            }
+            toast.success(`SDK verified on ${testResult.domain}!`);
 
-            // Log successful check to database
+            // Log successful integration test
             supabase.from("integration_test_results").insert({
               founder_id: user.id,
-              domain: status.domain,
+              domain: testResult.domain,
               api_key: apiKey,
-              churn_score: null,
-              risk_level: 'verified'
+              churn_score: testResult.churnScore,
+              risk_level: testResult.riskLevel
             });
 
           } else {
+            let errorMessage = "❌ SDK Integration Failed";
+            
+            // Provide specific error messages based on failure type
+            if (testResult.error?.includes('not found')) {
+              errorMessage = "❌ SDK script not found on your website";
+            } else if (testResult.error?.includes('API key')) {
+              errorMessage = "❌ API key not configured or invalid";
+            } else if (testResult.error?.includes('track')) {
+              errorMessage = "❌ SDK track function failed to execute";
+            } else if (testResult.error?.includes('response')) {
+              errorMessage = "❌ Supabase edge function not responding";
+            }
+
             setResult({
               status: "error",
-              message: "SDK script found but not active on your website."
+              message: errorMessage,
+              details: {
+                domain: testResult.domain || 'Unknown',
+                apiKey: 'Not Configured',
+              }
             });
           }
           
@@ -141,16 +162,20 @@ export const SmartIntegrationTest: React.FC = () => {
 
       window.addEventListener("message", messageHandler);
 
-      // Wait for iframe to load then request SDK status
+      // Wait for iframe to load, then trigger SDK test
       iframe.onload = () => {
         setTimeout(() => {
           try {
-            iframe.contentWindow?.postMessage({ action: "GET_CHURNAIZER_SDK_STATUS" }, "*");
+            // Send test command to the iframe
+            iframe.contentWindow?.postMessage({
+              type: 'CHURNAIZER_SDK_TEST',
+              apiKey: apiKey,
+              traceId: traceId
+            }, "*");
           } catch (error) {
-            // Cross-origin restriction - this is expected for external sites
-            console.log("Cross-origin postMessage (expected for external sites)");
+            console.warn("Cross-origin postMessage expected for external sites");
           }
-        }, 1000);
+        }, 2000); // Wait 2 seconds for SDK to load
       };
 
       iframe.onerror = () => {
@@ -159,7 +184,7 @@ export const SmartIntegrationTest: React.FC = () => {
         document.body.removeChild(iframe);
         setResult({
           status: "error",
-          message: "Unable to access your website. Please check the URL in your profile."
+          message: "❌ Unable to access your website. Please check the URL in your founder profile."
         });
         setRunning(false);
       };
@@ -167,7 +192,7 @@ export const SmartIntegrationTest: React.FC = () => {
     } catch (error: any) {
       setResult({
         status: "error",
-        message: error.message || "Failed to check SDK integration"
+        message: error.message || "❌ Failed to test SDK integration"
       });
       setRunning(false);
     }
@@ -181,7 +206,7 @@ export const SmartIntegrationTest: React.FC = () => {
         🔍 Check SDK Integration
       </h3>
       <p className="text-xs md:text-sm text-muted-foreground">
-        Verify that the Churnaizer SDK is properly installed and configured on your website.
+        Test your SDK integration by sending a live tracking event through your website to validate the entire pipeline.
       </p>
 
       <Button 
@@ -193,7 +218,7 @@ export const SmartIntegrationTest: React.FC = () => {
         {running ? (
           <>
             <Loader2 className="mr-2 h-4 w-4 animate-spin" /> 
-            Checking Integration...
+            Testing SDK Integration...
           </>
         ) : (
           <>
@@ -229,21 +254,34 @@ export const SmartIntegrationTest: React.FC = () => {
                 
                 {result.status === "success" && result.details && (
                   <div className="text-sm text-muted-foreground space-y-1">
-                    <p><strong>Domain:</strong> {result.details.domain}</p>
-                    <p><strong>API Key:</strong> {result.details.apiKey === 'not-set' ? 'Not configured' : '✅ Configured'}</p>
-                    {result.details.version && (
-                      <p><strong>SDK Version:</strong> {result.details.version}</p>
+                    <p><strong>Website:</strong> {result.details.domain}</p>
+                    <p><strong>API Key:</strong> {result.details.apiKey}</p>
+                    {result.details.churnScore !== undefined && (
+                      <p><strong>Churn Score:</strong> {result.details.churnScore}</p>
+                    )}
+                    {result.details.riskLevel && (
+                      <p><strong>Risk Level:</strong> {result.details.riskLevel}</p>
+                    )}
+                    {result.details.churnReason && (
+                      <p><strong>Prediction:</strong> {result.details.churnReason}</p>
+                    )}
+                    {result.details.emailSent !== undefined && (
+                      <p><strong>Email Sent:</strong> {result.details.emailSent ? 'Yes ✅' : 'No'}</p>
+                    )}
+                    {result.details.traceId && (
+                      <p><strong>Trace ID:</strong> {result.details.traceId}</p>
                     )}
                   </div>
                 )}
 
                 {result.status === "error" && (
                   <div className="text-sm text-muted-foreground">
-                    <p>Make sure you have:</p>
+                    <p><strong>Troubleshooting Steps:</strong></p>
                     <ul className="list-disc list-inside mt-1 space-y-1">
-                      <li>Added the SDK script to your website</li>
-                      <li>Configured your API key correctly</li>
-                      <li>Updated your website URL in your founder profile</li>
+                      <li>Ensure the SDK script is added to your website's &lt;head&gt; section</li>
+                      <li>Verify your API key is configured: <code>window.__CHURNAIZER_API_KEY__ = "your-key"</code></li>
+                      <li>Check that your website URL is correct in your founder profile</li>
+                      <li>Make sure your website is accessible and not blocked by CORS</li>
                     </ul>
                   </div>
                 )}

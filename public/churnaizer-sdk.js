@@ -83,7 +83,7 @@
       try { window.__Churnaizer_lastApiKey = apiKey; } catch (_) {}
 
       // Generate unique trace session ID for end-to-end logging (support backward compatibility)
-      const traceId = userData.trace_id || (crypto?.randomUUID?.() || `${Date.now()}-${Math.random().toString(16).slice(2)}`);
+      const traceId = userData.trace_id || (crypto && crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(16).slice(2)}`);
 
       // Prepare tracking data with all expected fields
       const trackingData = {
@@ -153,6 +153,37 @@
 
       // Send tracking request
       this._sendTrackingRequest(trackingData, apiKey, wrappedCallback);
+    },
+
+    // Test function specifically for integration testing
+    testTrackingIntegration: function(apiKey, traceId, callback) {
+      log('Running SDK integration test with trace ID:', traceId);
+
+      const testUserData = {
+        user_id: "sdk_test_user_" + Date.now(),
+        email: "sdk_test@example.com",
+        customer_name: "SDK Test User",
+        customer_email: "sdk_test@example.com",
+        days_since_signup: 1,
+        monthly_revenue: 0,
+        subscription_plan: "Free",
+        number_of_logins_last30days: 1,
+        active_features_used: 1,
+        support_tickets_opened: 0,
+        last_payment_status: "active",
+        email_opens_last30days: 0,
+        last_login_days_ago: 0,
+        billing_issue_count: 0,
+        trace_id: traceId,
+        timestamp: new Date().toISOString(),
+        session_id: this._generateSessionId(),
+        user_agent: navigator.userAgent,
+        url: window.location.href,
+        sdk_version: SDK_VERSION
+      };
+
+      // Send the test tracking request
+      this._sendTrackingRequest(testUserData, apiKey, callback);
     },
 
     // New trackEvent function for recovery tracking
@@ -309,9 +340,9 @@
     _sendTrackingRequest: function(data, apiKey, callback) {
       const xhr = new XMLHttpRequest();
       
-      xhr.open('POST', `${API_BASE_URL}/track`, true);
+      xhr.open('POST', `${API_BASE_URL}/sdk-track`, true);
       xhr.setRequestHeader('Content-Type', 'application/json');
-      xhr.setRequestHeader('X-API-Key', apiKey);
+      xhr.setRequestHeader('x-churnaizer-api-key', apiKey);
       xhr.setRequestHeader('X-SDK-Version', SDK_VERSION);
       
       xhr.onreadystatechange = function() {
@@ -668,7 +699,7 @@
     version: SDK_VERSION
   };
 
-  // Listen for SDK status requests via postMessage
+  // Listen for SDK status requests and test commands via postMessage
   window.addEventListener("message", function(event) {
     if (event.data && event.data.action === "GET_CHURNAIZER_SDK_STATUS") {
       try {
@@ -677,6 +708,80 @@
         }, "*");
       } catch (error) {
         log('PostMessage failed: ' + error.message);
+      }
+    }
+
+    // Handle SDK integration test command
+    if (event.data && event.data.type === "CHURNAIZER_SDK_TEST") {
+      try {
+        const { apiKey, traceId } = event.data;
+        
+        log('Received SDK test command with trace ID:', traceId);
+
+        // Check if SDK is properly loaded
+        if (!window.Churnaizer) {
+          window.parent.postMessage({
+            type: 'CHURNAIZER_SDK_TEST_RESULT',
+            result: {
+              success: false,
+              error: 'SDK not found - Churnaizer object not available',
+              domain: window.location.hostname
+            }
+          }, "*");
+          return;
+        }
+
+        // Check if API key is available
+        if (!apiKey) {
+          window.parent.postMessage({
+            type: 'CHURNAIZER_SDK_TEST_RESULT',
+            result: {
+              success: false,
+              error: 'API key not provided for test',
+              domain: window.location.hostname
+            }
+          }, "*");
+          return;
+        }
+
+        // Run the actual tracking test
+        window.Churnaizer.testTrackingIntegration(apiKey, traceId, function(result, error) {
+          if (error) {
+            window.parent.postMessage({
+              type: 'CHURNAIZER_SDK_TEST_RESULT',
+              result: {
+                success: false,
+                error: 'SDK track function failed: ' + error,
+                domain: window.location.hostname,
+                apiKeyUsed: !!apiKey
+              }
+            }, "*");
+          } else {
+            window.parent.postMessage({
+              type: 'CHURNAIZER_SDK_TEST_RESULT',
+              result: {
+                success: true,
+                domain: window.location.hostname,
+                apiKeyUsed: !!apiKey,
+                churnScore: result.churn_score,
+                riskLevel: result.risk_level,
+                churnReason: result.churn_reason,
+                emailSent: result.shouldTriggerEmail,
+                traceId: traceId
+              }
+            }, "*");
+          }
+        });
+
+      } catch (error) {
+        window.parent.postMessage({
+          type: 'CHURNAIZER_SDK_TEST_RESULT',
+          result: {
+            success: false,
+            error: 'SDK test execution failed: ' + error.message,
+            domain: window.location.hostname
+          }
+        }, "*");
       }
     }
   });

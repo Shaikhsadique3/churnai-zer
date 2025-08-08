@@ -14,7 +14,6 @@ import {
   Upload, 
   Code,
   Mail,
-  Users,
   User,
   Shield
 } from "lucide-react"
@@ -29,31 +28,25 @@ const items = [
   },
   {
     title: "CSV Upload",
-    url: "/dashboard/csv-upload",
+    url: "/csv-upload",
     icon: Upload,
     description: "Bulk user data import"
   },
   {
     title: "SDK Integration",
-    url: "/integration",
+    url: "/sdk",
     icon: Code,
     description: "Real-time tracking setup"
   },
   {
     title: "Email Logs",
-    url: "/dashboard/ai-email-campaigns",
+    url: "/email-logs",
     icon: Mail,
     description: "Retention email history"
   },
   {
-    title: "Recovered Users",
-    url: "/dashboard/recovered-users", 
-    icon: Users,
-    description: "Retention success metrics"
-  },
-  {
     title: "Founder Profile",
-    url: "/dashboard/founder-profile",
+    url: "/profile",
     icon: User,
     description: "Account settings & API keys"
   }
@@ -86,7 +79,7 @@ export function CleanAppSidebar() {
             <SidebarMenu className="space-y-1">
               {items.map((item) => {
                 const isActive = location.pathname === item.url || 
-                  (item.url === "/dashboard" && location.pathname.startsWith("/dashboard"))
+                  (item.url === "/dashboard" && location.pathname === "/dashboard")
                 
                 return (
                   <SidebarMenuItem key={item.title}>

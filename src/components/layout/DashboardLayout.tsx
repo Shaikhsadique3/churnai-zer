@@ -1,7 +1,7 @@
 
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar"
 import { CleanAppSidebar } from "@/components/dashboard/CleanAppSidebar"
-import { Outlet, useNavigate } from "react-router-dom"
+import { Outlet, useNavigate, useLocation } from "react-router-dom"
 import DashboardHeader from "@/components/dashboard/DashboardHeader"
 import { useAuth } from "@/contexts/AuthContext"
 import { useIsMobile } from "@/hooks/use-mobile"
@@ -9,6 +9,7 @@ import { useIsMobile } from "@/hooks/use-mobile"
 export function DashboardLayout() {
   const { user, signOut } = useAuth()
   const navigate = useNavigate()
+  const location = useLocation()
   const isMobile = useIsMobile()
 
   const handleLogout = async () => {
@@ -59,12 +60,25 @@ export function DashboardLayout() {
   )
 }
 
-// Helper function to get page title
+// Helper function to get page title based on route
 function getPageTitle(pathname: string): string {
-  if (pathname.includes('/integration')) return 'SDK Integration'
-  if (pathname.includes('/csv-upload')) return 'CSV Upload'
-  if (pathname.includes('/email-campaigns')) return 'Email Logs'
-  if (pathname.includes('/recovered-users')) return 'Recovered Users'
-  if (pathname.includes('/founder-profile')) return 'Profile Settings'
-  return 'Dashboard'
+  switch (pathname) {
+    case '/dashboard':
+      return 'Dashboard'
+    case '/csv-upload':
+      return 'CSV Upload'
+    case '/sdk':
+    case '/integration':
+      return 'SDK Integration'
+    case '/email-logs':
+      return 'Email Logs'
+    case '/profile':
+      return 'Founder Profile'
+    default:
+      if (pathname.includes('/sdk') || pathname.includes('/integration')) return 'SDK Integration'
+      if (pathname.includes('/csv-upload')) return 'CSV Upload'
+      if (pathname.includes('/email-logs')) return 'Email Logs'
+      if (pathname.includes('/profile')) return 'Profile Settings'
+      return 'Dashboard'
+  }
 }

@@ -1,3 +1,4 @@
+
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -34,6 +35,8 @@ import { UserDetailPage } from "./pages/dashboard/UserDetailPage";
 import FounderProfile from "./pages/dashboard/FounderProfile";
 import OnboardingForm from "./pages/dashboard/OnboardingForm";
 import DashboardDocumentation from "./pages/dashboard/DashboardDocumentation";
+import { CSVUploadPage } from "./pages/dashboard/CSVUploadPage";
+import { AIEmailCampaignsPage } from "./pages/dashboard/AIEmailCampaignsPage";
 // Admin pages
 import AdminPanel from "./pages/AdminPanel";
 import AdminLogin from "./pages/AdminLogin";
@@ -56,6 +59,7 @@ const App = () => {
           <Sonner />
           <BrowserRouter>
             <Routes>
+              {/* Public routes */}
               <Route path="/" element={<Index />} />
               <Route path="/auth" element={<Auth />} />
               <Route path="/forgot-password" element={<ForgotPassword />} />
@@ -67,9 +71,11 @@ const App = () => {
               <Route path="/contact" element={<Contact />} />
               <Route path="/docs" element={<Documentation />} />
               <Route path="/onboarding" element={<OnboardingForm />} />
+              
               {/* Blog routes */}
               <Route path="/blog" element={<BlogIndex />} />
               <Route path="/blog/:slug" element={<BlogPost />} />
+              
               {/* Admin routes */}
               <Route path="/admin/login" element={<AdminLogin />} />
               <Route 
@@ -87,7 +93,8 @@ const App = () => {
                 <Route path="inbox" element={<AdminInbox />} />
               </Route>
               <Route path="/not-authorized" element={<NotAuthorized />} />
-              {/* Protected Main App Routes - All wrapped in DashboardLayout */}
+              
+              {/* Protected Dashboard Routes */}
               <Route 
                 path="/"
                 element={
@@ -96,6 +103,14 @@ const App = () => {
                   </ProtectedRoute>
                 }
               >
+                {/* Main dashboard routes */}
+                <Route path="dashboard" element={<Integration />} />
+                <Route path="csv-upload" element={<CSVUploadPage />} />
+                <Route path="sdk" element={<Integration />} />
+                <Route path="email-logs" element={<AIEmailCampaignsPage />} />
+                <Route path="profile" element={<FounderProfile />} />
+                
+                {/* Legacy routes for backwards compatibility */}
                 <Route path="integration" element={<Integration />} />
                 <Route path="integration/setup" element={<Integration />} />
                 <Route path="integration/*" element={<Integration />} />
@@ -104,11 +119,11 @@ const App = () => {
                 <Route path="recovery" element={<RecoveredUsersPage />} />
                 <Route path="notifications" element={<NotificationsPage />} />
                 <Route path="users/:userId" element={<UserDetailPage />} />
-                <Route path="profile" element={<FounderProfile />} />
                 <Route path="dashboard/docs" element={<DashboardDocumentation />} />
-                <Route path="dashboard" element={<Integration />} />
                 <Route path="dashboard/*" element={<Integration />} />
               </Route>
+              
+              {/* Catch all route */}
               <Route path="*" element={<NotFound />} />
             </Routes>
           </BrowserRouter>

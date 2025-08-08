@@ -38,6 +38,34 @@ export const SmartIntegrationTest: React.FC = () => {
     fetchApiKey();
   }, [user]);
 
+  // Ensure Churnaizer SDK is available on this page (auto-load for testing)
+  const ensureSDKLoaded = (): Promise<void> => {
+    return new Promise((resolve, reject) => {
+      if ((window as any).Churnaizer) return resolve();
+
+      const existing = document.getElementById('churnaizer-sdk');
+      if (existing) {
+        existing.addEventListener('load', () => resolve());
+        existing.addEventListener('error', () => reject(new Error('Failed to load SDK')));
+        setTimeout(() => ((window as any).Churnaizer ? resolve() : reject(new Error('SDK load timeout'))), 8000);
+        return;
+      }
+
+      const script = document.createElement('script');
+      script.id = 'churnaizer-sdk';
+      script.src = '/churnaizer-sdk.js';
+      script.async = true;
+      script.onload = () => {
+        (window as any).ChurnaizerConfig = { debug: true };
+        resolve();
+      };
+      script.onerror = () => reject(new Error('Failed to load SDK'));
+      document.head.appendChild(script);
+
+      setTimeout(() => ((window as any).Churnaizer ? resolve() : reject(new Error('SDK load timeout'))), 8000);
+    });
+  };
+
   const run = async () => {
     setRunning(true);
     setResult({ status: "running", step: "Initializing", message: "Starting Smart Integration Test..." });
@@ -46,9 +74,11 @@ export const SmartIntegrationTest: React.FC = () => {
       const domain = window.location.hostname;
 
       // Step 1: SDK presence
-      setResult({ status: "running", step: "Step 1", message: "Detecting SDK on page..." });
-      // Ensure SDK is loaded (some pages lazy-load it)
-      if (!window.Churnaizer) {
+      setResult({ status: "running", step: "Step 1", message: "Loading SDK on this page..." });
+      // Auto-load SDK for this diagnostic if not present
+      try {
+        await ensureSDKLoaded();
+      } catch (err) {
         throw new Error("SDK not found on your website. Please add the Churnaizer SDK first.");
       }
 

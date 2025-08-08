@@ -1,3 +1,4 @@
+
 // Single domain configuration for Churnaizer
 export const APP_CONFIG = {
   // Domain configuration - using single domain only
@@ -35,7 +36,7 @@ export const APP_CONFIG = {
       title: 'Churnaizer - AI-Powered Churn Prediction',
       description: 'Predict & Prevent Customer Churn with AI - Tiger-sharp insights for SaaS businesses',
       ogImage: '/assets/og-main.png',
-      favicon: '/assets/favicon-main.png'
+      favicon: '/favicon.ico'
     };
   }
 };

@@ -42,8 +42,8 @@ export const DynamicHead = ({ title, description, ogImage, favicon }: DynamicHea
     updateMetaTag('name', 'twitter:description', finalDescription);
     updateMetaTag('name', 'twitter:image', finalOgImage);
     
-    // Update favicon
-    const finalFavicon = favicon || seoConfig.favicon;
+    // Update favicon - use existing favicon.ico as fallback
+    const finalFavicon = favicon || '/favicon.ico';
     updateFavicon(finalFavicon);
     
     // Update canonical URL

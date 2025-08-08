@@ -13,7 +13,7 @@ import {
   SidebarGroupLabel,
   SidebarGroupContent,
 } from "@/components/ui/sidebar";
-import { LayoutDashboard, Code, Mail, User, BookOpen, HelpCircle } from "lucide-react";
+import { LayoutDashboard, Code, Mail, User, BookOpen, HelpCircle, Users, CheckCircle, FileText } from "lucide-react";
 import { AccountSection } from './AccountSection';
 
 const navigation = [
@@ -26,6 +26,16 @@ const navigation = [
     title: "SDK Integration", 
     icon: Code,
     href: "/sdk",
+  },
+  {
+    title: "User Predictions",
+    icon: Users,
+    href: "/users",
+  },
+  {
+    title: "Churn Recovery",
+    icon: CheckCircle,
+    href: "/recovery",
   },
   {
     title: "Email Logs",
@@ -44,6 +54,11 @@ const resources = [
     title: "Feature Guide",
     icon: BookOpen,
     href: "/resources/feature-guide",
+  },
+  {
+    title: "Blog",
+    icon: FileText,
+    href: "/blog",
   },
   {
     title: "Help & Support",
@@ -102,7 +117,7 @@ export const AppSidebar = () => {
           <SidebarGroupContent>
             <SidebarMenu>
               {resources.map((item) => {
-                const isActive = location.pathname === item.href;
+                const isActive = location.pathname === item.href || location.pathname.startsWith(item.href);
                 return (
                   <SidebarMenuItem key={item.title}>
                     <SidebarMenuButton asChild isActive={isActive}>

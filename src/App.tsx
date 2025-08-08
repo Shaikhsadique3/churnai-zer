@@ -1,3 +1,4 @@
+
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -34,6 +35,7 @@ import { UserDetailPage } from "./pages/dashboard/UserDetailPage";
 import FounderProfile from "./pages/dashboard/FounderProfile";
 import OnboardingForm from "./pages/dashboard/OnboardingForm";
 import DashboardDocumentation from "./pages/dashboard/DashboardDocumentation";
+import FeatureGuide from "./pages/dashboard/FeatureGuide";
 // Admin pages
 import AdminPanel from "./pages/AdminPanel";
 import AdminLogin from "./pages/AdminLogin";
@@ -43,7 +45,6 @@ import AdminBlogs from "./pages/admin/AdminBlogs";
 import AdminInbox from "./pages/admin/AdminInbox";
 import NotAuthorized from "./pages/NotAuthorized";
 import AdminRoute from "./components/auth/AdminRoute";
-import FeatureGuide from "./pages/dashboard/FeatureGuide";
 
 const queryClient = new QueryClient();
 
@@ -68,9 +69,11 @@ const App = () => {
               <Route path="/contact" element={<Contact />} />
               <Route path="/docs" element={<Documentation />} />
               <Route path="/onboarding" element={<OnboardingForm />} />
+              
               {/* Blog routes */}
               <Route path="/blog" element={<BlogIndex />} />
               <Route path="/blog/:slug" element={<BlogPost />} />
+              
               {/* Admin routes */}
               <Route path="/admin/login" element={<AdminLogin />} />
               <Route 
@@ -88,6 +91,7 @@ const App = () => {
                 <Route path="inbox" element={<AdminInbox />} />
               </Route>
               <Route path="/not-authorized" element={<NotAuthorized />} />
+              
               {/* Protected Main App Routes */}
               <Route 
                 path="/dashboard" 
@@ -105,6 +109,26 @@ const App = () => {
                   <ProtectedRoute>
                     <DashboardLayout>
                       <Integration />
+                    </DashboardLayout>
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="/users" 
+                element={
+                  <ProtectedRoute>
+                    <DashboardLayout>
+                      <UploadedUsersPage />
+                    </DashboardLayout>
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="/recovery" 
+                element={
+                  <ProtectedRoute>
+                    <DashboardLayout>
+                      <RecoveredUsersPage />
                     </DashboardLayout>
                   </ProtectedRoute>
                 } 
@@ -139,6 +163,7 @@ const App = () => {
                   </ProtectedRoute>
                 } 
               />
+              
               {/* Legacy routes for backwards compatibility */}
               <Route 
                 path="/integration" 
@@ -170,32 +195,12 @@ const App = () => {
                   </ProtectedRoute>
                 } 
               />
-              <Route 
-                path="/users" 
-                element={
-                  <ProtectedRoute>
-                    <DashboardLayout>
-                      <UploadedUsersPage />
-                    </DashboardLayout>
-                  </ProtectedRoute>
-                } 
-              />
                <Route 
                  path="/automation" 
                  element={
                    <ProtectedRoute>
                      <DashboardLayout>
                        <EmailAutomationPage />
-                     </DashboardLayout>
-                   </ProtectedRoute>
-                 } 
-               />
-               <Route 
-                 path="/recovery" 
-                 element={
-                   <ProtectedRoute>
-                     <DashboardLayout>
-                       <RecoveredUsersPage />
                      </DashboardLayout>
                    </ProtectedRoute>
                  } 
@@ -226,6 +231,16 @@ const App = () => {
                    <ProtectedRoute>
                      <DashboardLayout>
                        <DashboardDocumentation />
+                     </DashboardLayout>
+                   </ProtectedRoute>
+                 } 
+               />
+               <Route 
+                 path="/help" 
+                 element={
+                   <ProtectedRoute>
+                     <DashboardLayout>
+                       <Contact />
                      </DashboardLayout>
                    </ProtectedRoute>
                  } 

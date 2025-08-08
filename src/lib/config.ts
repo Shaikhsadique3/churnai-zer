@@ -36,7 +36,7 @@ export const APP_CONFIG = {
       title: 'Churnaizer - AI-Powered Churn Prediction',
       description: 'Predict & Prevent Customer Churn with AI - Tiger-sharp insights for SaaS businesses',
       ogImage: '/assets/og-main.png',
-      favicon: '/favicon.ico'
+      favicon: '/lovable-uploads/1aef79a1-9fcd-4a47-b402-730242d7c759.png'
     };
   }
 };

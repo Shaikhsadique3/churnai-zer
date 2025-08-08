@@ -1,3 +1,4 @@
+
 import { useEffect } from 'react';
 import { APP_CONFIG } from '@/lib/config';
 
@@ -42,8 +43,8 @@ export const DynamicHead = ({ title, description, ogImage, favicon }: DynamicHea
     updateMetaTag('name', 'twitter:description', finalDescription);
     updateMetaTag('name', 'twitter:image', finalOgImage);
     
-    // Update favicon - use existing favicon.ico as fallback
-    const finalFavicon = favicon || '/favicon.ico';
+    // Update favicon - use uploaded favicon as fallback
+    const finalFavicon = favicon || seoConfig.favicon;
     updateFavicon(finalFavicon);
     
     // Update canonical URL

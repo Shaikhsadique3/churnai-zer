@@ -9,16 +9,12 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-  SidebarMenuSub,
-  SidebarMenuSubButton,
-  SidebarMenuSubItem,
   SidebarGroup,
   SidebarGroupLabel,
   SidebarGroupContent,
 } from "@/components/ui/sidebar";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { ChevronRight, LayoutDashboard, Code, Mail, User, BookOpen, HelpCircle } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { LayoutDashboard, Code, Mail, User, BookOpen, HelpCircle } from "lucide-react";
+import { AccountSection } from './AccountSection';
 
 const navigation = [
   {
@@ -124,16 +120,7 @@ export const AppSidebar = () => {
       </SidebarContent>
       
       <SidebarFooter>
-        <SidebarMenu>
-          <SidebarMenuItem>
-            <SidebarMenuButton size="sm" asChild>
-              <Link to="/profile">
-                <User className="size-4" />
-                <span>Account</span>
-              </Link>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-        </SidebarMenu>
+        <AccountSection />
       </SidebarFooter>
     </Sidebar>
   );

@@ -1,28 +1,47 @@
-
-import React from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Upload, FileText, Users, TrendingUp } from "lucide-react";
+import { Upload, FileText, Clock, CheckCircle } from "lucide-react";
 import { SimpleCSVUploader } from "@/components/dashboard/SimpleCSVUploader";
 import UploadHistorySection from "@/components/dashboard/UploadHistorySection";
+import { ApiTestComponent } from "@/components/dashboard/ApiTestComponent";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
 
 export const CSVUploadPage = () => {
+  const { user } = useAuth();
+  const [uploadModalOpen, setUploadModalOpen] = useState(false);
+
+  // Fetch upload statistics
+  const { data: uploadStats } = useQuery({
+    queryKey: ['upload-stats', user?.id],
+    queryFn: async () => {
+      const { data: uploads, error } = await supabase
+        .from('csv_uploads')
+        .select('*')
+        .eq('user_id', user?.id);
+      
+      if (error) throw error;
+
+      const totalUploads = uploads?.length || 0;
+      const totalProcessed = uploads?.reduce((sum, upload) => sum + (upload.rows_processed || 0), 0) || 0;
+      const successfulUploads = uploads?.filter(upload => upload.status === 'completed').length || 0;
+
+      return { totalUploads, totalProcessed, successfulUploads };
+    },
+    enabled: !!user?.id,
+  });
+
   return (
     <div className="space-y-6">
       {/* Page Header */}
       <div className="border-b pb-4">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
-              <Upload className="h-6 w-6" />
-              CSV Data Upload
-            </h1>
-            <p className="text-muted-foreground">Upload your user data to generate churn predictions</p>
-          </div>
-        </div>
+        <h1 className="text-2xl font-bold text-foreground">📂 CSV Upload & Analysis</h1>
+        <p className="text-muted-foreground">Import and analyze your customer data</p>
       </div>
 
-      {/* Quick Stats */}
+      {/* Upload Stats */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -30,82 +49,42 @@ export const CSVUploadPage = () => {
             <FileText className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">12</div>
-            <p className="text-xs text-muted-foreground">+2 from last week</p>
+            <div className="text-2xl font-bold">{uploadStats?.totalUploads || 0}</div>
+            <p className="text-xs text-muted-foreground">CSV files processed</p>
           </CardContent>
         </Card>
+
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Users Processed</CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
+            <Clock className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">2,847</div>
-            <p className="text-xs text-muted-foreground">+425 from last upload</p>
+            <div className="text-2xl font-bold">{uploadStats?.totalProcessed || 0}</div>
+            <p className="text-xs text-muted-foreground">Customer records analyzed</p>
           </CardContent>
         </Card>
+
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Prediction Accuracy</CardTitle>
-            <TrendingUp className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium">Success Rate</CardTitle>
+            <CheckCircle className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">94.2%</div>
-            <p className="text-xs text-muted-foreground">+1.2% improvement</p>
+            <div className="text-2xl font-bold">
+              {uploadStats?.totalUploads ? 
+                Math.round((uploadStats.successfulUploads / uploadStats.totalUploads) * 100) : 0}%
+            </div>
+            <p className="text-xs text-muted-foreground">Uploads completed successfully</p>
           </CardContent>
         </Card>
       </div>
 
-      {/* Upload Component */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Upload New Data</CardTitle>
-              <CardDescription>
-                Upload a CSV file with your user data to generate churn predictions
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <SimpleCSVUploader />
-            </CardContent>
-          </Card>
-        </div>
-
-        <div className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Data Requirements</CardTitle>
-              <CardDescription>
-                Ensure your CSV includes these required fields
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <h4 className="font-medium">Required Fields:</h4>
-                <ul className="text-sm text-muted-foreground space-y-1">
-                  <li>• user_id (unique identifier)</li>
-                  <li>• email (user email address)</li>
-                  <li>• signup_date (YYYY-MM-DD format)</li>
-                  <li>• last_activity_date (YYYY-MM-DD format)</li>
-                </ul>
-              </div>
-              <div className="space-y-2">
-                <h4 className="font-medium">Optional Fields:</h4>
-                <ul className="text-sm text-muted-foreground space-y-1">
-                  <li>• subscription_tier (free, pro, enterprise)</li>
-                  <li>• monthly_revenue (numeric value)</li>
-                  <li>• feature_usage_score (0-100)</li>
-                  <li>• support_tickets (number of tickets)</li>
-                </ul>
-              </div>
-              <Button variant="outline" className="w-full">
-                Download Sample CSV
-              </Button>
-            </CardContent>
-          </Card>
-        </div>
-      </div>
+      {/* Simple CSV Uploader */}
+      <SimpleCSVUploader onUploadComplete={() => {
+        // Refresh page to update stats
+        window.location.reload();
+      }} />
 
       {/* Upload History */}
       <UploadHistorySection />

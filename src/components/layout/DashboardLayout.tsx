@@ -2,7 +2,7 @@
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar"
 import { CleanAppSidebar } from "@/components/dashboard/CleanAppSidebar"
 import { Outlet } from "react-router-dom"
-import { DashboardHeader } from "@/components/dashboard/DashboardHeader"
+import DashboardHeader from "@/components/dashboard/DashboardHeader"
 
 export function DashboardLayout() {
   return (

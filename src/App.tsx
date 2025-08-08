@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -88,130 +87,28 @@ const App = () => {
                 <Route path="inbox" element={<AdminInbox />} />
               </Route>
               <Route path="/not-authorized" element={<NotAuthorized />} />
-              {/* Protected Main App Routes */}
+              {/* Protected Main App Routes - All wrapped in DashboardLayout */}
               <Route 
-                path="/integration" 
+                path="/"
                 element={
                   <ProtectedRoute>
-                    <DashboardLayout>
-                      <Integration />
-                    </DashboardLayout>
+                    <DashboardLayout />
                   </ProtectedRoute>
-                } 
-              />
-              <Route 
-                path="/integration/setup" 
-                element={
-                  <ProtectedRoute>
-                    <DashboardLayout>
-                      <Integration />
-                    </DashboardLayout>
-                  </ProtectedRoute>
-                } 
-              />
-              {/* Integration sub-routes - catch all integration paths */}
-              <Route 
-                path="/integration/*" 
-                element={
-                  <ProtectedRoute>
-                    <DashboardLayout>
-                      <Integration />
-                    </DashboardLayout>
-                  </ProtectedRoute>
-                } 
-              />
-              <Route 
-                path="/users" 
-                element={
-                  <ProtectedRoute>
-                    <DashboardLayout>
-                      <UploadedUsersPage />
-                    </DashboardLayout>
-                  </ProtectedRoute>
-                } 
-              />
-               <Route 
-                 path="/automation" 
-                 element={
-                   <ProtectedRoute>
-                     <DashboardLayout>
-                       <EmailAutomationPage />
-                     </DashboardLayout>
-                   </ProtectedRoute>
-                 } 
-               />
-               <Route 
-                 path="/recovery" 
-                 element={
-                   <ProtectedRoute>
-                     <DashboardLayout>
-                       <RecoveredUsersPage />
-                     </DashboardLayout>
-                   </ProtectedRoute>
-                 } 
-               />
-               <Route 
-                 path="/notifications" 
-                 element={
-                   <ProtectedRoute>
-                     <DashboardLayout>
-                       <NotificationsPage />
-                     </DashboardLayout>
-                   </ProtectedRoute>
-                 } 
-               />
-                <Route 
-                  path="/users/:userId" 
-                  element={
-                    <ProtectedRoute>
-                      <DashboardLayout>
-                        <UserDetailPage />
-                      </DashboardLayout>
-                    </ProtectedRoute>
-                  } 
-              />
-              <Route 
-                path="/profile" 
-                element={
-                  <ProtectedRoute>
-                    <DashboardLayout>
-                      <FounderProfile />
-                    </DashboardLayout>
-                  </ProtectedRoute>
-                } 
-               />
-               <Route 
-                 path="/dashboard/docs" 
-                 element={
-                   <ProtectedRoute>
-                     <DashboardLayout>
-                       <DashboardDocumentation />
-                     </DashboardLayout>
-                   </ProtectedRoute>
-                 } 
-               />
-              {/* Redirect dashboard to integration for backwards compatibility */}
-              <Route 
-                path="/dashboard" 
-                element={
-                  <ProtectedRoute>
-                    <DashboardLayout>
-                      <Integration />
-                    </DashboardLayout>
-                  </ProtectedRoute>
-                } 
-              />
-              {/* Redirect any dashboard subroutes to integration for backwards compatibility */}
-              <Route 
-                path="/dashboard/*" 
-                element={
-                  <ProtectedRoute>
-                    <DashboardLayout>
-                      <Integration />
-                    </DashboardLayout>
-                  </ProtectedRoute>
-                } 
-              />
+                }
+              >
+                <Route path="integration" element={<Integration />} />
+                <Route path="integration/setup" element={<Integration />} />
+                <Route path="integration/*" element={<Integration />} />
+                <Route path="users" element={<UploadedUsersPage />} />
+                <Route path="automation" element={<EmailAutomationPage />} />
+                <Route path="recovery" element={<RecoveredUsersPage />} />
+                <Route path="notifications" element={<NotificationsPage />} />
+                <Route path="users/:userId" element={<UserDetailPage />} />
+                <Route path="profile" element={<FounderProfile />} />
+                <Route path="dashboard/docs" element={<DashboardDocumentation />} />
+                <Route path="dashboard" element={<Integration />} />
+                <Route path="dashboard/*" element={<Integration />} />
+              </Route>
               <Route path="*" element={<NotFound />} />
             </Routes>
           </BrowserRouter>

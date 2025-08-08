@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -44,6 +43,7 @@ import AdminBlogs from "./pages/admin/AdminBlogs";
 import AdminInbox from "./pages/admin/AdminInbox";
 import NotAuthorized from "./pages/NotAuthorized";
 import AdminRoute from "./components/auth/AdminRoute";
+import FeatureGuide from "./pages/dashboard/FeatureGuide";
 
 const queryClient = new QueryClient();
 
@@ -90,6 +90,57 @@ const App = () => {
               <Route path="/not-authorized" element={<NotAuthorized />} />
               {/* Protected Main App Routes */}
               <Route 
+                path="/dashboard" 
+                element={
+                  <ProtectedRoute>
+                    <DashboardLayout>
+                      <Integration />
+                    </DashboardLayout>
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="/sdk" 
+                element={
+                  <ProtectedRoute>
+                    <DashboardLayout>
+                      <Integration />
+                    </DashboardLayout>
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="/email-logs" 
+                element={
+                  <ProtectedRoute>
+                    <DashboardLayout>
+                      <EmailAutomationPage />
+                    </DashboardLayout>
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="/profile" 
+                element={
+                  <ProtectedRoute>
+                    <DashboardLayout>
+                      <FounderProfile />
+                    </DashboardLayout>
+                  </ProtectedRoute>
+                } 
+               />
+              <Route 
+                path="/resources/feature-guide" 
+                element={
+                  <ProtectedRoute>
+                    <DashboardLayout>
+                      <FeatureGuide />
+                    </DashboardLayout>
+                  </ProtectedRoute>
+                } 
+              />
+              {/* Legacy routes for backwards compatibility */}
+              <Route 
                 path="/integration" 
                 element={
                   <ProtectedRoute>
@@ -109,7 +160,6 @@ const App = () => {
                   </ProtectedRoute>
                 } 
               />
-              {/* Integration sub-routes - catch all integration paths */}
               <Route 
                 path="/integration/*" 
                 element={
@@ -170,16 +220,6 @@ const App = () => {
                     </ProtectedRoute>
                   } 
               />
-              <Route 
-                path="/profile" 
-                element={
-                  <ProtectedRoute>
-                    <DashboardLayout>
-                      <FounderProfile />
-                    </DashboardLayout>
-                  </ProtectedRoute>
-                } 
-               />
                <Route 
                  path="/dashboard/docs" 
                  element={
@@ -190,28 +230,6 @@ const App = () => {
                    </ProtectedRoute>
                  } 
                />
-              {/* Redirect dashboard to integration for backwards compatibility */}
-              <Route 
-                path="/dashboard" 
-                element={
-                  <ProtectedRoute>
-                    <DashboardLayout>
-                      <Integration />
-                    </DashboardLayout>
-                  </ProtectedRoute>
-                } 
-              />
-              {/* Redirect any dashboard subroutes to integration for backwards compatibility */}
-              <Route 
-                path="/dashboard/*" 
-                element={
-                  <ProtectedRoute>
-                    <DashboardLayout>
-                      <Integration />
-                    </DashboardLayout>
-                  </ProtectedRoute>
-                } 
-              />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </BrowserRouter>

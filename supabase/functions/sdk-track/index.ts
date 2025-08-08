@@ -120,6 +120,7 @@ Deno.serve(async (req) => {
         risk_level: 'high',
         understanding_score: 85,
         reason: 'Low feature usage and recent billing issues',
+        churn_reason: 'Low feature usage and recent billing issues', // Required field
         message: 'User at high risk of churn',
         shouldTriggerEmail: true,
         recommended_tone: 'empathetic',
@@ -133,7 +134,8 @@ Deno.serve(async (req) => {
           processed_at: new Date().toISOString(),
           sdk_version: '1.0.0',
           api_version: 'v1',
-          test_mode: true
+          test_mode: true,
+          trace_id: trace_id
         }
       }
 
@@ -376,12 +378,12 @@ Deno.serve(async (req) => {
     const response = {
       success: true,
       user_id: trackingData.user_id,
-      churn_score: churnScore,
-      churn_probability: churnScore, // Add for compatibility
+      churn_score: Number(churnScore.toFixed(3)),
+      churn_probability: Number(churnScore.toFixed(3)), // Add for compatibility
       risk_level: riskLevel,
       understanding_score: Math.round(understandingScore),
       reason: churnReason,
-      churn_reason: churnReason, // Add for compatibility
+      churn_reason: churnReason, // Add for compatibility  
       message: shouldTriggerEmail ? 'High risk user - immediate attention needed' : 'User engagement is stable',
       shouldTriggerEmail: shouldTriggerEmail, // Required SDK field
       recommended_tone: recommendedTone, // Required SDK field
@@ -399,6 +401,21 @@ Deno.serve(async (req) => {
         trace_id: trace_id
       }
     }
+
+    console.log(`[TRACE SUCCESS | trace_id: ${trace_id}] Final response prepared:`, {
+      response_fields: Object.keys(response),
+      required_fields_present: {
+        success: !!response.success,
+        churn_score: response.churn_score != null,
+        churn_reason: !!response.churn_reason,
+        risk_level: !!response.risk_level
+      },
+      response_values: {
+        churn_score: response.churn_score,
+        churn_reason: response.churn_reason,
+        risk_level: response.risk_level
+      }
+    })
 
     // Trigger automated actions for high-risk users
     if (riskLevel === 'high') {

@@ -660,6 +660,27 @@
     }
   };
 
+  // ✅ Lightweight global verification object
+  window.__CHURNAIZER_SDK_STATUS__ = {
+    installed: true,
+    apiKey: window.__CHURNAIZER_API_KEY__ || 'not-set',
+    domain: window.location.hostname,
+    version: SDK_VERSION
+  };
+
+  // Listen for SDK status requests via postMessage
+  window.addEventListener("message", function(event) {
+    if (event.data && event.data.action === "GET_CHURNAIZER_SDK_STATUS") {
+      try {
+        window.parent.postMessage({
+          __CHURNAIZER_SDK_STATUS__: window.__CHURNAIZER_SDK_STATUS__
+        }, "*");
+      } catch (error) {
+        log('PostMessage failed: ' + error.message);
+      }
+    }
+  });
+
   // Auto-initialize if configured
   if (window.ChurnaizerConfig) {
     window.Churnaizer.initRetentionMonitoring(window.ChurnaizerConfig);

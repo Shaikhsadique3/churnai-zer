@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Upload, FileText, Users, TrendingUp } from "lucide-react";
 import { SimpleCSVUploader } from "@/components/dashboard/SimpleCSVUploader";
-import { UploadHistorySection } from "@/components/dashboard/UploadHistorySection";
+import UploadHistorySection from "@/components/dashboard/UploadHistorySection";
 
 export const CSVUploadPage = () => {
   return (

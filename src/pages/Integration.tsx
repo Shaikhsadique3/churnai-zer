@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { SimplifiedSDKIntegration } from "@/components/integration/SimplifiedSDKIntegration";
@@ -9,16 +10,6 @@ import { useAuth } from "@/contexts/AuthContext";
 const Integration = () => {
   const { user } = useAuth();
   const [apiKey, setApiKey] = useState<string>("");
-
-  // Debug domain information
-  useEffect(() => {
-    console.log('[DEBUG] Current location:', {
-      hostname: window.location.hostname,
-      href: window.location.href,
-      origin: window.location.origin,
-      pathname: window.location.pathname
-    });
-  }, []);
 
   useEffect(() => {
     fetchApiKey();
@@ -46,7 +37,6 @@ const Integration = () => {
   };
 
   const handleCopyCode = (code: string) => {
-    // Handle code copy actions if needed
     console.log('Code copied:', code);
   };
 
@@ -55,17 +45,17 @@ const Integration = () => {
       <div className="space-y-2">
         <h1 className="text-2xl md:text-3xl font-bold text-foreground">Website Integration</h1>
         <p className="text-muted-foreground">
-          Choose your integration approach: Quick setup for experienced developers or detailed step-by-step guide for non-technical founders.
+          Set up the Churnaizer SDK on your website to start tracking user behavior and predicting churn.
         </p>
       </div>
 
-        <Tabs defaultValue="quick-setup" className="w-full">
-          <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger value="quick-setup">Quick Setup</TabsTrigger>
-            <TabsTrigger value="step-by-step">Step-by-Step</TabsTrigger>
-            <TabsTrigger value="test-integration">Live SDK Test</TabsTrigger>
-          </TabsList>
-        
+      <Tabs defaultValue="quick-setup" className="w-full">
+        <TabsList className="grid w-full grid-cols-3">
+          <TabsTrigger value="quick-setup">Quick Setup</TabsTrigger>
+          <TabsTrigger value="step-by-step">Step-by-Step</TabsTrigger>
+          <TabsTrigger value="test-integration">Check SDK</TabsTrigger>
+        </TabsList>
+      
         <TabsContent value="quick-setup" className="space-y-6">
           <SimplifiedSDKIntegration />
         </TabsContent>

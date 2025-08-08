@@ -3,24 +3,6 @@
  * Version: 1.0.0
  * 
  * This SDK helps SaaS founders track user behavior and predict churn risk.
- * 
- * Usage:
- * <script src="https://cdn.churnaizer.com/churnaizer-sdk.js"></script>
- * <script>
- *   Churnaizer.track({
- *     user_id: "u123",
- *     customer_email: "user@example.com",
- *     subscription_plan: "Pro",
- *     number_of_logins_last30days: 14,
- *     // ... other user data
- *   }, "YOUR_API_KEY", function(result, error) {
- *     if (error) {
- *       console.error("Churn prediction failed:", error);
- *       return;
- *     }
- *     console.log("Churn prediction:", result);
- *   });
- * </script>
  */
 
 (function() {
@@ -37,12 +19,16 @@
 
   function log(...args) {
     if (isDebugEnabled()) {
-      console.log('[Churnaizer SDK]', ...args);
+      console.log('%c[Churnaizer SDK]', 'color: #4CAF50; font-weight: bold;', ...args);
     }
   }
 
   function logError(...args) {
-    console.error('[Churnaizer SDK Error]', ...args);
+    console.error('%c[Churnaizer SDK Error]', 'color: #f44336; font-weight: bold;', ...args);
+  }
+
+  function logSuccess(...args) {
+    console.log('%c[Churnaizer SDK]', 'color: #2196F3; font-weight: bold;', ...args);
   }
 
   // Main Churnaizer SDK Object
@@ -51,7 +37,7 @@
     
     // Display SDK info
     info: function() {
-      console.log(`Churnaizer SDK v${SDK_VERSION}`);
+      console.log(`%c✅ Churnaizer SDK v${SDK_VERSION}`, 'color: #4CAF50; font-weight: bold;');
       console.log('Documentation: https://docs.churnaizer.com');
       console.log('Support: https://churnaizer.com/contact');
     },
@@ -77,12 +63,13 @@
         return;
       }
 
-      log('Tracking user data for:', userData.user_id);
+      log('✅ Churnaizer SDK initialized');
+      log('📡 Sending user behavior data...');
 
       // Expose last used API key for diagnostics
       try { window.__Churnaizer_lastApiKey = apiKey; } catch (_) {}
 
-      // Generate unique trace session ID for end-to-end logging (support backward compatibility)
+      // Generate unique trace session ID for end-to-end logging
       const traceId = userData.trace_id || (crypto && crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(16).slice(2)}`);
 
       // Prepare tracking data with all expected fields
@@ -111,24 +98,18 @@
         sdk_version: SDK_VERSION
       };
 
-      // *** TRACE LOG 1: SDK PAYLOAD ***
-      console.log(`[TRACE 1 | trace_id: ${traceId}] SDK Payload:`, {
-        payload: trackingData,
-        original_user_data: userData,
-        required_fields_present: {
-          user_id: !!trackingData.user_id,
-          email: !!trackingData.email,
-          monthly_revenue: trackingData.monthly_revenue,
-          subscription_plan: trackingData.subscription_plan,
-          billing_issue_count: trackingData.billing_issue_count,
-          number_of_logins_last30days: trackingData.number_of_logins_last30days,
-          trace_id: !!traceId
-        }
-      });
-
-      // Send tracking request with callback wrapper to also track login event
+      // Send tracking request with enhanced callback
       const wrappedCallback = (result, error) => {
         if (!error && result && result.status === 'ok') {
+          // Enhanced success logging
+          logSuccess('🎯 Prediction:', result.risk_level ? `${result.risk_level} Risk` : 'Medium Risk (Fallback)');
+          
+          if (result.shouldTriggerEmail) {
+            logSuccess('✉️ Email Sent to: high-risk user');
+          } else {
+            log('📧 Email Ready (not triggered for this risk level)');
+          }
+
           // Also track login event after successful prediction (non-blocking)
           try {
             this.trackEvent({
@@ -137,9 +118,8 @@
               email: userData.email || userData.customer_email,
               customer_name: userData.customer_name,
               monthly_revenue: userData.monthly_revenue || 0,
-              trace_id: traceId // Propagate trace_id to event tracking
+              trace_id: traceId
             }, apiKey, function(eventResult, eventError) {
-              // Event tracking is optional - don't fail main flow if it fails
               if (eventError) {
                 console.warn('Event tracking failed but main flow continues:', eventError);
               }
@@ -147,17 +127,19 @@
           } catch (eventError) {
             console.warn('Event tracking failed but main flow continues:', eventError);
           }
+        } else {
+          logError('Tracking failed:', error || 'Unknown error');
         }
+        
         if (callback) callback(result, error);
       };
 
-      // Send tracking request
       this._sendTrackingRequest(trackingData, apiKey, wrappedCallback);
     },
 
     // Test function specifically for integration testing
     testTrackingIntegration: function(apiKey, traceId, callback) {
-      log('Running SDK integration test with trace ID:', traceId);
+      log('🧪 Running SDK integration test with trace ID:', traceId);
 
       const testUserData = {
         user_id: "sdk_test_user_" + Date.now(),
@@ -351,11 +333,10 @@
             const response = JSON.parse(xhr.responseText);
             
             if (xhr.status === 200 || xhr.status === 201) {
-              log('Tracking successful - Full response:', response);
+              logSuccess('✅ User Tracked');
               
               // Check if it's a single result or batch results
               const result = response.results?.[0] || response.result || response;
-              log('Extracted result:', result);
               
               // Validate required fields for SDK response
               const requiredFields = ['churn_score', 'churn_reason', 'risk_level'];
@@ -364,8 +345,6 @@
               if (missingFields.length > 0) {
                 const error = `API response missing required fields: ${missingFields.join(', ')}`;
                 logError('Missing fields error. Full response:', response);
-                logError('Extracted result:', result);
-                logError('Missing fields:', missingFields);
                 if (callback) callback(null, error);
                 return;
               }
@@ -381,18 +360,18 @@
               // Execute callback
               if (callback) callback(result, null);
             } else {
-              logError('Tracking failed:', response);
+              logError('❌ Tracking failed:', response);
               if (callback) callback(null, response.error || 'Tracking failed');
             }
           } catch (e) {
-            logError('Invalid response format:', e);
+            logError('❌ Invalid response format:', e);
             if (callback) callback(null, 'Invalid response format');
           }
         }
       }.bind(this);
 
       xhr.onerror = function() {
-        logError('Network error during tracking request');
+        logError('❌ Network error during tracking request');
         if (callback) callback(null, 'Network error');
       };
 
@@ -716,7 +695,7 @@
       try {
         const { apiKey, traceId } = event.data;
         
-        log('Received SDK test command with trace ID:', traceId);
+        log('🔍 Received SDK test command with trace ID:', traceId);
 
         // Check if SDK is properly loaded
         if (!window.Churnaizer) {
@@ -791,15 +770,5 @@
     window.Churnaizer.initRetentionMonitoring(window.ChurnaizerConfig);
   }
 
-  // Add CSS animation for badge
-  const style = document.createElement('style');
-  style.textContent = `
-    @keyframes slideIn {
-      from { transform: translateX(100%); opacity: 0; }
-      to { transform: translateX(0); opacity: 1; }
-    }
-  `;
-  document.head.appendChild(style);
-
-  log('Churnaizer SDK v' + SDK_VERSION + ' loaded successfully');
+  log('✅ Churnaizer SDK v' + SDK_VERSION + ' loaded successfully');
 })();

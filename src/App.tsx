@@ -23,16 +23,16 @@ import NotFound from './pages/NotFound';
 import NotAuthorized from './pages/NotAuthorized';
 
 // Dashboard pages
-import DashboardLayout from './components/layout/DashboardLayout';
+import { DashboardLayout } from './components/layout/DashboardLayout';
 import { DashboardOverview } from './components/dashboard/DashboardOverview';
 import { CSVUploadPage } from './pages/dashboard/CSVUploadPage';
 import Integration from './pages/Integration';
-import { FounderProfile } from './pages/dashboard/FounderProfile';
+import FounderProfile from './pages/dashboard/FounderProfile';
 import AIEmailCampaignsPage from './pages/dashboard/AIEmailCampaignsPage';
 
 // Admin pages
 import AdminLogin from './pages/AdminLogin';
-import AdminLayout from './components/layout/AdminLayout';
+import { AdminLayout } from './components/layout/AdminLayout';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import AdminPanel from './pages/AdminPanel';
 import AdminAnnouncements from './pages/admin/AdminAnnouncements';

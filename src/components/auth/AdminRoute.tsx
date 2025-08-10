@@ -1,9 +1,10 @@
-import React from 'react';
+
+import React, { ReactNode } from 'react';
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 
 interface AdminRouteProps {
-  children: React.ReactNode;
+  children: ReactNode;
 }
 
 const AdminRoute: React.FC<AdminRouteProps> = ({ children }) => {

@@ -1,142 +1,110 @@
-
-import React from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import React from "react";
 import {
-  Sidebar,
-  SidebarContent,
-  SidebarFooter,
-  SidebarHeader,
-  SidebarMenu,
-  SidebarMenuButton,
-  SidebarMenuItem,
-  SidebarGroup,
-  SidebarGroupLabel,
-  SidebarGroupContent,
-} from "@/components/ui/sidebar";
-import { LayoutDashboard, Code, Mail, User, BookOpen, HelpCircle, Users, CheckCircle, FileText } from "lucide-react";
-import { AccountSection } from './AccountSection';
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
+import { Sidebar } from "@/components/ui/sidebar";
+import {
+  LayoutDashboard,
+  Upload,
+  Mail,
+  Zap,
+  Bot,
+  Users,
+  CheckCircle,
+  BookOpen,
+  Menu,
+  TrendingUp,
+} from "lucide-react";
+import { useSidebar } from "@/components/ui/sidebar";
 
-const navigation = [
+const navigationItems = [
   {
-    title: "Dashboard",
+    title: "Overview",
+    url: "/dashboard",
     icon: LayoutDashboard,
-    href: "/dashboard",
   },
   {
-    title: "SDK Integration", 
-    icon: Code,
-    href: "/sdk",
+    title: "Analytics Hub",
+    url: "/dashboard/analytics", 
+    icon: TrendingUp,
+  },
+  {
+    title: "CSV Upload",
+    url: "/dashboard/csv-upload",
+    icon: Upload,
+  },
+  {
+    title: "Email Automation",
+    url: "/dashboard/email-automation",
+    icon: Mail,
+  },
+  {
+    title: "Automations",
+    url: "/dashboard/automations",
+    icon: Zap,
+  },
+  {
+    title: "AI Campaigns",
+    url: "/dashboard/campaigns",
+    icon: Bot,
   },
   {
     title: "User Predictions",
+    url: "/dashboard/user-predictions",
     icon: Users,
-    href: "/users",
   },
   {
     title: "Churn Recovery",
+    url: "/dashboard/recovered-users",
     icon: CheckCircle,
-    href: "/recovery",
   },
   {
-    title: "Email Logs",
-    icon: Mail,
-    href: "/email-logs",
-  },
-  {
-    title: "Profile",
-    icon: User,
-    href: "/profile",
-  }
-];
-
-const resources = [
-  {
-    title: "Feature Guide",
+    title: "Playbooks",
+    url: "/dashboard/playbooks",
     icon: BookOpen,
-    href: "/resources/feature-guide",
   },
-  {
-    title: "Blog",
-    icon: FileText,
-    href: "/blog",
-  },
-  {
-    title: "Help & Support",
-    icon: HelpCircle,
-    href: "/help",
-  }
 ];
 
 export const AppSidebar = () => {
-  const location = useLocation();
+  const { isOpen, onOpen, onClose } = useSidebar();
 
   return (
-    <Sidebar variant="inset">
-      <SidebarHeader>
-        <SidebarMenu>
-          <SidebarMenuItem>
-            <SidebarMenuButton size="lg" asChild>
-              <Link to="/dashboard">
-                <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground">
-                  <LayoutDashboard className="size-4" />
-                </div>
-                <div className="grid flex-1 text-left text-sm leading-tight">
-                  <span className="truncate font-semibold">Churnaizer</span>
-                  <span className="truncate text-xs">Churn Prevention</span>
-                </div>
-              </Link>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-        </SidebarMenu>
-      </SidebarHeader>
-      
-      <SidebarContent>
-        <SidebarGroup>
-          <SidebarGroupLabel>Main</SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {navigation.map((item) => {
-                const isActive = location.pathname === item.href;
-                return (
-                  <SidebarMenuItem key={item.title}>
-                    <SidebarMenuButton asChild isActive={isActive}>
-                      <Link to={item.href}>
-                        <item.icon className="size-4" />
-                        <span>{item.title}</span>
-                      </Link>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                );
-              })}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
+    <>
+      {/* Desktop Sidebar */}
+      <Sidebar
+        className="hidden md:block border-r border-border"
+        defaultOpen={true}
+        close={onClose}
+        open={isOpen}
+        items={navigationItems}
+      />
 
-        <SidebarGroup>
-          <SidebarGroupLabel>Resources</SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {resources.map((item) => {
-                const isActive = location.pathname === item.href || location.pathname.startsWith(item.href);
-                return (
-                  <SidebarMenuItem key={item.title}>
-                    <SidebarMenuButton asChild isActive={isActive}>
-                      <Link to={item.href}>
-                        <item.icon className="size-4" />
-                        <span>{item.title}</span>
-                      </Link>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                );
-              })}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
-      </SidebarContent>
-      
-      <SidebarFooter>
-        <AccountSection />
-      </SidebarFooter>
-    </Sidebar>
+      {/* Mobile Sidebar */}
+      <Sheet open={isOpen} onOpenChange={onClose}>
+        <SheetTrigger asChild>
+          <Menu className="md:hidden p-2 hover:bg-sidebar-accent rounded-md transition-colors" />
+        </SheetTrigger>
+        <SheetContent side="left" className="w-full sm:w-64 border-r border-border p-0">
+          <SheetHeader className="pl-6 pr-4 pt-4 pb-2.5">
+            <SheetTitle>Churnaizer</SheetTitle>
+            <SheetDescription>
+              Navigate your dashboard
+            </SheetDescription>
+          </SheetHeader>
+          <Sidebar
+            className="md:hidden"
+            defaultOpen={false}
+            close={onClose}
+            open={isOpen}
+            items={navigationItems}
+          />
+        </SheetContent>
+      </Sheet>
+    </>
   );
 };

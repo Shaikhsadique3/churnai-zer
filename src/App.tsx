@@ -34,7 +34,7 @@ import AdminAnnouncements from './pages/admin/AdminAnnouncements';
 import AdminBlogs from './pages/admin/AdminBlogs';
 import AdminInbox from './pages/admin/AdminInbox';
 import { AdminLayout } from './components/layout/AdminLayout';
-import { DashboardLayout } from './components/layout/DashboardLayout';
+import { MainLayout } from './components/layout/MainLayout';
 import ProtectedRoute from './components/auth/ProtectedRoute';
 import AdminRoute from './components/auth/AdminRoute';
 import { AnalyticsDashboard } from "@/pages/dashboard/AnalyticsDashboard";
@@ -70,25 +70,28 @@ function App() {
         <Route path="/blog" element={<BlogIndex />} />
         <Route path="/blog/:slug" element={<BlogPost />} />
 
-        {/* Protected dashboard routes */}
-        <Route path="/dashboard" element={<ProtectedRoute><DashboardLayout><DashboardOverview /></DashboardLayout></ProtectedRoute>} />
-        <Route path="/dashboard/analytics" element={<ProtectedRoute><DashboardLayout><AnalyticsDashboard /></DashboardLayout></ProtectedRoute>} />
-        <Route path="/dashboard/csv-upload" element={<ProtectedRoute><DashboardLayout><CSVUploadPage /></DashboardLayout></ProtectedRoute>} />
-        <Route path="/dashboard/email-automation" element={<ProtectedRoute><DashboardLayout><EmailAutomationPage /></DashboardLayout></ProtectedRoute>} />
-        <Route path="/dashboard/automations" element={<ProtectedRoute><DashboardLayout><AutomationsPage /></DashboardLayout></ProtectedRoute>} />
-        <Route path="/dashboard/playbooks" element={<ProtectedRoute><DashboardLayout><PlaybooksBuilderPage /></DashboardLayout></ProtectedRoute>} />
-        <Route path="/dashboard/campaigns" element={<ProtectedRoute><DashboardLayout><AIEmailCampaignsPage /></DashboardLayout></ProtectedRoute>} />
-        <Route path="/dashboard/user-predictions" element={<ProtectedRoute><DashboardLayout><UploadedUsersPage /></DashboardLayout></ProtectedRoute>} />
-        <Route path="/dashboard/recovered-users" element={<ProtectedRoute><DashboardLayout><RecoveredUsersPage /></DashboardLayout></ProtectedRoute>} />
-        <Route path="/dashboard/user/:id" element={<ProtectedRoute><DashboardLayout><UserDetailPage /></DashboardLayout></ProtectedRoute>} />
-        <Route path="/dashboard/notifications" element={<ProtectedRoute><DashboardLayout><NotificationsPage /></DashboardLayout></ProtectedRoute>} />
-        <Route path="/dashboard/onboarding" element={<ProtectedRoute><DashboardLayout><OnboardingForm /></DashboardLayout></ProtectedRoute>} />
-        <Route path="/dashboard/profile" element={<ProtectedRoute><DashboardLayout><FounderProfile /></DashboardLayout></ProtectedRoute>} />
-        <Route path="/dashboard/guide" element={<ProtectedRoute><DashboardLayout><FeatureGuide /></DashboardLayout></ProtectedRoute>} />
-        <Route path="/dashboard/docs" element={<ProtectedRoute><DashboardLayout><DashboardDocumentation /></DashboardLayout></ProtectedRoute>} />
+        {/* Protected dashboard routes - now using MainLayout */}
+        <Route path="/dashboard" element={<ProtectedRoute><MainLayout><DashboardOverview /></MainLayout></ProtectedRoute>} />
+        <Route path="/dashboard/analytics" element={<ProtectedRoute><MainLayout><AnalyticsDashboard /></MainLayout></ProtectedRoute>} />
+        <Route path="/dashboard/csv-upload" element={<ProtectedRoute><MainLayout><CSVUploadPage /></MainLayout></ProtectedRoute>} />
+        <Route path="/dashboard/email-automation" element={<ProtectedRoute><MainLayout><EmailAutomationPage /></MainLayout></ProtectedRoute>} />
+        <Route path="/dashboard/automations" element={<ProtectedRoute><MainLayout><AutomationsPage /></MainLayout></ProtectedRoute>} />
+        <Route path="/dashboard/playbooks" element={<ProtectedRoute><MainLayout><PlaybooksBuilderPage /></MainLayout></ProtectedRoute>} />
+        <Route path="/dashboard/campaigns" element={<ProtectedRoute><MainLayout><AIEmailCampaignsPage /></MainLayout></ProtectedRoute>} />
+        <Route path="/dashboard/user-predictions" element={<ProtectedRoute><MainLayout><UploadedUsersPage /></MainLayout></ProtectedRoute>} />
+        <Route path="/dashboard/recovered-users" element={<ProtectedRoute><MainLayout><RecoveredUsersPage /></MainLayout></ProtectedRoute>} />
+        <Route path="/dashboard/user/:id" element={<ProtectedRoute><MainLayout><UserDetailPage /></MainLayout></ProtectedRoute>} />
+        <Route path="/dashboard/notifications" element={<ProtectedRoute><MainLayout><NotificationsPage /></MainLayout></ProtectedRoute>} />
+        <Route path="/dashboard/onboarding" element={<ProtectedRoute><MainLayout><OnboardingForm /></MainLayout></ProtectedRoute>} />
+        <Route path="/dashboard/profile" element={<ProtectedRoute><MainLayout><FounderProfile /></MainLayout></ProtectedRoute>} />
+        <Route path="/dashboard/guide" element={<ProtectedRoute><MainLayout><FeatureGuide /></MainLayout></ProtectedRoute>} />
+        <Route path="/dashboard/docs" element={<ProtectedRoute><MainLayout><DashboardDocumentation /></MainLayout></ProtectedRoute>} />
 
         {/* Integration route */}
-        <Route path="/integration" element={<ProtectedRoute><DashboardLayout><Integration /></DashboardLayout></ProtectedRoute>} />
+        <Route path="/integration" element={<ProtectedRoute><MainLayout><Integration /></MainLayout></ProtectedRoute>} />
+        
+        {/* Users route - mapped to the same component as user-predictions */}
+        <Route path="/users" element={<ProtectedRoute><MainLayout><UploadedUsersPage /></MainLayout></ProtectedRoute>} />
 
         {/* Admin routes */}
         <Route path="/admin" element={<AdminLogin />} />

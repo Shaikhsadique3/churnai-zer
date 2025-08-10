@@ -1,3 +1,4 @@
+
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "./AppSidebar";
 
@@ -12,8 +13,14 @@ export function MainLayout({ children }: MainLayoutProps) {
         <AppSidebar />
         <div className="flex-1 flex flex-col min-w-0">
           {/* Mobile header with hamburger - always visible on mobile */}
-          <header className="flex h-12 shrink-0 items-center gap-3 border-b border-border bg-card px-3 shadow-sm md:hidden">
-            <SidebarTrigger className="p-1 hover:bg-sidebar-accent rounded-md transition-colors" />
+          <header className="flex h-12 shrink-0 items-center gap-3 border-b border-border bg-card px-4 shadow-sm md:hidden sticky top-0 z-50">
+            <SidebarTrigger className="p-2 hover:bg-sidebar-accent rounded-md transition-colors" />
+            <h1 className="text-lg font-semibold text-foreground">Churnaizer</h1>
+          </header>
+          
+          {/* Desktop header with sidebar trigger - always visible */}
+          <header className="hidden md:flex h-12 shrink-0 items-center gap-3 border-b border-border bg-card px-4 shadow-sm sticky top-0 z-50">
+            <SidebarTrigger className="p-2 hover:bg-sidebar-accent rounded-md transition-colors" />
           </header>
           
           {/* Main content area */}

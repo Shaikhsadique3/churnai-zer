@@ -1,19 +1,22 @@
 /**
  * Churnaizer SDK - JavaScript Library for User Retention & Churn Prediction
- * Version: 1.0.0
+ * Version: 1.1.0 - Enhanced with Auto Integration Checks
  * 
  * This SDK helps SaaS founders track user behavior and predict churn risk.
+ * Now includes automatic integration verification.
  * 
  * Usage:
  * <script src="https://cdn.churnaizer.com/churnaizer-sdk.js"></script>
  * <script>
+ *   window.__CHURNAIZER_API_KEY__ = "YOUR_API_KEY_HERE";
+ *   
  *   Churnaizer.track({
  *     user_id: "u123",
  *     customer_email: "user@example.com",
  *     subscription_plan: "Pro",
  *     number_of_logins_last30days: 14,
  *     // ... other user data
- *   }, "YOUR_API_KEY", function(result, error) {
+ *   }, window.__CHURNAIZER_API_KEY__, function(result, error) {
  *     if (error) {
  *       console.error("Churn prediction failed:", error);
  *       return;
@@ -26,9 +29,8 @@
 (function() {
   'use strict';
 
-  const SDK_VERSION = '1.0.0';
+  const SDK_VERSION = '1.1.0';
   const API_BASE_URL = 'https://ntbkydpgjaswmwruegyl.supabase.co/functions/v1';
-  const DASHBOARD_SYNC_URL = 'https://churnaizer.com/api/sync';
   
   // Get debug setting from global config
   function isDebugEnabled() {
@@ -45,6 +47,87 @@
     console.error('[Churnaizer SDK Error]', ...args);
   }
 
+  // Auto Integration Check - runs when page loads
+  function performAutoIntegrationCheck() {
+    const apiKey = window.__CHURNAIZER_API_KEY__;
+    
+    if (!apiKey) {
+      console.warn('[Churnaizer SDK] ⚠️ API key not found. Set window.__CHURNAIZER_API_KEY__ for integration verification.');
+      return;
+    }
+
+    // Don't run check on localhost or development environments
+    if (window.location.hostname === 'localhost' || window.location.hostname.includes('127.0.0.1')) {
+      log('Skipping integration check on localhost');
+      return;
+    }
+
+    try {
+      fetch(`${API_BASE_URL}/sdk-test`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': apiKey
+        },
+        body: JSON.stringify({
+          test: true,
+          website: window.location.hostname,
+          user_id: 'auto_check_' + Date.now()
+        })
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data && data.status === 'ok') {
+          console.log(`✅ Churnaizer SDK integration confirmed for ${window.location.hostname}`);
+          log('Integration check successful:', data);
+          
+          // Store successful check status
+          try {
+            localStorage.setItem('churnaizer_integration_status', JSON.stringify({
+              status: 'success',
+              timestamp: new Date().toISOString(),
+              trace_id: data.trace_id
+            }));
+          } catch (e) {
+            // localStorage might be disabled
+          }
+        } else {
+          console.warn('⚠️ Churnaizer SDK integration check failed:', data);
+          logError('Integration check failed:', data);
+          
+          // Store failed check status
+          try {
+            localStorage.setItem('churnaizer_integration_status', JSON.stringify({
+              status: 'error',
+              timestamp: new Date().toISOString(),
+              error: data.message || 'Unknown error'
+            }));
+          } catch (e) {
+            // localStorage might be disabled
+          }
+        }
+      })
+      .catch(error => {
+        console.error('❌ SDK integration check error:', error);
+        logError('Integration check network error:', error);
+        
+        // Store network error status
+        try {
+          localStorage.setItem('churnaizer_integration_status', JSON.stringify({
+            status: 'network_error',
+            timestamp: new Date().toISOString(),
+            error: error.message
+          }));
+        } catch (e) {
+          // localStorage might be disabled
+        }
+      });
+    } catch (e) {
+      console.error('❌ SDK auto-check failed to run:', e);
+      logError('Auto-check execution error:', e);
+    }
+  }
+
   // Main Churnaizer SDK Object
   window.Churnaizer = {
     version: SDK_VERSION,
@@ -54,6 +137,48 @@
       console.log(`Churnaizer SDK v${SDK_VERSION}`);
       console.log('Documentation: https://docs.churnaizer.com');
       console.log('Support: https://churnaizer.com/contact');
+    },
+
+    // Get integration status from localStorage
+    getIntegrationStatus: function() {
+      try {
+        const status = localStorage.getItem('churnaizer_integration_status');
+        return status ? JSON.parse(status) : null;
+      } catch (e) {
+        return null;
+      }
+    },
+
+    // Manual integration check
+    checkIntegration: function(callback) {
+      const apiKey = window.__CHURNAIZER_API_KEY__;
+      
+      if (!apiKey) {
+        const error = 'API key not found. Set window.__CHURNAIZER_API_KEY__';
+        if (callback) callback(null, error);
+        logError(error);
+        return;
+      }
+
+      fetch(`${API_BASE_URL}/sdk-test`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': apiKey
+        },
+        body: JSON.stringify({
+          test: true,
+          website: window.location.hostname,
+          user_id: 'manual_check_' + Date.now()
+        })
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (callback) callback(data, null);
+      })
+      .catch(error => {
+        if (callback) callback(null, error.message);
+      });
     },
 
     // Main tracking function
@@ -82,13 +207,13 @@
       // Expose last used API key for diagnostics
       try { window.__Churnaizer_lastApiKey = apiKey; } catch (_) {}
 
-      // Generate unique trace session ID for end-to-end logging (support backward compatibility)
+      // Generate unique trace session ID for end-to-end logging
       const traceId = userData.trace_id || (crypto && crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(16).slice(2)}`);
 
       // Prepare tracking data with all expected fields
       const trackingData = {
         user_id: userData.user_id,
-        email: userData.email || userData.customer_email, // Support both email fields
+        email: userData.email || userData.customer_email,
         customer_name: userData.customer_name || userData.customer_email?.split('@')[0] || 'Unknown',
         customer_email: userData.customer_email,
         days_since_signup: userData.days_since_signup || 0,
@@ -101,7 +226,7 @@
         email_opens_last30days: userData.email_opens_last30days || 0,
         last_login_days_ago: userData.last_login_days_ago || 0,
         billing_issue_count: userData.billing_issue_count || 0,
-        trace_id: traceId, // Add trace session ID
+        trace_id: traceId,
         
         // Additional metadata
         timestamp: new Date().toISOString(),
@@ -110,21 +235,6 @@
         url: window.location.href,
         sdk_version: SDK_VERSION
       };
-
-      // *** TRACE LOG 1: SDK PAYLOAD ***
-      console.log(`[TRACE 1 | trace_id: ${traceId}] SDK Payload:`, {
-        payload: trackingData,
-        original_user_data: userData,
-        required_fields_present: {
-          user_id: !!trackingData.user_id,
-          email: !!trackingData.email,
-          monthly_revenue: trackingData.monthly_revenue,
-          subscription_plan: trackingData.subscription_plan,
-          billing_issue_count: trackingData.billing_issue_count,
-          number_of_logins_last30days: trackingData.number_of_logins_last30days,
-          trace_id: !!traceId
-        }
-      });
 
       // Send tracking request with callback wrapper to also track login event
       const wrappedCallback = (result, error) => {
@@ -691,15 +801,16 @@
     }
   };
 
-  // ✅ Lightweight global verification object
+  // ✅ Enhanced global verification object
   window.__CHURNAIZER_SDK_STATUS__ = {
     installed: true,
     apiKey: window.__CHURNAIZER_API_KEY__ || 'not-set',
     domain: window.location.hostname,
-    version: SDK_VERSION
+    version: SDK_VERSION,
+    autoCheckEnabled: true
   };
 
-  // Listen for SDK status requests and test commands via postMessage
+  // Listen for SDK status requests
   window.addEventListener("message", function(event) {
     if (event.data && event.data.action === "GET_CHURNAIZER_SDK_STATUS") {
       try {
@@ -710,96 +821,15 @@
         log('PostMessage failed: ' + error.message);
       }
     }
-
-    // Handle SDK integration test command
-    if (event.data && event.data.type === "CHURNAIZER_SDK_TEST") {
-      try {
-        const { apiKey, traceId } = event.data;
-        
-        log('Received SDK test command with trace ID:', traceId);
-
-        // Check if SDK is properly loaded
-        if (!window.Churnaizer) {
-          window.parent.postMessage({
-            type: 'CHURNAIZER_SDK_TEST_RESULT',
-            result: {
-              success: false,
-              error: 'SDK not found - Churnaizer object not available',
-              domain: window.location.hostname
-            }
-          }, "*");
-          return;
-        }
-
-        // Check if API key is available
-        if (!apiKey) {
-          window.parent.postMessage({
-            type: 'CHURNAIZER_SDK_TEST_RESULT',
-            result: {
-              success: false,
-              error: 'API key not provided for test',
-              domain: window.location.hostname
-            }
-          }, "*");
-          return;
-        }
-
-        // Run the actual tracking test
-        window.Churnaizer.testTrackingIntegration(apiKey, traceId, function(result, error) {
-          if (error) {
-            window.parent.postMessage({
-              type: 'CHURNAIZER_SDK_TEST_RESULT',
-              result: {
-                success: false,
-                error: 'SDK track function failed: ' + error,
-                domain: window.location.hostname,
-                apiKeyUsed: !!apiKey
-              }
-            }, "*");
-          } else {
-            window.parent.postMessage({
-              type: 'CHURNAIZER_SDK_TEST_RESULT',
-              result: {
-                success: true,
-                domain: window.location.hostname,
-                apiKeyUsed: !!apiKey,
-                churnScore: result.churn_score,
-                riskLevel: result.risk_level,
-                churnReason: result.churn_reason,
-                emailSent: result.shouldTriggerEmail,
-                traceId: traceId
-              }
-            }, "*");
-          }
-        });
-
-      } catch (error) {
-        window.parent.postMessage({
-          type: 'CHURNAIZER_SDK_TEST_RESULT',
-          result: {
-            success: false,
-            error: 'SDK test execution failed: ' + error.message,
-            domain: window.location.hostname
-          }
-        }, "*");
-      }
-    }
   });
 
-  // Auto-initialize if configured
-  if (window.ChurnaizerConfig) {
-    window.Churnaizer.initRetentionMonitoring(window.ChurnaizerConfig);
+  // Auto-initialize when DOM loads
+  if (document.readyState === 'loading') {
+    window.addEventListener('DOMContentLoaded', performAutoIntegrationCheck);
+  } else {
+    // DOM already loaded
+    setTimeout(performAutoIntegrationCheck, 100);
   }
 
-  // Add CSS animation for badge
-  const style = document.createElement('style');
-  style.textContent = `
-    @keyframes slideIn {
-      from { transform: translateX(100%); opacity: 0; }
-      to { transform: translateX(0); opacity: 1; }
-    }
-  `;
-  document.head.appendChild(style);
-
-  log('Churnaizer SDK v' + SDK_VERSION + ' loaded successfully');
+  log('Churnaizer SDK v' + SDK_VERSION + ' loaded successfully with auto integration checks');
 })();

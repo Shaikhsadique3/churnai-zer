@@ -1,11 +1,14 @@
-import { useState } from "react";
-import { ArrowRight, CheckCircle, Code, Shield, Users, Zap, Globe, Activity } from "lucide-react";
+
+import { useState, useEffect } from "react";
+import { ArrowRight, CheckCircle, Code, Shield, Users, Zap, Globe, Activity, RefreshCw, AlertCircle } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { APIKeysSection } from "./APIKeysSection";
 import { ApiTestComponent } from "@/components/dashboard/ApiTestComponent";
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface IntegrationOverviewProps {
   apiKeys: any[];
@@ -26,7 +29,92 @@ export const IntegrationOverview = ({
   onCopyKey,
   isCreating
 }: IntegrationOverviewProps) => {
+  const { user } = useAuth();
+  const [integrationStatus, setIntegrationStatus] = useState<{
+    status: 'unknown' | 'success' | 'fail';
+    lastCheck?: string;
+    website?: string;
+    loading: boolean;
+  }>({ status: 'unknown', loading: true });
+
   const isConnected = apiKeys && apiKeys.length > 0;
+
+  // Check integration status
+  useEffect(() => {
+    const checkIntegrationStatus = async () => {
+      if (!user) return;
+      
+      try {
+        const { data } = await supabase
+          .from('integrations')
+          .select('*')
+          .eq('founder_id', user.id)
+          .eq('status', 'success')
+          .order('checked_at', { ascending: false })
+          .limit(1)
+          .maybeSingle();
+
+        if (data) {
+          setIntegrationStatus({
+            status: 'success',
+            lastCheck: data.checked_at,
+            website: data.website,
+            loading: false
+          });
+        } else {
+          setIntegrationStatus({
+            status: 'fail',
+            loading: false
+          });
+        }
+      } catch (error) {
+        console.error('Error checking integration status:', error);
+        setIntegrationStatus({
+          status: 'unknown',
+          loading: false
+        });
+      }
+    };
+
+    checkIntegrationStatus();
+    
+    // Check every 30 seconds for real-time updates
+    const interval = setInterval(checkIntegrationStatus, 30000);
+    return () => clearInterval(interval);
+  }, [user]);
+
+  const getStatusDisplay = () => {
+    if (integrationStatus.loading) {
+      return {
+        icon: <RefreshCw className="h-3 h-3 animate-spin" />,
+        text: 'Checking...',
+        color: 'bg-yellow-200 border-yellow-300 text-yellow-800'
+      };
+    }
+
+    switch (integrationStatus.status) {
+      case 'success':
+        return {
+          icon: <CheckCircle className="h-3 w-3" />,
+          text: `SDK Active${integrationStatus.website ? ` on ${integrationStatus.website}` : ''}`,
+          color: 'bg-green-200 border-green-300 text-green-800'
+        };
+      case 'fail':
+        return {
+          icon: <AlertCircle className="h-3 w-3" />,
+          text: 'SDK Not Detected',
+          color: 'bg-red-200 border-red-300 text-red-800'
+        };
+      default:
+        return {
+          icon: <AlertCircle className="h-3 w-3" />,
+          text: 'Status Unknown',
+          color: 'bg-gray-200 border-gray-300 text-gray-800'
+        };
+    }
+  };
+
+  const statusDisplay = getStatusDisplay();
 
   return (
     <div className="max-w-6xl mx-auto space-y-8">
@@ -34,7 +122,7 @@ export const IntegrationOverview = ({
       <div className="text-center space-y-6 py-12">
         <div className="inline-flex items-center gap-2 bg-primary/10 text-primary px-4 py-2 rounded-full text-sm font-medium">
           <Globe className="h-4 w-4" />
-          Website Integration
+          Website Integration v1.1.0
         </div>
         
         <h1 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
@@ -42,48 +130,59 @@ export const IntegrationOverview = ({
         </h1>
         
         <p className="text-xl text-muted-foreground max-w-2xl mx-auto leading-relaxed">
-          Start tracking churn risk in real-time with our lightweight SDK. 
-          Get instant predictions and insights for every user interaction.
+          Enhanced SDK with automatic integration verification. 
+          Get instant status updates and real-time churn predictions.
         </p>
 
         {/* Trust Badges */}
         <div className="flex flex-wrap justify-center gap-4 pt-4">
           <Badge variant="secondary" className="gap-2">
             <Shield className="h-4 w-4" />
-            Used by 10+ SaaS teams
+            Auto-verified integrations
           </Badge>
           <Badge variant="secondary" className="gap-2">
             <CheckCircle className="h-4 w-4" />
-            Data encrypted & secure
+            Real-time status tracking
           </Badge>
           <Badge variant="secondary" className="gap-2">
             <Zap className="h-4 w-4" />
-            GDPR-ready
+            Enhanced v1.1.0 SDK
           </Badge>
         </div>
       </div>
 
-      {/* SDK Status Card */}
-      <Card className={`border-2 ${isConnected ? 'border-green-200 bg-green-50/50' : 'border-yellow-200 bg-yellow-50/50'}`}>
+      {/* Enhanced SDK Status Card */}
+      <Card className={`border-2 ${statusDisplay.color.includes('green') ? 'border-green-200 bg-green-50/50' : 
+                      statusDisplay.color.includes('red') ? 'border-red-200 bg-red-50/50' : 
+                      'border-yellow-200 bg-yellow-50/50'}`}>
         <CardHeader>
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className={`w-3 h-3 rounded-full ${isConnected ? 'bg-green-500' : 'bg-yellow-500'}`}></div>
+              <div className={`w-3 h-3 rounded-full ${
+                integrationStatus.status === 'success' ? 'bg-green-500' : 
+                integrationStatus.status === 'fail' ? 'bg-red-500' : 'bg-yellow-500'
+              }`}></div>
               <div>
-                <CardTitle className="text-lg">
-                  SDK Status: {isConnected ? 'Connected' : 'Not Connected'}
+                <CardTitle className="text-lg flex items-center gap-2">
+                  {statusDisplay.icon}
+                  SDK Status: {statusDisplay.text}
                 </CardTitle>
                 <CardDescription>
-                  {isConnected 
-                    ? 'Your integration is active and ready to track users'
-                    : 'Set up your API keys to start tracking churn predictions'
-                  }
+                  {integrationStatus.status === 'success' && integrationStatus.lastCheck && (
+                    `Auto-verified: ${new Date(integrationStatus.lastCheck).toLocaleString()}`
+                  )}
+                  {integrationStatus.status === 'fail' && (
+                    'No active integration detected. Install the enhanced SDK below.'
+                  )}
+                  {integrationStatus.status === 'unknown' && (
+                    'Unable to verify integration status. Check your connection.'
+                  )}
                 </CardDescription>
               </div>
             </div>
             <Button asChild>
-              <Link to="/integration/setup">
-                {isConnected ? 'View Setup' : 'Get Started'}
+              <Link to="/integration">
+                {integrationStatus.status === 'success' ? 'View Details' : 'Setup SDK'}
                 <ArrowRight className="h-4 w-4 ml-2" />
               </Link>
             </Button>
@@ -91,18 +190,18 @@ export const IntegrationOverview = ({
         </CardHeader>
       </Card>
 
-      {/* How It Works */}
+      {/* Enhanced Features */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <Card className="text-center hover:shadow-lg transition-shadow">
           <CardHeader>
             <div className="mx-auto w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center mb-4">
               <Code className="h-6 w-6 text-primary" />
             </div>
-            <CardTitle>1. Upload Your Data</CardTitle>
+            <CardTitle>1. Enhanced SDK Integration</CardTitle>
           </CardHeader>
           <CardContent>
             <p className="text-muted-foreground">
-              Import your user behavior via CSV or integrate our lightweight SDK
+              Auto-verifying SDK with real-time status updates and console feedback
             </p>
           </CardContent>
         </Card>
@@ -112,11 +211,11 @@ export const IntegrationOverview = ({
             <div className="mx-auto w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center mb-4">
               <Activity className="h-6 w-6 text-primary" />
             </div>
-            <CardTitle>2. AI Predicts Churn Risk</CardTitle>
+            <CardTitle>2. Instant Verification</CardTitle>
           </CardHeader>
           <CardContent>
             <p className="text-muted-foreground">
-              Instantly segment users by churn likelihood with our AI models
+              Automatic integration checks with live dashboard status updates
             </p>
           </CardContent>
         </Card>
@@ -126,11 +225,11 @@ export const IntegrationOverview = ({
             <div className="mx-auto w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center mb-4">
               <Users className="h-6 w-6 text-primary" />
             </div>
-            <CardTitle>3. Retain Smarter</CardTitle>
+            <CardTitle>3. Smart Churn Prevention</CardTitle>
           </CardHeader>
           <CardContent>
             <p className="text-muted-foreground">
-              Take action with psychology-based email & automation playbooks
+              AI-powered predictions with automated retention campaigns
             </p>
           </CardContent>
         </Card>
@@ -248,25 +347,25 @@ export const IntegrationOverview = ({
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Shield className="h-5 w-5 text-primary" />
-                Why Trust Churnaizer?
+                Enhanced v1.1.0 Features
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-3 text-sm">
               <div className="flex items-start gap-2">
                 <CheckCircle className="h-4 w-4 text-green-500 mt-0.5" />
-                <span>Powered by secure infrastructure (Supabase + Resend)</span>
+                <span>Automatic integration verification on page load</span>
               </div>
               <div className="flex items-start gap-2">
                 <CheckCircle className="h-4 w-4 text-green-500 mt-0.5" />
-                <span>No shady tracking — we only use your data to help you win back customers</span>
+                <span>Real-time status updates in founder dashboard</span>
               </div>
               <div className="flex items-start gap-2">
                 <CheckCircle className="h-4 w-4 text-green-500 mt-0.5" />
-                <span>Backed by real founders building in public</span>
+                <span>Complete admin logging and monitoring</span>
               </div>
               <div className="flex items-start gap-2">
                 <CheckCircle className="h-4 w-4 text-green-500 mt-0.5" />
-                <span>Emails sent via nexa@churnaizer.com using trusted APIs</span>
+                <span>Enhanced console feedback and error handling</span>
               </div>
               <div className="pt-2">
                 <Link to="/privacy" className="text-primary hover:underline text-sm">
@@ -279,13 +378,13 @@ export const IntegrationOverview = ({
           {/* CTA */}
           <Card className="bg-primary text-primary-foreground">
             <CardContent className="p-6 text-center">
-              <h3 className="font-semibold mb-2">Ready to get started?</h3>
+              <h3 className="font-semibold mb-2">Ready for enhanced tracking?</h3>
               <p className="text-sm opacity-90 mb-4">
-                Be the first to predict churn like a pro — before your next renewal cycle.
+                Upgrade to SDK v1.1.0 with automatic integration verification.
               </p>
               <Button variant="secondary" asChild className="w-full">
-                <Link to="/integration/setup">
-                  Go to SDK Setup Guide
+                <Link to="/integration">
+                  Get Enhanced SDK Code
                   <ArrowRight className="h-4 w-4 ml-2" />
                 </Link>
               </Button>

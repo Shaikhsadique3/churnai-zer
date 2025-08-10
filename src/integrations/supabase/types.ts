@@ -641,6 +641,45 @@ export type Database = {
         }
         Relationships: []
       }
+      integrations: {
+        Row: {
+          api_key: string
+          checked_at: string
+          created_at: string
+          error_message: string | null
+          founder_id: string
+          id: string
+          status: string
+          trace_id: string | null
+          user_id: string
+          website: string
+        }
+        Insert: {
+          api_key: string
+          checked_at?: string
+          created_at?: string
+          error_message?: string | null
+          founder_id: string
+          id?: string
+          status: string
+          trace_id?: string | null
+          user_id: string
+          website: string
+        }
+        Update: {
+          api_key?: string
+          checked_at?: string
+          created_at?: string
+          error_message?: string | null
+          founder_id?: string
+          id?: string
+          status?: string
+          trace_id?: string | null
+          user_id?: string
+          website?: string
+        }
+        Relationships: []
+      }
       notifications: {
         Row: {
           created_at: string | null

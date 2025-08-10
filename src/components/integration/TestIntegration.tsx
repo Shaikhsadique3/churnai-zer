@@ -1,247 +1,167 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
-import { Loader2, CheckCircle2, XCircle, TestTube, AlertCircle } from 'lucide-react';
-import { showErrorToast, showSuccessToast, showSDKErrorToast, errorMessages } from '@/components/ui/error-toast';
+import { CheckCircle2, XCircle, AlertCircle, RefreshCw } from 'lucide-react';
 
-interface TestResult {
-  success: boolean;
-  churn_probability?: number;
-  churn_score?: number;
-  risk_level?: string;
-  understanding_score?: number;
-  reason?: string;
-  churn_reason?: string;
-  message?: string;
-  error?: string;
+interface IntegrationStatus {
+  status: 'unknown' | 'success' | 'fail';
+  lastCheck?: string;
+  website?: string;
+  loading: boolean;
 }
 
 export const TestIntegration = () => {
-  const [isLoading, setIsLoading] = useState(false);
-  const [testResult, setTestResult] = useState<TestResult | null>(null);
-  const [apiKey, setApiKey] = useState<string>("");
+  const [integrationStatus, setIntegrationStatus] = useState<IntegrationStatus>({
+    status: 'unknown',
+    loading: true
+  });
   const { user } = useAuth();
 
   useEffect(() => {
-    fetchApiKey();
+    checkIntegrationStatus();
+    
+    // Auto-refresh every 30 seconds
+    const interval = setInterval(checkIntegrationStatus, 30000);
+    return () => clearInterval(interval);
   }, [user]);
 
-  const fetchApiKey = async () => {
+  const checkIntegrationStatus = async () => {
     if (!user) return;
     
+    setIntegrationStatus(prev => ({ ...prev, loading: true }));
+    
     try {
-      const { data, error } = await supabase
-        .from('api_keys')
-        .select('key')
-        .eq('user_id', user.id)
-        .eq('is_active', true)
-        .order('created_at', { ascending: false })
+      const { data } = await supabase
+        .from('integrations')
+        .select('*')
+        .eq('founder_id', user.id)
+        .eq('status', 'success')
+        .order('checked_at', { ascending: false })
         .limit(1)
         .maybeSingle();
 
-      if (error) throw error;
-      if (data) setApiKey(data.key);
-    } catch (error) {
-      // Silently handle API key fetch errors - user will see appropriate message
-    }
-  };
-
-  const runIntegrationTest = async () => {
-    setIsLoading(true);
-    setTestResult(null);
-
-    try {
-      // 1. Check if SDK is loaded
-      if (!window.Churnaizer) {
-        throw new Error(errorMessages.sdkNotFound);
-      }
-
-      // 2. Check if user is logged in
-      if (!user) {
-        throw new Error('Please sign in to test the integration.');
-      }
-
-      // 3. Check if API key is available
-      if (!apiKey) {
-        throw new Error(errorMessages.apiKeyMissing);
-      }
-
-      // 4. Prepare real user data
-      const userData = {
-        user_id: user.id,
-        email: user.email || '',
-        customer_name: user.user_metadata?.full_name || user.user_metadata?.name || user.email?.split('@')[0] || 'Unknown User',
-        customer_email: user.email || '',
-        subscription_plan: 'Pro', // Default for testing
-        monthly_revenue: 29.99,
-        loginCount: 1,
-        dashboardViews: 1,
-        feature_usage: {
-          dashboard: 1,
-          reports: 0,
-          settings: 0
-        },
-        days_since_signup: Math.floor((Date.now() - new Date(user.created_at).getTime()) / (1000 * 60 * 60 * 24)),
-        number_of_logins_last30days: 1,
-        active_features_used: 1,
-        support_tickets_opened: 0,
-        last_payment_status: 'success',
-        email_opens_last30days: 0,
-        last_login_days_ago: 0,
-        billing_issue_count: 0
-      };
-
-      // 5. Call the SDK with real data
-      const result = await new Promise<any>((resolve, reject) => {
-        const timeout = setTimeout(() => {
-          reject(new Error('SDK request timeout'));
-        }, 10000);
-
-        window.Churnaizer.track(userData, apiKey, (result: any, error: any) => {
-          clearTimeout(timeout);
-          if (error) {
-            reject(new Error(error.message || error || 'SDK tracking request failed'));
-          } else {
-            resolve(result);
-          }
+      if (data) {
+        setIntegrationStatus({
+          status: 'success',
+          lastCheck: data.checked_at,
+          website: data.website,
+          loading: false
         });
-      });
-
-      // 6. Validate response
-      if (!result.churn_score && !result.risk_level) {
-        throw new Error('Invalid response from SDK: ' + JSON.stringify(result));
+      } else {
+        setIntegrationStatus({
+          status: 'fail',
+          loading: false
+        });
       }
-
-      const successResult = {
-        success: true,
-        ...result
-      };
-      
-      setTestResult(successResult);
-      
-      // Check if email automation was triggered
-      const emailTriggered = result.risk_level === 'high';
-      const churnScore = result.churn_score || result.churn_probability || 0;
-      const description = emailTriggered 
-        ? `Risk Level: ${result.risk_level} | Churn Score: ${Math.round(churnScore * 100)}% | ✉️ Email sent!`
-        : `Risk Level: ${result.risk_level} | Churn Score: ${Math.round(churnScore * 100)}%`;
-
-      showSuccessToast(
-        "SDK Integration Successful",
-        description
-      );
-
     } catch (error) {
-      const errorResult = {
-        success: false,
-        error: error instanceof Error ? error.message : 'Unknown error occurred'
-      };
-      
-      setTestResult(errorResult);
-      
-      showSDKErrorToast(errorResult.error);
-    } finally {
-      setIsLoading(false);
+      console.error('Error checking integration status:', error);
+      setIntegrationStatus({
+        status: 'unknown',
+        loading: false
+      });
     }
   };
 
-  // Check if user can test
-  const canTest = user && apiKey;
+  const getStatusDisplay = () => {
+    if (integrationStatus.loading) {
+      return {
+        icon: <RefreshCw className="h-4 w-4 animate-spin" />,
+        title: 'Checking Integration Status...',
+        description: 'Verifying SDK connection',
+        bgColor: 'bg-blue-50',
+        borderColor: 'border-blue-200',
+        textColor: 'text-blue-800'
+      };
+    }
+
+    switch (integrationStatus.status) {
+      case 'success':
+        return {
+          icon: <CheckCircle2 className="h-5 w-5 text-green-600" />,
+          title: '✅ SDK Integration Active',
+          description: `Last confirmed: ${integrationStatus.lastCheck ? new Date(integrationStatus.lastCheck).toLocaleString() : 'Unknown'}${integrationStatus.website ? ` on ${integrationStatus.website}` : ''}`,
+          bgColor: 'bg-green-50',
+          borderColor: 'border-green-200',
+          textColor: 'text-green-800'
+        };
+      case 'fail':
+        return {
+          icon: <XCircle className="h-5 w-5 text-red-600" />,
+          title: '❌ SDK Not Detected',
+          description: 'Add the embed code to your website to complete integration. Status updates automatically.',
+          bgColor: 'bg-red-50',
+          borderColor: 'border-red-200',
+          textColor: 'text-red-800'
+        };
+      default:
+        return {
+          icon: <AlertCircle className="h-5 w-5 text-gray-600" />,
+          title: 'Integration Status Unknown',
+          description: 'Unable to verify integration status. Check your connection.',
+          bgColor: 'bg-gray-50',
+          borderColor: 'border-gray-200',
+          textColor: 'text-gray-800'
+        };
+    }
+  };
+
+  const statusDisplay = getStatusDisplay();
 
   return (
-    <div className="space-y-3 md:space-y-4">
+    <div className="space-y-4">
       <div className="flex items-center space-x-2">
-        <TestTube className="h-4 w-4 md:h-5 md:w-5" />
-        <h3 className="text-base md:text-lg font-semibold">Live SDK Test</h3>
+        <h3 className="text-lg font-semibold">Auto-Integration Status</h3>
       </div>
       
-      <p className="text-xs md:text-sm text-muted-foreground">
-        Test your SDK integration with real user data to verify everything works correctly.
+      <p className="text-sm text-muted-foreground">
+        Integration status updates automatically when you add the SDK to your website.
       </p>
 
-      {!canTest && (
-        <div className="p-3 rounded-lg bg-muted border border-border">
-          <div className="flex items-start space-x-2">
-            <AlertCircle className="h-4 w-4 text-muted-foreground mt-0.5" />
-            <div className="text-xs md:text-sm text-muted-foreground">
-              {!user ? 'Please sign in to test the integration.' : 'API key not found. Please refresh the page.'}
-            </div>
+      <div className={`p-4 rounded-lg border ${statusDisplay.bgColor} ${statusDisplay.borderColor}`}>
+        <div className="flex items-start space-x-3">
+          {statusDisplay.icon}
+          <div className="flex-1">
+            <h4 className={`font-medium ${statusDisplay.textColor}`}>
+              {statusDisplay.title}
+            </h4>
+            <p className={`mt-1 text-sm ${statusDisplay.textColor}`}>
+              {statusDisplay.description}
+            </p>
           </div>
         </div>
-      )}
+      </div>
 
-      <div className="space-y-3">
+      <div className="flex items-center space-x-2">
         <Button 
-          onClick={runIntegrationTest}
-          disabled={isLoading || !canTest}
-          className="w-full text-xs md:text-sm py-2 md:py-3"
-          variant={canTest ? "default" : "secondary"}
+          onClick={checkIntegrationStatus}
+          disabled={integrationStatus.loading}
+          variant="outline"
+          size="sm"
         >
-          {isLoading ? (
+          {integrationStatus.loading ? (
             <>
-              <Loader2 className="mr-2 h-3 w-3 md:h-4 md:w-4 animate-spin" />
-              Testing Live Integration...
+              <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
+              Checking...
             </>
           ) : (
             <>
-              <TestTube className="mr-2 h-3 w-3 md:h-4 md:w-4" />
-              Test Live Integration
+              <RefreshCw className="mr-2 h-4 w-4" />
+              Refresh Status
             </>
           )}
         </Button>
-
-        {testResult && (
-          <div className={`p-3 md:p-4 rounded-lg border ${
-            testResult.success 
-              ? 'bg-secondary/5 border-secondary/20' 
-              : 'bg-destructive/5 border-destructive/20'
-          }`}>
-            <div className="flex items-start space-x-2">
-              {testResult.success ? (
-                <CheckCircle2 className="h-4 w-4 md:h-5 md:w-5 text-secondary mt-0.5" />
-              ) : (
-                <XCircle className="h-4 w-4 md:h-5 md:w-5 text-destructive mt-0.5" />
-              )}
-              <div className="flex-1">
-                <h4 className={`text-sm md:text-base font-medium ${
-                  testResult.success ? 'text-secondary' : 'text-destructive'
-                }`}>
-                  {testResult.success ? 'Integration Test Passed' : 'Integration Test Failed'}
-                </h4>
-                
-                {testResult.success ? (
-                  <div className="mt-2 text-xs md:text-sm text-secondary space-y-1">
-                    <p><strong>Risk Level:</strong> {testResult.risk_level}</p>
-                    <p><strong>Churn Score:</strong> {Math.round(((testResult.churn_score || testResult.churn_probability) || 0) * 100)}%</p>
-                    <p><strong>Understanding Score:</strong> {testResult.understanding_score}</p>
-                    <p><strong>Reason:</strong> {testResult.churn_reason || testResult.reason}</p>
-                    {testResult.risk_level === 'high' && (
-                      <div className="mt-2 p-2 bg-primary/10 rounded border border-primary/20">
-                        <p className="text-primary font-medium text-xs">✉️ Email Automation Triggered</p>
-                        <p className="text-xs text-muted-foreground">A retention email was automatically sent to this user.</p>
-                      </div>
-                    )}
-                  </div>
-                ) : (
-                  <p className="mt-1 text-xs md:text-sm text-destructive">
-                    {testResult.error}
-                  </p>
-                )}
-              </div>
-            </div>
-          </div>
-        )}
       </div>
 
-      <div className="mt-4 md:mt-6 p-3 md:p-4 bg-muted rounded-lg">
-        <h4 className="text-sm md:text-base font-medium mb-2">What this live test does:</h4>
-        <ul className="text-xs md:text-sm text-muted-foreground space-y-1">
-          <li>• Checks if SDK script is loaded on current page</li>
-          <li>• Uses your real user data and API key</li>
-          <li>• Sends live tracking request to Churnaizer</li>
-          <li>• Validates complete API response structure</li>
-          <li>• Shows actual churn risk assessment for your account</li>
+      <div className="mt-6 p-4 bg-muted rounded-lg">
+        <h4 className="font-medium mb-2">How Auto-Integration Works:</h4>
+        <ul className="text-sm text-muted-foreground space-y-1">
+          <li>• Add the SDK embed code to your website</li>
+          <li>• SDK automatically sends integration check on page load</li>
+          <li>• Dashboard status updates within 30 seconds</li>
+          <li>• Console shows success/error messages</li>
+          <li>• No manual testing required</li>
         </ul>
       </div>
     </div>

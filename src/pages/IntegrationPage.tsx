@@ -49,7 +49,7 @@ const IntegrationPage = () => {
     fetchApiKey();
   }, [user]);
 
-  // Check integration status
+  // Check integration status with auto-refresh
   useEffect(() => {
     const checkIntegrationStatus = async () => {
       if (!user) return;
@@ -88,56 +88,18 @@ const IntegrationPage = () => {
 
     checkIntegrationStatus();
     
-    // Check every 30 seconds
+    // Auto-refresh every 30 seconds
     const interval = setInterval(checkIntegrationStatus, 30000);
     return () => clearInterval(interval);
   }, [user]);
 
   const embedCode = `<!-- Churnaizer SDK Integration -->
 <script>
-  window.churnaizer = window.churnaizer || function () {
-    (window.churnaizer.q = window.churnaizer.q || []).push(arguments);
-  };
-
   // API key from Churnaizer Dashboard
   window.__CHURNAIZER_API_KEY__ = "${apiKey || 'YOUR_API_KEY_HERE'}";
-
-  // Identify the user (replace with real user ID from app)
-  churnaizer('identify', 'USER_ID');
-
-  // Example event (replace or add more based on usage)
-  churnaizer('track', 'feature_used', { feature_name: 'dashboard' });
-
-  // Automatic SDK Integration Check
-  window.addEventListener("load", function () {
-    try {
-      fetch("https://ntbkydpgjaswmwruegyl.supabase.co/functions/v1/sdk-test", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "x-api-key": window.__CHURNAIZER_API_KEY__
-        },
-        body: JSON.stringify({
-          test: true,
-          website: window.location.hostname,
-          user_id: "USER_ID"
-        })
-      })
-      .then(res => res.json())
-      .then(data => {
-        if (data && data.status === "ok") {
-          console.log(\`✅ Churnaizer SDK integration confirmed for \${window.location.hostname}\`);
-        } else {
-          console.warn("⚠️ Churnaizer SDK integration check failed:", data);
-        }
-      })
-      .catch(err => {
-        console.error("❌ SDK integration check error:", err);
-      });
-    } catch (e) {
-      console.error("❌ SDK auto-check failed to run:", e);
-    }
-  });
+  
+  // Set user ID dynamically from your app
+  window.__CHURNAIZER_USER_ID__ = "USER_ID"; // Replace with actual user ID
 </script>
 
 <!-- Load the Churnaizer SDK -->
@@ -148,7 +110,7 @@ const IntegrationPage = () => {
     setCopied(true);
     toast({
       title: "Copied!",
-      description: "Enhanced embed code copied to clipboard.",
+      description: "Embed code copied to clipboard.",
     });
     setTimeout(() => setCopied(false), 2000);
   };
@@ -205,14 +167,14 @@ const IntegrationPage = () => {
         return (
           <Badge variant="default" className="gap-2 bg-green-500 hover:bg-green-600">
             <CheckCircle className="h-4 w-4" />
-            Integration Confirmed
+            ✅ Integrated
           </Badge>
         );
       case 'fail':
         return (
           <Badge variant="destructive" className="gap-2">
             <AlertCircle className="h-4 w-4" />
-            SDK Not Detected
+            ❌ Not Detected
           </Badge>
         );
       default:
@@ -248,7 +210,7 @@ const IntegrationPage = () => {
                   </>
                 )}
                 {integrationStatus.status === 'fail' && (
-                  'No successful integration detected. Follow the setup guide below.'
+                  'Add the embed code below to your website to complete integration.'
                 )}
                 {integrationStatus.status === 'unknown' && (
                   'Unable to determine integration status. Check your connection.'
@@ -267,20 +229,20 @@ const IntegrationPage = () => {
         <CardHeader>
           <CardTitle className="text-lg font-semibold flex items-center gap-2">
             <Code className="h-5 w-5" />
-            Enhanced Integration Guide
+            Auto-Integration SDK v1.1.0
           </CardTitle>
           <CardDescription>
-            Add the enhanced Churnaizer script to your website for automatic integration verification
+            Add this code to your website. Integration status will update automatically.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="snippet">Enhanced Embed Code (v1.1.0)</Label>
+            <Label htmlFor="snippet">Embed Code (Auto-Integration)</Label>
             <Textarea
               id="snippet"
               value={embedCode}
               readOnly
-              rows={12}
+              rows={8}
               className="font-mono text-sm resize-none"
             />
             <Button size="sm" onClick={handleCopy} disabled={copied}>
@@ -292,32 +254,32 @@ const IntegrationPage = () => {
               ) : (
                 <>
                   <Code className="h-4 w-4 mr-2" />
-                  Copy Enhanced Code
+                  Copy Embed Code
                 </>
               )}
             </Button>
           </div>
 
           <div className="bg-blue-50 border border-blue-200 rounded p-4">
-            <h4 className="font-medium text-blue-900 mb-2">✨ What's New in v1.1.0:</h4>
+            <h4 className="font-medium text-blue-900 mb-2">✨ What's New in Auto-Integration v1.1.0:</h4>
             <ul className="text-sm text-blue-800 space-y-1">
-              <li>• <strong>Auto Integration Check:</strong> Automatically verifies SDK connection on page load</li>
-              <li>• <strong>Real-time Status:</strong> Dashboard shows live integration status</li>
-              <li>• <strong>Admin Logging:</strong> All integration attempts logged for monitoring</li>
+              <li>• <strong>Automatic Integration Check:</strong> No manual testing required</li>
+              <li>• <strong>Instant Status Updates:</strong> Dashboard shows live integration status</li>
               <li>• <strong>Console Feedback:</strong> Clear success/error messages in browser console</li>
-              <li>• <strong>No Manual Testing:</strong> Integration status updates automatically</li>
+              <li>• <strong>Auto-Refresh:</strong> Status updates every 30 seconds</li>
+              <li>• <strong>Admin Logging:</strong> All integration attempts logged for monitoring</li>
             </ul>
           </div>
 
           <div className="space-y-2">
             <Label>Setup Instructions</Label>
             <ol className="list-decimal pl-5 space-y-2 text-sm">
-              <li>Copy the enhanced embed code above (your API key is already included)</li>
+              <li>Copy the embed code above (your API key is already included)</li>
               <li>Paste it into the <code>&lt;head&gt;</code> section of your website's HTML</li>
-              <li>Replace <code>"USER_ID"</code> with the actual unique identifier for each user</li>
-              <li>Add custom tracking events using <code>churnaizer('track', 'event_name', data)</code></li>
-              <li>Check your browser console for integration confirmation messages</li>
-              <li>The status above will automatically update when integration is detected</li>
+              <li>Replace <code>window.__CHURNAIZER_USER_ID__ = "USER_ID"</code> with the actual user ID from your app</li>
+              <li>Load your website - the integration check runs automatically</li>
+              <li>Check your browser console for confirmation messages</li>
+              <li>Your dashboard status will update to "✅ Integrated" within 30 seconds</li>
             </ol>
           </div>
 
@@ -333,16 +295,17 @@ const IntegrationPage = () => {
           <div className="space-y-2">
             <Label>Troubleshooting</Label>
             <div className="text-sm space-y-2">
-              <p><strong>Status shows "SDK Not Detected":</strong></p>
+              <p><strong>Status shows "❌ Not Detected":</strong></p>
               <ul className="list-disc pl-5 space-y-1">
-                <li>Check that the script is properly added to your website</li>
-                <li>Verify your API key is correctly set</li>
-                <li>Ensure CORS is not blocking the integration check</li>
-                <li>Check browser console for error messages</li>
+                <li>Verify the script is properly added to your website</li>
+                <li>Check that your API key is correctly set</li>
+                <li>Ensure the user ID is set (not "USER_ID")</li>
+                <li>Check browser console for specific error messages</li>
+                <li>Wait up to 30 seconds for status to refresh</li>
               </ul>
               
               <p className="mt-3"><strong>CORS Issues:</strong></p>
-              <p>If you see CORS errors, the tracking will still work, but status updates may be delayed. This is normal for some hosting environments.</p>
+              <p>If you see CORS errors in console, the integration check may fail but tracking will still work. This is normal for some hosting environments.</p>
             </div>
           </div>
 
@@ -350,7 +313,7 @@ const IntegrationPage = () => {
             <Badge variant="secondary">
               <Link className="h-4 w-4 mr-2" />
               <a href="https://app.churnaizer.com/docs" target="_blank" rel="noopener noreferrer">
-                View Full Documentation
+                View Documentation
               </a>
             </Badge>
           </div>

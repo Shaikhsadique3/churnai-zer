@@ -72,7 +72,7 @@
         body: JSON.stringify({
           test: true,
           website: window.location.hostname,
-          user_id: 'auto_check_' + Date.now()
+          user_id: window.__CHURNAIZER_USER_ID__ || 'auto_check_' + Date.now()
         })
       })
       .then(response => response.json())
@@ -169,7 +169,7 @@
         body: JSON.stringify({
           test: true,
           website: window.location.hostname,
-          user_id: 'manual_check_' + Date.now()
+          user_id: window.__CHURNAIZER_USER_ID__ || 'manual_check_' + Date.now()
         })
       })
       .then(response => response.json())

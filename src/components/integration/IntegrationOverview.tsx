@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { APIKeysSection } from "./APIKeysSection";
-import { ApiTestComponent } from "@/components/dashboard/ApiTestComponent";
+import { TestIntegration } from "./TestIntegration";
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -39,7 +39,7 @@ export const IntegrationOverview = ({
 
   const isConnected = apiKeys && apiKeys.length > 0;
 
-  // Check integration status
+  // Check integration status with auto-refresh
   useEffect(() => {
     const checkIntegrationStatus = async () => {
       if (!user) return;
@@ -96,13 +96,13 @@ export const IntegrationOverview = ({
       case 'success':
         return {
           icon: <CheckCircle className="h-3 w-3" />,
-          text: `SDK Active${integrationStatus.website ? ` on ${integrationStatus.website}` : ''}`,
+          text: `✅ SDK Active${integrationStatus.website ? ` on ${integrationStatus.website}` : ''}`,
           color: 'bg-green-200 border-green-300 text-green-800'
         };
       case 'fail':
         return {
           icon: <AlertCircle className="h-3 w-3" />,
-          text: 'SDK Not Detected',
+          text: '❌ SDK Not Detected',
           color: 'bg-red-200 border-red-300 text-red-800'
         };
       default:
@@ -122,16 +122,16 @@ export const IntegrationOverview = ({
       <div className="text-center space-y-6 py-12">
         <div className="inline-flex items-center gap-2 bg-primary/10 text-primary px-4 py-2 rounded-full text-sm font-medium">
           <Globe className="h-4 w-4" />
-          Website Integration v1.1.0
+          Auto-Integration SDK v1.1.0
         </div>
         
         <h1 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
-          Connect your site in minutes
+          Zero-click integration
         </h1>
         
         <p className="text-xl text-muted-foreground max-w-2xl mx-auto leading-relaxed">
-          Enhanced SDK with automatic integration verification. 
-          Get instant status updates and real-time churn predictions.
+          Add our SDK to your site and get instant integration confirmation. 
+          No manual testing required - status updates automatically.
         </p>
 
         {/* Trust Badges */}
@@ -172,7 +172,7 @@ export const IntegrationOverview = ({
                     `Auto-verified: ${new Date(integrationStatus.lastCheck).toLocaleString()}`
                   )}
                   {integrationStatus.status === 'fail' && (
-                    'No active integration detected. Install the enhanced SDK below.'
+                    'Add the embed code below to complete integration. Status updates automatically.'
                   )}
                   {integrationStatus.status === 'unknown' && (
                     'Unable to verify integration status. Check your connection.'
@@ -182,7 +182,7 @@ export const IntegrationOverview = ({
             </div>
             <Button asChild>
               <Link to="/integration">
-                {integrationStatus.status === 'success' ? 'View Details' : 'Setup SDK'}
+                {integrationStatus.status === 'success' ? 'View Details' : 'Get Embed Code'}
                 <ArrowRight className="h-4 w-4 ml-2" />
               </Link>
             </Button>
@@ -197,11 +197,11 @@ export const IntegrationOverview = ({
             <div className="mx-auto w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center mb-4">
               <Code className="h-6 w-6 text-primary" />
             </div>
-            <CardTitle>1. Enhanced SDK Integration</CardTitle>
+            <CardTitle>1. Auto-Integration SDK</CardTitle>
           </CardHeader>
           <CardContent>
             <p className="text-muted-foreground">
-              Auto-verifying SDK with real-time status updates and console feedback
+              SDK automatically verifies connection when loaded. No manual testing required.
             </p>
           </CardContent>
         </Card>
@@ -211,11 +211,11 @@ export const IntegrationOverview = ({
             <div className="mx-auto w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center mb-4">
               <Activity className="h-6 w-6 text-primary" />
             </div>
-            <CardTitle>2. Instant Verification</CardTitle>
+            <CardTitle>2. Real-time Status</CardTitle>
           </CardHeader>
           <CardContent>
             <p className="text-muted-foreground">
-              Automatic integration checks with live dashboard status updates
+              Dashboard updates every 30 seconds with live integration status and console feedback.
             </p>
           </CardContent>
         </Card>
@@ -229,45 +229,11 @@ export const IntegrationOverview = ({
           </CardHeader>
           <CardContent>
             <p className="text-muted-foreground">
-              AI-powered predictions with automated retention campaigns
+              AI-powered predictions with automated retention campaigns once integrated.
             </p>
           </CardContent>
         </Card>
       </div>
-
-      {/* Who It's For */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-2xl">Who It's For</CardTitle>
-          <CardDescription>
-            If churn is hurting your growth, Churnaizer gives you clarity, predictions, and automation — all in one place.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="space-y-4">
-              <div className="flex items-center gap-3">
-                <CheckCircle className="h-5 w-5 text-green-500" />
-                <span className="font-medium">SaaS Founders</span>
-              </div>
-              <div className="flex items-center gap-3">
-                <CheckCircle className="h-5 w-5 text-green-500" />
-                <span className="font-medium">Customer Success Teams</span>
-              </div>
-            </div>
-            <div className="space-y-4">
-              <div className="flex items-center gap-3">
-                <CheckCircle className="h-5 w-5 text-green-500" />
-                <span className="font-medium">Product Managers</span>
-              </div>
-              <div className="flex items-center gap-3">
-                <CheckCircle className="h-5 w-5 text-green-500" />
-                <span className="font-medium">Marketing Ops Teams</span>
-              </div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
 
       {/* What You'll Get */}
       <Card>
@@ -282,8 +248,8 @@ export const IntegrationOverview = ({
                   <Activity className="h-4 w-4 text-primary" />
                 </div>
                 <div>
-                  <h4 className="font-medium">AI-Powered Churn Predictions</h4>
-                  <p className="text-sm text-muted-foreground">See who's about to leave, before it happens</p>
+                  <h4 className="font-medium">Instant Integration Confirmation</h4>
+                  <p className="text-sm text-muted-foreground">See ✅/❌ status immediately after adding SDK to your site</p>
                 </div>
               </div>
               
@@ -292,8 +258,8 @@ export const IntegrationOverview = ({
                   <Users className="h-4 w-4 text-primary" />
                 </div>
                 <div>
-                  <h4 className="font-medium">Insights Dashboard</h4>
-                  <p className="text-sm text-muted-foreground">Visual breakdown of risk levels, usage, support trends</p>
+                  <h4 className="font-medium">Browser Console Feedback</h4>
+                  <p className="text-sm text-muted-foreground">Clear success/error messages in your website's console</p>
                 </div>
               </div>
             </div>
@@ -304,8 +270,8 @@ export const IntegrationOverview = ({
                   <Zap className="h-4 w-4 text-primary" />
                 </div>
                 <div>
-                  <h4 className="font-medium">Smart Retention Campaigns</h4>
-                  <p className="text-sm text-muted-foreground">Auto-generated emails using behavior psychology</p>
+                  <h4 className="font-medium">Auto-Refreshing Dashboard</h4>
+                  <p className="text-sm text-muted-foreground">Status updates every 30 seconds without page refresh</p>
                 </div>
               </div>
               
@@ -314,8 +280,8 @@ export const IntegrationOverview = ({
                   <Code className="h-4 w-4 text-primary" />
                 </div>
                 <div>
-                  <h4 className="font-medium">Retention Playbook Templates</h4>
-                  <p className="text-sm text-muted-foreground">Proven strategies for every churn trigger</p>
+                  <h4 className="font-medium">AI Churn Predictions</h4>
+                  <p className="text-sm text-muted-foreground">Once integrated, start getting churn risk assessments</p>
                 </div>
               </div>
             </div>
@@ -326,8 +292,8 @@ export const IntegrationOverview = ({
       {/* Sidebar Components */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2">
-          {/* API Test Component */}
-          <ApiTestComponent />
+          {/* Auto Integration Status Component */}
+          <TestIntegration />
         </div>
         
         <div className="space-y-6">
@@ -347,7 +313,7 @@ export const IntegrationOverview = ({
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Shield className="h-5 w-5 text-primary" />
-                Enhanced v1.1.0 Features
+                Auto-Integration v1.1.0
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-3 text-sm">
@@ -357,15 +323,15 @@ export const IntegrationOverview = ({
               </div>
               <div className="flex items-start gap-2">
                 <CheckCircle className="h-4 w-4 text-green-500 mt-0.5" />
-                <span>Real-time status updates in founder dashboard</span>
+                <span>Real-time status updates (30s refresh)</span>
               </div>
               <div className="flex items-start gap-2">
                 <CheckCircle className="h-4 w-4 text-green-500 mt-0.5" />
-                <span>Complete admin logging and monitoring</span>
+                <span>Console feedback for developers</span>
               </div>
               <div className="flex items-start gap-2">
                 <CheckCircle className="h-4 w-4 text-green-500 mt-0.5" />
-                <span>Enhanced console feedback and error handling</span>
+                <span>Admin logging and monitoring</span>
               </div>
               <div className="pt-2">
                 <Link to="/privacy" className="text-primary hover:underline text-sm">
@@ -378,13 +344,13 @@ export const IntegrationOverview = ({
           {/* CTA */}
           <Card className="bg-primary text-primary-foreground">
             <CardContent className="p-6 text-center">
-              <h3 className="font-semibold mb-2">Ready for enhanced tracking?</h3>
+              <h3 className="font-semibold mb-2">Ready for auto-integration?</h3>
               <p className="text-sm opacity-90 mb-4">
-                Upgrade to SDK v1.1.0 with automatic integration verification.
+                Get your embed code with automatic status verification.
               </p>
               <Button variant="secondary" asChild className="w-full">
                 <Link to="/integration">
-                  Get Enhanced SDK Code
+                  Get Auto-Integration Code
                   <ArrowRight className="h-4 w-4 ml-2" />
                 </Link>
               </Button>

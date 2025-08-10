@@ -1,13 +1,10 @@
+
 import { 
   Users, 
   Code,
-  LayoutDashboard,
   Upload,
   Mail,
-  Zap,
-  Bot,
   CheckCircle,
-  BookOpen,
   TrendingUp
 } from "lucide-react";
 import { NavLink, useLocation } from "react-router-dom";
@@ -29,18 +26,14 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Logo } from "@/components/ui/logo";
 
-// Full navigation items - keeping all dashboard features accessible
+// Updated navigation items - removed automations, ai campaigns, playbooks and replaced overview with analytics hub
 const navigationItems = [
-  { title: "Overview", url: "/dashboard", icon: LayoutDashboard },
-  { title: "Analytics Hub", url: "/dashboard/analytics", icon: TrendingUp },
+  { title: "Analytics Hub", url: "/dashboard", icon: TrendingUp },
   { title: "Website Integration", url: "/integration", icon: Code },
   { title: "User Predictions", url: "/users", icon: Users },
   { title: "CSV Upload", url: "/dashboard/csv-upload", icon: Upload },
   { title: "Email Automation", url: "/dashboard/email-automation", icon: Mail },
-  { title: "Automations", url: "/dashboard/automations", icon: Zap },
-  { title: "AI Campaigns", url: "/dashboard/campaigns", icon: Bot },
   { title: "Churn Recovery", url: "/dashboard/recovered-users", icon: CheckCircle },
-  { title: "Playbooks", url: "/dashboard/playbooks", icon: BookOpen },
 ];
 
 export function AppSidebar() {

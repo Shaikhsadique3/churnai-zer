@@ -1,93 +1,200 @@
-import React, { useState } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import React, { useState, useCallback } from 'react';
+import { useDropzone } from 'react-dropzone';
 import { Button } from "@/components/ui/button";
-import { Upload, FileText, Clock, CheckCircle } from "lucide-react";
-import { SimpleCSVUploader } from "@/components/dashboard/SimpleCSVUploader";
-import UploadHistorySection from "@/components/dashboard/UploadHistorySection";
-import { ApiTestComponent } from "@/components/dashboard/ApiTestComponent";
-import { useQuery } from "@tanstack/react-query";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/contexts/AuthContext";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { format } from 'date-fns';
+import { PageLayout } from '@/components/layout/PageLayout';
+import { Upload } from 'lucide-react';
 
 export const CSVUploadPage = () => {
-  const { user } = useAuth();
-  const [uploadModalOpen, setUploadModalOpen] = useState(false);
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const [csvFile, setCsvFile] = useState<File | null>(null);
+  const [uploading, setUploading] = useState(false);
 
-  // Fetch upload statistics
-  const { data: uploadStats } = useQuery({
-    queryKey: ['upload-stats', user?.id],
-    queryFn: async () => {
-      const { data: uploads, error } = await supabase
-        .from('csv_uploads')
-        .select('*')
-        .eq('user_id', user?.id);
-      
+  const onDrop = useCallback((acceptedFiles: File[]) => {
+    setCsvFile(acceptedFiles[0]);
+  }, []);
+
+  const { getRootProps, getInputProps, isDragActive } = useDropzone({ onDrop, accept: {
+    'text/csv': ['.csv'],
+    'text/plain': ['.txt'],
+  } })
+
+  const uploadCSVMutation = useMutation({
+    mutationFn: async (file: File) => {
+      setUploading(true);
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error("Not logged in");
+
+      const fileExt = file.name.split('.').pop();
+      const filePath = `csv_uploads/${session.user.id}/${Date.now()}.${fileExt}`;
+
+      const { data, error } = await supabase.storage
+        .from('churn_files')
+        .upload(filePath, file, {
+          cacheControl: '3600',
+          upsert: false
+        });
+
       if (error) throw error;
 
-      const totalUploads = uploads?.length || 0;
-      const totalProcessed = uploads?.reduce((sum, upload) => sum + (upload.rows_processed || 0), 0) || 0;
-      const successfulUploads = uploads?.filter(upload => upload.status === 'completed').length || 0;
+      // Call function to process the CSV file
+      const { error: processError } = await supabase.functions.invoke('process-csv', {
+        body: {
+          filePath: filePath,
+          userId: session.user.id
+        }
+      });
 
-      return { totalUploads, totalProcessed, successfulUploads };
+      if (processError) {
+        console.error("Error processing CSV:", processError);
+        // Optionally delete the uploaded file if processing fails
+        await supabase.storage.from('churn_files').remove([filePath]);
+        throw processError;
+      }
+
+      return data;
     },
-    enabled: !!user?.id,
+    onSuccess: () => {
+      toast({
+        title: "Upload Successful",
+        description: "CSV file uploaded and processing started.",
+      });
+      queryClient.invalidateQueries({ queryKey: ['csv-history'] });
+      setCsvFile(null);
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Upload Failed",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+    onSettled: () => {
+      setUploading(false);
+    },
   });
 
-  return (
-    <div className="space-y-6">
-      {/* Page Header */}
-      <div className="border-b pb-4">
-        <h1 className="text-2xl font-bold text-foreground">📂 CSV Upload & Analysis</h1>
-        <p className="text-muted-foreground">Import and analyze your customer data</p>
-      </div>
-
-      {/* Upload Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Uploads</CardTitle>
-            <FileText className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{uploadStats?.totalUploads || 0}</div>
-            <p className="text-xs text-muted-foreground">CSV files processed</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Users Processed</CardTitle>
-            <Clock className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{uploadStats?.totalProcessed || 0}</div>
-            <p className="text-xs text-muted-foreground">Customer records analyzed</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Success Rate</CardTitle>
-            <CheckCircle className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {uploadStats?.totalUploads ? 
-                Math.round((uploadStats.successfulUploads / uploadStats.totalUploads) * 100) : 0}%
+  const CSVUploader = () => (
+    <Card>
+      <CardContent>
+        <div {...getRootProps()} className="relative border-2 border-dashed rounded-md p-6 flex flex-col items-center justify-center hover:border-primary transition-colors">
+          <input {...getInputProps()} />
+          {
+            isDragActive ?
+              <p className="text-center">Drop the files here ...</p> :
+              <div className="text-center">
+                <p className="text-muted-foreground">
+                  Drag 'n' drop some files here, or click to select files
+                </p>
+                <p className="text-sm text-muted-foreground mt-2">
+                  Only *.csv and *.txt files will be accepted
+                </p>
+              </div>
+          }
+          {csvFile && (
+            <div className="absolute top-2 right-2">
+              <Badge variant="secondary">{csvFile.name}</Badge>
             </div>
-            <p className="text-xs text-muted-foreground">Uploads completed successfully</p>
-          </CardContent>
-        </Card>
-      </div>
+          )}
+        </div>
+        <div className="mt-4">
+          <Button onClick={() => {
+            if (csvFile) {
+              uploadCSVMutation.mutate(csvFile);
+            } else {
+              toast({
+                title: "No File Selected",
+                description: "Please select a CSV file to upload.",
+                variant: "destructive",
+              });
+            }
+          }} disabled={uploading} className="w-full">
+            {uploading ? "Uploading..." : "Upload CSV"}
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
+  );
 
-      {/* Simple CSV Uploader */}
-      <SimpleCSVUploader onUploadComplete={() => {
-        // Refresh page to update stats
-        window.location.reload();
-      }} />
+  interface CSVRecord {
+    id: string;
+    file_path: string;
+    created_at: string;
+    status: string;
+    error_message?: string;
+  }
 
-      {/* Upload History */}
-      <UploadHistorySection />
-    </div>
+  const { data: csvHistory = [], isLoading } = useQuery({
+    queryKey: ['csv-history'],
+    queryFn: async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error("Not logged in");
+
+      const { data, error } = await supabase
+        .from('csv_upload_history')
+        .select('*')
+        .eq('user_id', session.user.id)
+        .order('created_at', { ascending: false })
+        .limit(10);
+
+      if (error) throw error;
+      return data as CSVRecord[];
+    },
+  });
+
+  const CSVHistoryTable = () => (
+    <Card>
+      <CardContent className="space-y-4">
+        <h4 className="text-lg font-semibold">Upload History</h4>
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>File</TableHead>
+              <TableHead>Uploaded At</TableHead>
+              <TableHead>Status</TableHead>
+              <TableHead>Error Message</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {isLoading ? (
+              <TableRow>
+                <TableCell colSpan={4} className="text-center py-4">Loading...</TableCell>
+              </TableRow>
+            ) : csvHistory.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={4} className="text-center py-4">No CSV upload history found.</TableCell>
+              </TableRow>
+            ) : (
+              csvHistory.map((record) => (
+                <TableRow key={record.id}>
+                  <TableCell>{record.file_path.split('/').pop()}</TableCell>
+                  <TableCell>{format(new Date(record.created_at), 'MMM d, yyyy h:mm a')}</TableCell>
+                  <TableCell>{record.status}</TableCell>
+                  <TableCell>{record.error_message || 'No Error'}</TableCell>
+                </TableRow>
+              ))
+            )}
+          </TableBody>
+        </Table>
+      </CardContent>
+    </Card>
+  );
+
+  return (
+    <PageLayout 
+      title="CSV Upload" 
+      description="Upload and manage your customer data files"
+      icon={<Upload className="h-8 w-8 text-primary" />}
+    >
+      <CSVUploader />
+      <CSVHistoryTable />
+    </PageLayout>
   );
 };

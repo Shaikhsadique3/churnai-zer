@@ -49,9 +49,17 @@ const AdminIntegrations = () => {
 
       if (error) throw error;
 
-      // Get founder emails from auth metadata (this would need to be done via a function in production)
-      const processedIntegrations = integrationsData?.map(integration => ({
-        ...integration,
+      // Process integrations data and ensure proper typing
+      const processedIntegrations: Integration[] = integrationsData?.map(integration => ({
+        id: integration.id,
+        website: integration.website,
+        user_id: integration.user_id,
+        api_key: integration.api_key,
+        founder_id: integration.founder_id,
+        status: integration.status as 'success' | 'fail',
+        checked_at: integration.checked_at,
+        error_message: integration.error_message || undefined,
+        trace_id: integration.trace_id || undefined,
         founder_email: `founder-${integration.founder_id.slice(0, 8)}@example.com` // Placeholder
       })) || [];
 

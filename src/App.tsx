@@ -13,7 +13,7 @@ import { CSVUploadPage } from "./pages/dashboard/CSVUploadPage";
 import { EmailAutomationPage } from "./pages/dashboard/EmailAutomationPage";
 import { RecoveredUsersPage } from "./pages/dashboard/RecoveredUsersPage";
 import { UsersPage } from "./pages/UsersPage";
-import { IntegrationPage } from "./pages/IntegrationPage";
+import IntegrationPage from "./pages/IntegrationPage";
 import { MainLayout } from "@/components/layout/MainLayout";
 
 const queryClient = new QueryClient();

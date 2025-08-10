@@ -1,9 +1,12 @@
+
 import React, { useState, useCallback } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -21,10 +24,13 @@ export const CSVUploadPage = () => {
     setCsvFile(acceptedFiles[0]);
   }, []);
 
-  const { getRootProps, getInputProps, isDragActive } = useDropzone({ onDrop, accept: {
-    'text/csv': ['.csv'],
-    'text/plain': ['.txt'],
-  } })
+  const { getRootProps, getInputProps, isDragActive } = useDropzone({ 
+    onDrop, 
+    accept: {
+      'text/csv': ['.csv'],
+      'text/plain': ['.txt'],
+    } 
+  });
 
   const uploadCSVMutation = useMutation({
     mutationFn: async (file: File) => {
@@ -83,7 +89,7 @@ export const CSVUploadPage = () => {
 
   const CSVUploader = () => (
     <Card>
-      <CardContent>
+      <CardContent className="pt-6">
         <div {...getRootProps()} className="relative border-2 border-dashed rounded-md p-6 flex flex-col items-center justify-center hover:border-primary transition-colors">
           <input {...getInputProps()} />
           {
@@ -125,10 +131,11 @@ export const CSVUploadPage = () => {
 
   interface CSVRecord {
     id: string;
-    file_path: string;
+    filename: string;
     created_at: string;
     status: string;
-    error_message?: string;
+    rows_processed?: number;
+    rows_failed?: number;
   }
 
   const { data: csvHistory = [], isLoading } = useQuery({
@@ -138,7 +145,7 @@ export const CSVUploadPage = () => {
       if (!session) throw new Error("Not logged in");
 
       const { data, error } = await supabase
-        .from('csv_upload_history')
+        .from('csv_uploads')
         .select('*')
         .eq('user_id', session.user.id)
         .order('created_at', { ascending: false })
@@ -151,33 +158,41 @@ export const CSVUploadPage = () => {
 
   const CSVHistoryTable = () => (
     <Card>
-      <CardContent className="space-y-4">
-        <h4 className="text-lg font-semibold">Upload History</h4>
+      <CardHeader>
+        <CardTitle>Upload History</CardTitle>
+      </CardHeader>
+      <CardContent>
         <Table>
           <TableHeader>
             <TableRow>
               <TableHead>File</TableHead>
               <TableHead>Uploaded At</TableHead>
               <TableHead>Status</TableHead>
-              <TableHead>Error Message</TableHead>
+              <TableHead>Processed</TableHead>
+              <TableHead>Failed</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {isLoading ? (
               <TableRow>
-                <TableCell colSpan={4} className="text-center py-4">Loading...</TableCell>
+                <TableCell colSpan={5} className="text-center py-4">Loading...</TableCell>
               </TableRow>
             ) : csvHistory.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={4} className="text-center py-4">No CSV upload history found.</TableCell>
+                <TableCell colSpan={5} className="text-center py-4">No CSV upload history found.</TableCell>
               </TableRow>
             ) : (
               csvHistory.map((record) => (
                 <TableRow key={record.id}>
-                  <TableCell>{record.file_path.split('/').pop()}</TableCell>
+                  <TableCell>{record.filename}</TableCell>
                   <TableCell>{format(new Date(record.created_at), 'MMM d, yyyy h:mm a')}</TableCell>
-                  <TableCell>{record.status}</TableCell>
-                  <TableCell>{record.error_message || 'No Error'}</TableCell>
+                  <TableCell>
+                    <Badge variant={record.status === 'completed' ? 'default' : record.status === 'processing' ? 'secondary' : 'destructive'}>
+                      {record.status}
+                    </Badge>
+                  </TableCell>
+                  <TableCell>{record.rows_processed || 0}</TableCell>
+                  <TableCell>{record.rows_failed || 0}</TableCell>
                 </TableRow>
               ))
             )}

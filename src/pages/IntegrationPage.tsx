@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -81,13 +82,13 @@ const IntegrationGuide = () => {
               Copy the code snippet above.
             </li>
             <li>
-              Paste it into the `<head>` section of your website's HTML, ideally right before the closing `</head>` tag.
+              Paste it into the `&lt;head&gt;` section of your website's HTML, ideally right before the closing `&lt;/head&gt;` tag.
             </li>
             <li>
               Replace `"USER_ID"` with the actual unique identifier for each logged-in user on your site.
             </li>
             <li>
-              Use the `churnaizer('track', 'event_name', { event_properties })` function to track key user actions, like feature usage, page views, etc.
+              Use the `churnaizer('track', 'event_name', {`{`} event_properties {`}`})` function to track key user actions, like feature usage, page views, etc.
             </li>
             <li>
               <Badge variant="secondary">

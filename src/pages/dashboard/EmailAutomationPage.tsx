@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { EmailAutomationDashboard } from "@/components/dashboard/EmailAutomationDashboard";
 import { PageLayout } from '@/components/layout/PageLayout';

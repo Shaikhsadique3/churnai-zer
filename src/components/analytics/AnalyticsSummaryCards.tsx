@@ -6,38 +6,43 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { TrendingUp, DollarSign, Users, Mail } from "lucide-react";
 
-export const AnalyticsSummaryCards = () => {
+interface AnalyticsSummaryCardsProps {
+  filters?: any;
+  isPaidPlan?: boolean;
+}
+
+export const AnalyticsSummaryCards = ({ filters, isPaidPlan }: AnalyticsSummaryCardsProps) => {
   const { user } = useAuth();
 
-  // Fetch MRR data
+  // Fetch MRR data from user_data table
   const { data: mrrData } = useQuery({
     queryKey: ['mrr-data', user?.id],
     queryFn: async () => {
       if (!user?.id) return { currentMrr: 0, previousMrr: 0 };
       
-      const { data: predictions, error } = await supabase
-        .from('predictions')
-        .select('plan_amount')
-        .eq('user_id', user.id);
+      const { data: userData, error } = await supabase
+        .from('user_data')
+        .select('monthly_revenue')
+        .eq('owner_id', user.id);
       
       if (error) throw error;
       
-      const currentMrr = predictions?.reduce((sum, p) => sum + (p.plan_amount || 0), 0) || 0;
+      const currentMrr = userData?.reduce((sum, p) => sum + (p.monthly_revenue || 0), 0) || 0;
       return { currentMrr, previousMrr: currentMrr * 0.85 }; // Mock previous for growth calc
     },
     enabled: !!user?.id,
   });
 
-  // Fetch revenue saved data
+  // Fetch revenue saved data from recovery_logs table
   const { data: revenueSaved } = useQuery({
     queryKey: ['revenue-saved', user?.id],
     queryFn: async () => {
       if (!user?.id) return 0;
       
       const { data: recoveries, error } = await supabase
-        .from('recoveries')
+        .from('recovery_logs')
         .select('revenue_saved')
-        .eq('user_id', user.id);
+        .eq('owner_id', user.id);
       
       if (error) throw error;
       
@@ -46,21 +51,21 @@ export const AnalyticsSummaryCards = () => {
     enabled: !!user?.id,
   });
 
-  // Fetch recovery rate data
+  // Fetch recovery rate data from user_data table
   const { data: recoveryRate } = useQuery({
     queryKey: ['recovery-rate', user?.id],
     queryFn: async () => {
       if (!user?.id) return { rate: 0, recovered: 0, atRisk: 0 };
       
-      const { data: recoveries, error } = await supabase
-        .from('recoveries')
+      const { data: userData, error } = await supabase
+        .from('user_data')
         .select('status')
-        .eq('user_id', user.id);
+        .eq('owner_id', user.id);
       
       if (error) throw error;
       
-      const recovered = recoveries?.filter(r => r.status === 'recovered').length || 0;
-      const atRisk = recoveries?.filter(r => r.status === 'at_risk').length || 0;
+      const recovered = userData?.filter(r => r.status === 'recovered').length || 0;
+      const atRisk = userData?.filter(r => r.status === 'at_risk').length || 0;
       const total = recovered + atRisk;
       const rate = total > 0 ? (recovered / total) * 100 : 0;
       
@@ -69,7 +74,7 @@ export const AnalyticsSummaryCards = () => {
     enabled: !!user?.id,
   });
 
-  // Fetch active users data
+  // Fetch active users data from user_activity table
   const { data: activeUsers } = useQuery({
     queryKey: ['active-users', user?.id],
     queryFn: async () => {
@@ -78,15 +83,15 @@ export const AnalyticsSummaryCards = () => {
       const thirtyDaysAgo = new Date();
       thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
       
-      const { data: events, error } = await supabase
-        .from('events')
+      const { data: activity, error } = await supabase
+        .from('user_activity')
         .select('user_id')
-        .eq('created_by', user.id)
-        .gte('timestamp', thirtyDaysAgo.toISOString());
+        .eq('owner_id', user.id)
+        .gte('created_at', thirtyDaysAgo.toISOString());
       
       if (error) throw error;
       
-      const uniqueUsers = new Set(events?.map(e => e.user_id)).size;
+      const uniqueUsers = new Set(activity?.map(e => e.user_id)).size;
       return { current: uniqueUsers, previous: Math.floor(uniqueUsers * 0.9) };
     },
     enabled: !!user?.id,

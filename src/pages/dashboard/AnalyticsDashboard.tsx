@@ -8,13 +8,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Button } from '@/components/ui/button';
 import { DatePickerWithRange } from '@/components/ui/date-range-picker';
 import { AnalyticsSummaryCards } from '@/components/analytics/AnalyticsSummaryCards';
-import { EngagementTrendsChart } from '@/components/analytics/EngagementTrendsChart';
-import { RevenueTrendsChart } from '@/components/analytics/RevenueTrendsChart';
-import { ChurnRiskDistributionChart } from '@/components/analytics/ChurnRiskDistributionChart';
-import { FeatureUsageChart } from '@/components/analytics/FeatureUsageChart';
-import { EmailCampaignChart } from '@/components/analytics/EmailCampaignChart';
-import { RiskRevenueMatrix } from '@/components/analytics/RiskRevenueMatrix';
-import { ActivityRecoveryMatrix } from '@/components/analytics/ActivityRecoveryMatrix';
 import { TrendingUp, Download, Filter } from 'lucide-react';
 import { addDays, format } from 'date-fns';
 
@@ -182,22 +175,26 @@ export const AnalyticsDashboard = () => {
       {/* Summary Cards */}
       <AnalyticsSummaryCards filters={filters} isPaidPlan={isPaidPlan} />
 
-      {/* Priority Charts - Risk × Revenue Matrix and Feature Usage */}
+      {/* Placeholder for charts */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <RiskRevenueMatrix filters={filters} isPaidPlan={isPaidPlan} />
-        <FeatureUsageChart filters={filters} isPaidPlan={isPaidPlan} />
+        <Card>
+          <CardHeader>
+            <CardTitle>Engagement Trends</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-muted-foreground">Chart coming soon...</p>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardHeader>
+            <CardTitle>Revenue Trends</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-muted-foreground">Chart coming soon...</p>
+          </CardContent>
+        </Card>
       </div>
-
-      {/* Main Charts Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <EngagementTrendsChart filters={filters} isPaidPlan={isPaidPlan} />
-        <RevenueTrendsChart filters={filters} isPaidPlan={isPaidPlan} />
-        <ChurnRiskDistributionChart filters={filters} isPaidPlan={isPaidPlan} />
-        <EmailCampaignChart filters={filters} isPaidPlan={isPaidPlan} />
-      </div>
-
-      {/* Activity Recovery Matrix */}
-      <ActivityRecoveryMatrix filters={filters} isPaidPlan={isPaidPlan} />
     </div>
   );
 };

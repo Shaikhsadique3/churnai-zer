@@ -16,7 +16,7 @@ import Documentation from './pages/Documentation';
 import BlogIndex from './pages/blog/BlogIndex';
 import BlogPost from './pages/blog/BlogPost';
 import { CSVUploadPage } from './pages/dashboard/CSVUploadPage';
-import { EmailAutomationPage } from './pages/EmailAutomationPage';
+import { EmailAutomationPage } from './pages/dashboard/EmailAutomationPage';
 import { AutomationsPage } from './pages/dashboard/AutomationsPage';
 import { PlaybooksBuilderPage } from './pages/dashboard/PlaybooksBuilderPage';
 import AIEmailCampaignsPage from './pages/dashboard/AIEmailCampaignsPage';
@@ -38,14 +38,7 @@ import { DashboardLayout } from './components/layout/DashboardLayout';
 import ProtectedRoute from './components/auth/ProtectedRoute';
 import AdminRoute from './components/auth/AdminRoute';
 import { AnalyticsDashboard } from "@/pages/dashboard/AnalyticsDashboard";
-
-// Create missing components
-const DashboardOverview = () => (
-  <div className="space-y-6">
-    <h1 className="text-2xl font-bold">Dashboard Overview</h1>
-    <p>Welcome to your dashboard. Navigate to Analytics Hub for detailed insights.</p>
-  </div>
-);
+import { DashboardOverview } from "./pages/dashboard/DashboardOverview";
 
 const AdminLogin = () => (
   <div className="min-h-screen flex items-center justify-center">

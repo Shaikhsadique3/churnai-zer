@@ -2,7 +2,7 @@
 import React, { ReactNode } from 'react';
 import { SidebarProvider } from '@/components/ui/sidebar';
 import { AppSidebar } from '@/components/dashboard/AppSidebar';
-import { DashboardHeader } from '@/components/dashboard/DashboardHeader';
+import DashboardHeader from '@/components/dashboard/DashboardHeader';
 
 interface DashboardLayoutProps {
   children: ReactNode;

@@ -1,3 +1,4 @@
+
 import React from "react";
 import {
   Sheet,
@@ -71,23 +72,38 @@ const navigationItems = [
 ];
 
 export const AppSidebar = () => {
-  const { isOpen, onOpen, onClose } = useSidebar();
+  const { open, setOpen } = useSidebar();
 
   return (
     <>
       {/* Desktop Sidebar */}
-      <Sidebar
-        className="hidden md:block border-r border-border"
-        defaultOpen={true}
-        close={onClose}
-        open={isOpen}
-        items={navigationItems}
-      />
+      <Sidebar className="hidden md:block border-r border-border">
+        <div className="p-4">
+          <h2 className="text-lg font-semibold mb-4">Churnaizer</h2>
+          <nav className="space-y-2">
+            {navigationItems.map((item) => {
+              const IconComponent = item.icon;
+              return (
+                <a
+                  key={item.title}
+                  href={item.url}
+                  className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-accent transition-colors"
+                >
+                  <IconComponent className="h-4 w-4" />
+                  <span className="text-sm">{item.title}</span>
+                </a>
+              );
+            })}
+          </nav>
+        </div>
+      </Sidebar>
 
       {/* Mobile Sidebar */}
-      <Sheet open={isOpen} onOpenChange={onClose}>
+      <Sheet open={open} onOpenChange={setOpen}>
         <SheetTrigger asChild>
-          <Menu className="md:hidden p-2 hover:bg-sidebar-accent rounded-md transition-colors" />
+          <button className="md:hidden p-2 hover:bg-sidebar-accent rounded-md transition-colors">
+            <Menu className="h-5 w-5" />
+          </button>
         </SheetTrigger>
         <SheetContent side="left" className="w-full sm:w-64 border-r border-border p-0">
           <SheetHeader className="pl-6 pr-4 pt-4 pb-2.5">
@@ -96,13 +112,24 @@ export const AppSidebar = () => {
               Navigate your dashboard
             </SheetDescription>
           </SheetHeader>
-          <Sidebar
-            className="md:hidden"
-            defaultOpen={false}
-            close={onClose}
-            open={isOpen}
-            items={navigationItems}
-          />
+          <div className="p-4">
+            <nav className="space-y-2">
+              {navigationItems.map((item) => {
+                const IconComponent = item.icon;
+                return (
+                  <a
+                    key={item.title}
+                    href={item.url}
+                    className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-accent transition-colors"
+                    onClick={() => setOpen(false)}
+                  >
+                    <IconComponent className="h-4 w-4" />
+                    <span className="text-sm">{item.title}</span>
+                  </a>
+                );
+              })}
+            </nav>
+          </div>
         </SheetContent>
       </Sheet>
     </>

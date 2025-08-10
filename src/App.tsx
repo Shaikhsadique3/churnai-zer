@@ -1,44 +1,60 @@
+
 import React from 'react';
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
-import { Index } from './pages/Index';
-import { Pricing } from './pages/Pricing';
-import { Auth } from './pages/Auth';
-import { ForgotPassword } from './pages/ForgotPassword';
-import { ResetPassword } from './pages/ResetPassword';
-import { Contact } from './pages/Contact';
-import { Terms } from './pages/Terms';
-import { Privacy } from './pages/Privacy';
-import { RefundPolicy } from './pages/RefundPolicy';
-import { NotFound } from './pages/NotFound';
-import { NotAuthorized } from './pages/NotAuthorized';
-import { Documentation } from './pages/Documentation';
-import { BlogIndex } from './pages/blog/BlogIndex';
-import { BlogPost } from './pages/blog/BlogPost';
-import { DashboardOverview } from './pages/dashboard/DashboardOverview';
+import Index from './pages/Index';
+import Pricing from './pages/Pricing';
+import Auth from './pages/Auth';
+import ForgotPassword from './pages/ForgotPassword';
+import ResetPassword from './pages/ResetPassword';
+import Contact from './pages/Contact';
+import Terms from './pages/Terms';
+import Privacy from './pages/Privacy';
+import RefundPolicy from './pages/RefundPolicy';
+import NotFound from './pages/NotFound';
+import NotAuthorized from './pages/NotAuthorized';
+import Documentation from './pages/Documentation';
+import BlogIndex from './pages/blog/BlogIndex';
+import BlogPost from './pages/blog/BlogPost';
 import { CSVUploadPage } from './pages/dashboard/CSVUploadPage';
-import { EmailAutomationPage } from './pages/dashboard/EmailAutomationPage';
+import { EmailAutomationPage } from './pages/EmailAutomationPage';
 import { AutomationsPage } from './pages/dashboard/AutomationsPage';
 import { PlaybooksBuilderPage } from './pages/dashboard/PlaybooksBuilderPage';
-import { AIEmailCampaignsPage } from './pages/dashboard/AIEmailCampaignsPage';
+import AIEmailCampaignsPage from './pages/dashboard/AIEmailCampaignsPage';
 import { UploadedUsersPage } from './pages/dashboard/UploadedUsersPage';
 import { RecoveredUsersPage } from './pages/dashboard/RecoveredUsersPage';
 import { UserDetailPage } from './pages/dashboard/UserDetailPage';
 import { NotificationsPage } from './pages/dashboard/NotificationsPage';
-import { OnboardingForm } from './pages/dashboard/OnboardingForm';
-import { FounderProfile } from './pages/dashboard/FounderProfile';
-import { FeatureGuide } from './pages/dashboard/FeatureGuide';
-import { DashboardDocumentation } from './pages/dashboard/DashboardDocumentation';
-import { Integration } from './pages/Integration';
-import { AdminLogin } from './pages/admin/AdminLogin';
-import { AdminDashboard } from './pages/admin/AdminDashboard';
-import { AdminAnnouncements } from './pages/admin/AdminAnnouncements';
-import { AdminBlogs } from './pages/admin/AdminBlogs';
-import { AdminInbox } from './pages/admin/AdminInbox';
+import OnboardingForm from './pages/dashboard/OnboardingForm';
+import FounderProfile from './pages/dashboard/FounderProfile';
+import FeatureGuide from './pages/dashboard/FeatureGuide';
+import DashboardDocumentation from './pages/dashboard/DashboardDocumentation';
+import Integration from './pages/Integration';
+import AdminDashboard from './pages/admin/AdminDashboard';
+import AdminAnnouncements from './pages/admin/AdminAnnouncements';
+import AdminBlogs from './pages/admin/AdminBlogs';
+import AdminInbox from './pages/admin/AdminInbox';
 import { AdminLayout } from './components/layout/AdminLayout';
 import { DashboardLayout } from './components/layout/DashboardLayout';
-import { ProtectedRoute } from './components/auth/ProtectedRoute';
-import { AdminRoute } from './components/auth/AdminRoute';
+import ProtectedRoute from './components/auth/ProtectedRoute';
+import AdminRoute from './components/auth/AdminRoute';
 import { AnalyticsDashboard } from "@/pages/dashboard/AnalyticsDashboard";
+
+// Create missing components
+const DashboardOverview = () => (
+  <div className="space-y-6">
+    <h1 className="text-2xl font-bold">Dashboard Overview</h1>
+    <p>Welcome to your dashboard. Navigate to Analytics Hub for detailed insights.</p>
+  </div>
+);
+
+const AdminLogin = () => (
+  <div className="min-h-screen flex items-center justify-center">
+    <div className="text-center">
+      <h1 className="text-2xl font-bold mb-4">Admin Login</h1>
+      <p>Admin authentication coming soon</p>
+    </div>
+  </div>
+);
 
 function App() {
   return (

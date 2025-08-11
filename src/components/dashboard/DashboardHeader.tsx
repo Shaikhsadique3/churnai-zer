@@ -21,6 +21,7 @@ const DashboardHeader = ({ userEmail, onLogout }: DashboardHeaderProps) => {
     
     setIsLoggingOut(true);
     try {
+      // This will redirect to /auth automatically
       await onLogout();
     } catch (error) {
       console.error('Logout failed:', error);

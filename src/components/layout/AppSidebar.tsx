@@ -1,4 +1,3 @@
-
 import { 
   Users, 
   Code,
@@ -68,11 +67,8 @@ export function AppSidebar() {
         description: "Please wait while we sign you out."
       });
 
-      // Perform sign out
+      // Perform sign out (will redirect to /auth automatically)
       await signOut();
-      
-      // Force navigation to home page
-      window.location.href = '/';
       
     } catch (error) {
       console.error('Logout error:', error);
@@ -89,7 +85,7 @@ export function AppSidebar() {
         // Clear local storage as fallback
         localStorage.clear();
         sessionStorage.clear();
-        window.location.href = '/';
+        window.location.href = '/auth';
       } catch (fallbackError) {
         console.error('Fallback logout error:', fallbackError);
         // Last resort - reload page

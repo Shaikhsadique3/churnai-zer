@@ -1,4 +1,3 @@
-
 import React, { ReactNode } from 'react';
 import { SidebarProvider } from '@/components/ui/sidebar';
 import { AppSidebar } from '@/components/dashboard/AppSidebar';
@@ -24,11 +23,8 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) =>
         description: "Please wait while we sign you out."
       });
 
-      // Perform sign out
+      // Perform sign out (will redirect to /auth automatically)
       await signOut();
-      
-      // Force navigation to home page
-      window.location.href = '/';
       
     } catch (error) {
       console.error('Logout error:', error);
@@ -45,7 +41,7 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) =>
         // Clear local storage as fallback
         localStorage.clear();
         sessionStorage.clear();
-        window.location.href = '/';
+        window.location.href = '/auth';
       } catch (fallbackError) {
         console.error('Fallback logout error:', fallbackError);
         // Last resort - reload page

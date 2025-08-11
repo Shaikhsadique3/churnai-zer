@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/AuthContext';
@@ -7,8 +8,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Button } from '@/components/ui/button';
 import { DatePickerWithRange } from '@/components/ui/date-range-picker';
 import { AnalyticsSummaryCards } from '@/components/analytics/AnalyticsSummaryCards';
+import { useToast } from '@/hooks/use-toast';
 import { TrendingUp, Download, Filter } from 'lucide-react';
 import { addDays, format } from 'date-fns';
+import Papa from 'papaparse';
 
 interface DashboardFilters {
   planType: string;
@@ -23,6 +26,8 @@ interface DashboardFilters {
 
 export const AnalyticsDashboard = () => {
   const { user } = useAuth();
+  const { toast } = useToast();
+  const [isExporting, setIsExporting] = useState(false);
   const [filters, setFilters] = useState<DashboardFilters>({
     planType: 'all',
     riskLevel: 'all',
@@ -50,6 +55,24 @@ export const AnalyticsDashboard = () => {
     enabled: !!user?.id,
   });
 
+  // Fetch analytics data for export
+  const { data: analyticsData } = useQuery({
+    queryKey: ['analytics-data', user?.id, filters],
+    queryFn: async () => {
+      if (!user?.id) return [];
+      
+      const { data, error } = await supabase
+        .from('user_data')
+        .select('*')
+        .eq('owner_id', user.id)
+        .eq('is_deleted', false);
+      
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!user?.id,
+  });
+
   const isPaidPlan = userProfile?.revenue_model === 'Pro' || userProfile?.revenue_model === 'Enterprise';
 
   const handleFilterChange = (key: keyof DashboardFilters, value: any) => {
@@ -59,9 +82,121 @@ export const AnalyticsDashboard = () => {
     }));
   };
 
+  const downloadFile = (blob: Blob, filename: string) => {
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = filename;
+    link.style.display = 'none';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
+
+  const exportAsCSV = (data: any[], filename: string) => {
+    const csv = Papa.unparse(data);
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    downloadFile(blob, `${filename}.csv`);
+  };
+
+  const exportAsPDF = async (data: any[], filename: string) => {
+    // Create a simple HTML table for PDF generation
+    const tableHtml = `
+      <html>
+        <head>
+          <title>Analytics Export - ${format(new Date(), 'yyyy-MM-dd')}</title>
+          <style>
+            body { font-family: Arial, sans-serif; margin: 20px; }
+            h1 { color: #333; text-align: center; }
+            table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+            th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+            th { background-color: #f2f2f2; font-weight: bold; }
+            tr:nth-child(even) { background-color: #f9f9f9; }
+            .header-info { text-align: center; margin-bottom: 20px; color: #666; }
+          </style>
+        </head>
+        <body>
+          <h1>Churnaizer Analytics Report</h1>
+          <div class="header-info">
+            <p>Generated on: ${format(new Date(), 'PPP')}</p>
+            <p>Total Records: ${data.length}</p>
+          </div>
+          <table>
+            <thead>
+              <tr>
+                ${Object.keys(data[0] || {}).map(key => `<th>${key.replace(/_/g, ' ').toUpperCase()}</th>`).join('')}
+              </tr>
+            </thead>
+            <tbody>
+              ${data.map(row => `
+                <tr>
+                  ${Object.values(row).map(value => `<td>${value || '-'}</td>`).join('')}
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        </body>
+      </html>
+    `;
+
+    const blob = new Blob([tableHtml], { type: 'text/html' });
+    downloadFile(blob, `${filename}.html`);
+  };
+
   const exportData = async (format: 'csv' | 'pdf') => {
-    // Implementation for data export
-    console.log(`Exporting data as ${format}`);
+    if (!analyticsData || analyticsData.length === 0) {
+      toast({
+        title: "No data to export",
+        description: "There are no analytics records to export.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setIsExporting(true);
+    
+    try {
+      // Prepare export data
+      const exportData = analyticsData.map(record => ({
+        user_id: record.user_id,
+        plan: record.plan,
+        monthly_revenue: record.usage,
+        churn_score: record.churn_score,
+        risk_level: record.risk_level,
+        churn_probability: record.churn_score ? `${(record.churn_score * 100).toFixed(1)}%` : 'N/A',
+        last_login: record.last_login ? format(new Date(record.last_login), 'yyyy-MM-dd') : 'Never',
+        created_at: format(new Date(record.created_at), 'yyyy-MM-dd'),
+        churn_reason: record.churn_reason || 'Not analyzed'
+      }));
+
+      const timestamp = format(new Date(), 'yyyy-MM-dd_HH-mm');
+      const baseFilename = `churnaizer-analytics-${timestamp}`;
+
+      if (format === 'csv') {
+        exportAsCSV(exportData, baseFilename);
+        toast({
+          title: "CSV Export Successful",
+          description: `${exportData.length} records exported successfully.`,
+        });
+      } else {
+        await exportAsPDF(exportData, baseFilename);
+        toast({
+          title: "PDF Export Successful", 
+          description: `${exportData.length} records exported as HTML (open in browser to print as PDF).`,
+        });
+      }
+
+    } catch (error) {
+      console.error('Export error:', error);
+      toast({
+        title: "Export Failed",
+        description: "There was an error exporting your data. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsExporting(false);
+    }
   };
 
   return (
@@ -79,13 +214,21 @@ export const AnalyticsDashboard = () => {
         </div>
         
         <div className="flex items-center gap-2">
-          <Button variant="outline" onClick={() => exportData('csv')}>
+          <Button 
+            variant="outline" 
+            onClick={() => exportData('csv')}
+            disabled={isExporting}
+          >
             <Download className="h-4 w-4 mr-2" />
-            Export CSV
+            {isExporting ? 'Exporting...' : 'Export CSV'}
           </Button>
-          <Button variant="outline" onClick={() => exportData('pdf')}>
+          <Button 
+            variant="outline" 
+            onClick={() => exportData('pdf')}
+            disabled={isExporting}
+          >
             <Download className="h-4 w-4 mr-2" />
-            Export PDF
+            {isExporting ? 'Exporting...' : 'Export PDF'}
           </Button>
         </div>
       </div>

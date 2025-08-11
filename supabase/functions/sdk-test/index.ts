@@ -81,15 +81,11 @@ Deno.serve(async (req) => {
       })
     }
 
-    // Enhanced API key validation with better error logging
+    // Enhanced API key validation using secure hashing
     console.log('Validating API key:', apiKey.substring(0, 10) + '...')
     
-    const { data: apiKeyData, error: apiKeyError } = await supabase
-      .from('api_keys')
-      .select('user_id, is_active, name')
-      .eq('key', apiKey)
-      .eq('is_active', true)
-      .single()
+    const { data: userId, error: apiKeyError } = await supabase
+      .rpc('validate_api_key', { input_key: apiKey })
 
     if (apiKeyError) {
       console.log('API key query error:', {
@@ -100,11 +96,11 @@ Deno.serve(async (req) => {
       })
     }
 
-    if (apiKeyError || !apiKeyData) {
+    if (apiKeyError || !userId) {
       console.log('API key validation failed:', { 
         apiKey: apiKey.substring(0, 10) + '...', 
         error: apiKeyError?.message,
-        found: !!apiKeyData
+        found: !!userId
       })
       
       return new Response(JSON.stringify({ 
@@ -127,8 +123,7 @@ Deno.serve(async (req) => {
       website,
       user_id,
       trace_id: traceId,
-      founder_id: apiKeyData.user_id,
-      api_key_name: apiKeyData.name
+      founder_id: userId
     })
 
     // Log integration to sdk_integrations table
@@ -159,7 +154,7 @@ Deno.serve(async (req) => {
       trace_id: traceId,
       website,
       timestamp: new Date().toISOString(),
-      founder_id: apiKeyData.user_id
+      founder_id: userId
     }
 
     // Include log error if logging failed, but don't block the integration

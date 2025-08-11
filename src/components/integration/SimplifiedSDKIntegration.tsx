@@ -80,21 +80,25 @@ export function SimplifiedSDKIntegration() {
       console.log('Creating API key for user:', user.id);
       
       // Use the database function to generate API key
-      const { data: generatedKey, error: rpcError } = await supabase.rpc('generate_api_key');
+      const { data: keyData, error: rpcError } = await supabase.rpc('generate_api_key');
       
       if (rpcError) {
         console.error('RPC error:', JSON.stringify(rpcError, null, 2));
         throw rpcError;
       }
       
-      console.log('Generated key:', generatedKey);
+      console.log('Generated key data:', keyData);
       
-      // Insert the new API key
+      // Type the keyData as the expected return structure
+      const typedKeyData = keyData as { key: string; hashed_key: string };
+      
+      // Insert the new API key with both plain and hashed versions
       const { error: insertError } = await supabase
         .from('api_keys')
         .insert({
           user_id: user.id,
-          key: generatedKey,
+          key: typedKeyData.key,
+          hashed_key: typedKeyData.hashed_key,
           name: 'Default API Key'
         });
 
@@ -103,8 +107,8 @@ export function SimplifiedSDKIntegration() {
         throw insertError;
       }
       
-      setApiKey(generatedKey);
-      console.log('API key created successfully:', generatedKey);
+      setApiKey(typedKeyData.key);
+      console.log('API key created successfully:', typedKeyData.key);
       
       toast({
         title: "API Key Created",

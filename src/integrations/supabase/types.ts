@@ -50,6 +50,7 @@ export type Database = {
       api_keys: {
         Row: {
           created_at: string | null
+          hashed_key: string
           id: string
           is_active: boolean | null
           key: string
@@ -58,6 +59,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string | null
+          hashed_key: string
           id?: string
           is_active?: boolean | null
           key: string
@@ -66,6 +68,7 @@ export type Database = {
         }
         Update: {
           created_at?: string | null
+          hashed_key?: string
           id?: string
           is_active?: boolean | null
           key?: string
@@ -1354,6 +1357,10 @@ export type Database = {
     Functions: {
       generate_api_key: {
         Args: Record<PropertyKey, never>
+        Returns: Json
+      }
+      hash_api_key: {
+        Args: { api_key: string }
         Returns: string
       }
       is_admin_user: {
@@ -1363,6 +1370,10 @@ export type Database = {
       update_existing_user_insights: {
         Args: Record<PropertyKey, never>
         Returns: undefined
+      }
+      validate_api_key: {
+        Args: { input_key: string }
+        Returns: string
       }
     }
     Enums: {

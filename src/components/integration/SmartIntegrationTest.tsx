@@ -123,11 +123,12 @@ export const SmartIntegrationTest: React.FC = () => {
 
             toast.success(`SDK verified on ${testResult.domain}!`);
 
-            // Log successful integration test
+            // Log successful integration test with encrypted API key
+            // Note: The API key will be automatically encrypted by the database function
             supabase.from("integration_test_results").insert({
               founder_id: user.id,
               domain: testResult.domain,
-              api_key: apiKey,
+              api_key: apiKey, // This will be encrypted by the database
               churn_score: testResult.churnScore,
               risk_level: testResult.riskLevel
             });

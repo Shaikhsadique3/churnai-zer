@@ -643,7 +643,7 @@ export type Database = {
       }
       integration_test_results: {
         Row: {
-          api_key: string
+          api_key: string | null
           churn_score: number | null
           created_at: string
           domain: string
@@ -653,7 +653,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
-          api_key: string
+          api_key?: string | null
           churn_score?: number | null
           created_at?: string
           domain: string
@@ -663,7 +663,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
-          api_key?: string
+          api_key?: string | null
           churn_score?: number | null
           created_at?: string
           domain?: string

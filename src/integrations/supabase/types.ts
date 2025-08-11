@@ -1015,6 +1015,36 @@ export type Database = {
         }
         Relationships: []
       }
+      sdk_integrations: {
+        Row: {
+          api_key_hash: string | null
+          created_at: string
+          id: string
+          timestamp: string
+          trace_id: string
+          user_id: string
+          website: string
+        }
+        Insert: {
+          api_key_hash?: string | null
+          created_at?: string
+          id?: string
+          timestamp?: string
+          trace_id?: string
+          user_id: string
+          website: string
+        }
+        Update: {
+          api_key_hash?: string | null
+          created_at?: string
+          id?: string
+          timestamp?: string
+          trace_id?: string
+          user_id?: string
+          website?: string
+        }
+        Relationships: []
+      }
       smtp_providers: {
         Row: {
           created_at: string

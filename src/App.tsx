@@ -14,6 +14,7 @@ import { EmailAutomationPage } from "./pages/dashboard/EmailAutomationPage";
 import { RecoveredUsersPage } from "./pages/dashboard/RecoveredUsersPage";
 import { UsersPage } from "./pages/UsersPage";
 import IntegrationPage from "./pages/IntegrationPage";
+import ProfilePage from "./pages/ProfilePage";
 import { MainLayout } from "@/components/layout/MainLayout";
 
 const queryClient = new QueryClient();
@@ -38,6 +39,7 @@ const App: React.FC = () => {
                 <Route path="/dashboard/recovered-users" element={<MainLayout><RecoveredUsersPage /></MainLayout>} />
                 <Route path="/users" element={<MainLayout><UsersPage /></MainLayout>} />
                 <Route path="/integration" element={<MainLayout><IntegrationPage /></MainLayout>} />
+                <Route path="/profile" element={<MainLayout><ProfilePage /></MainLayout>} />
                 
                 {/* Redirect any unknown routes to analytics dashboard */}
                 <Route path="*" element={<Navigate to="/dashboard" replace />} />

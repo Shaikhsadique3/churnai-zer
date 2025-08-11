@@ -1,11 +1,11 @@
-
 import { 
   Users, 
   Code,
   Upload,
   Mail,
   CheckCircle,
-  TrendingUp
+  TrendingUp,
+  UserCircle
 } from "lucide-react";
 import { NavLink, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
@@ -26,7 +26,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Logo } from "@/components/ui/logo";
 
-// Updated navigation items - removed automations, ai campaigns, playbooks and replaced overview with analytics hub
+// Updated navigation items with Profile tab restored
 const navigationItems = [
   { title: "Analytics Hub", url: "/dashboard", icon: TrendingUp },
   { title: "Website Integration", url: "/integration", icon: Code },
@@ -34,6 +34,7 @@ const navigationItems = [
   { title: "CSV Upload", url: "/dashboard/csv-upload", icon: Upload },
   { title: "Email Automation", url: "/dashboard/email-automation", icon: Mail },
   { title: "Churn Recovery", url: "/dashboard/recovered-users", icon: CheckCircle },
+  { title: "Profile", url: "/profile", icon: UserCircle },
 ];
 
 export function AppSidebar() {

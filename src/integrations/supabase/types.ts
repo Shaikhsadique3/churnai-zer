@@ -1356,6 +1356,10 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: string
       }
+      is_admin_user: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean
+      }
       update_existing_user_insights: {
         Args: Record<PropertyKey, never>
         Returns: undefined

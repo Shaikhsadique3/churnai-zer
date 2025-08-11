@@ -1,9 +1,9 @@
 /**
  * Churnaizer SDK - JavaScript Library for User Retention & Churn Prediction
- * Version: 1.1.0 - Enhanced with Auto Integration Checks
+ * Version: 1.1.1 - Enhanced with Robust API Key Handling
  * 
  * This SDK helps SaaS founders track user behavior and predict churn risk.
- * Now includes automatic integration verification.
+ * Now includes automatic integration verification with improved reliability.
  * 
  * Usage:
  * <script src="https://cdn.churnaizer.com/churnaizer-sdk.js"></script>
@@ -29,7 +29,7 @@
 (function() {
   'use strict';
 
-  const SDK_VERSION = '1.1.0';
+  const SDK_VERSION = '1.1.1';
   const API_BASE_URL = 'https://ntbkydpgjaswmwruegyl.supabase.co/functions/v1';
   
   // Get debug setting from global config
@@ -47,85 +47,113 @@
     console.error('[Churnaizer SDK Error]', ...args);
   }
 
-  // Auto Integration Check - runs when page loads
+  // Enhanced Auto Integration Check - waits for API key and sends dual headers
   function performAutoIntegrationCheck() {
-    const apiKey = window.__CHURNAIZER_API_KEY__;
+    // Wait for API key to be available (up to 5 seconds)
+    let attempts = 0;
+    const maxAttempts = 50; // 5 seconds with 100ms intervals
     
-    if (!apiKey) {
-      console.warn('[Churnaizer SDK] ⚠️ API key not found. Set window.__CHURNAIZER_API_KEY__ for integration verification.');
-      return;
-    }
+    const checkForApiKey = () => {
+      attempts++;
+      const apiKey = window.__CHURNAIZER_API_KEY__;
+      
+      if (!apiKey) {
+        if (attempts < maxAttempts) {
+          setTimeout(checkForApiKey, 100);
+          return;
+        }
+        console.warn('[Churnaizer SDK] ⚠️ API key not found after 5 seconds. Set window.__CHURNAIZER_API_KEY__ for integration verification.');
+        return;
+      }
 
-    // Don't run check on localhost or development environments
-    if (window.location.hostname === 'localhost' || window.location.hostname.includes('127.0.0.1')) {
-      log('Skipping integration check on localhost');
-      return;
-    }
+      // Don't run check on localhost or development environments
+      if (window.location.hostname === 'localhost' || window.location.hostname.includes('127.0.0.1')) {
+        log('Skipping integration check on localhost');
+        return;
+      }
 
-    try {
-      fetch(`${API_BASE_URL}/sdk-test`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-api-key': apiKey
-        },
-        body: JSON.stringify({
-          test: true,
-          website: window.location.hostname,
-          user_id: window.__CHURNAIZER_USER_ID__ || 'auto_check_' + Date.now()
+      // Log the request details for debugging
+      const requestData = {
+        test: true,
+        website: window.location.hostname,
+        user_id: window.__CHURNAIZER_USER_ID__ || 'auto_check_' + Date.now()
+      };
+
+      log('Starting integration check with API key:', apiKey.substring(0, 10) + '...');
+      log('Request data:', requestData);
+
+      try {
+        fetch(`${API_BASE_URL}/sdk-test`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-api-key': apiKey.trim(), // Send via x-api-key header
+            'Authorization': `Bearer ${apiKey.trim()}`, // Also send via Authorization header
+            'x-sdk-version': SDK_VERSION
+          },
+          body: JSON.stringify(requestData)
         })
-      })
-      .then(response => response.json())
-      .then(data => {
-        if (data && data.status === 'ok') {
-          console.log(`✅ Churnaizer SDK integration confirmed for ${window.location.hostname}`);
-          log('Integration check successful:', data);
+        .then(response => {
+          log('Response status:', response.status);
+          return response.json();
+        })
+        .then(data => {
+          log('Response data:', data);
           
-          // Store successful check status
+          if (data && data.status === 'ok') {
+            console.log(`✅ Churnaizer SDK integration confirmed for ${window.location.hostname}`);
+            log('Integration check successful:', data);
+            
+            // Store successful check status
+            try {
+              localStorage.setItem('churnaizer_integration_status', JSON.stringify({
+                status: 'success',
+                timestamp: new Date().toISOString(),
+                trace_id: data.trace_id
+              }));
+            } catch (e) {
+              // localStorage might be disabled
+            }
+          } else {
+            console.warn('⚠️ Churnaizer SDK integration check failed:', data);
+            logError('Integration check failed:', data);
+            
+            // Store failed check status
+            try {
+              localStorage.setItem('churnaizer_integration_status', JSON.stringify({
+                status: 'error',
+                timestamp: new Date().toISOString(),
+                error: data.message || 'Unknown error',
+                code: data.code
+              }));
+            } catch (e) {
+              // localStorage might be disabled
+            }
+          }
+        })
+        .catch(error => {
+          console.error('❌ SDK integration check error:', error);
+          logError('Integration check network error:', error);
+          
+          // Store network error status
           try {
             localStorage.setItem('churnaizer_integration_status', JSON.stringify({
-              status: 'success',
+              status: 'network_error',
               timestamp: new Date().toISOString(),
-              trace_id: data.trace_id
+              error: error.message
             }));
           } catch (e) {
             // localStorage might be disabled
           }
-        } else {
-          console.warn('⚠️ Churnaizer SDK integration check failed:', data);
-          logError('Integration check failed:', data);
-          
-          // Store failed check status
-          try {
-            localStorage.setItem('churnaizer_integration_status', JSON.stringify({
-              status: 'error',
-              timestamp: new Date().toISOString(),
-              error: data.message || 'Unknown error'
-            }));
-          } catch (e) {
-            // localStorage might be disabled
-          }
-        }
-      })
-      .catch(error => {
-        console.error('❌ SDK integration check error:', error);
-        logError('Integration check network error:', error);
-        
-        // Store network error status
-        try {
-          localStorage.setItem('churnaizer_integration_status', JSON.stringify({
-            status: 'network_error',
-            timestamp: new Date().toISOString(),
-            error: error.message
-          }));
-        } catch (e) {
-          // localStorage might be disabled
-        }
-      });
-    } catch (e) {
-      console.error('❌ SDK auto-check failed to run:', e);
-      logError('Auto-check execution error:', e);
-    }
+        });
+      } catch (e) {
+        console.error('❌ SDK auto-check failed to run:', e);
+        logError('Auto-check execution error:', e);
+      }
+    };
+
+    // Start checking for API key
+    checkForApiKey();
   }
 
   // Main Churnaizer SDK Object
@@ -149,7 +177,7 @@
       }
     },
 
-    // Manual integration check
+    // Manual integration check with enhanced headers
     checkIntegration: function(callback) {
       const apiKey = window.__CHURNAIZER_API_KEY__;
       
@@ -160,17 +188,23 @@
         return;
       }
 
+      const requestData = {
+        test: true,
+        website: window.location.hostname,
+        user_id: window.__CHURNAIZER_USER_ID__ || 'manual_check_' + Date.now()
+      };
+
+      log('Manual integration check with API key:', apiKey.substring(0, 10) + '...');
+
       fetch(`${API_BASE_URL}/sdk-test`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'x-api-key': apiKey
+          'x-api-key': apiKey.trim(),
+          'Authorization': `Bearer ${apiKey.trim()}`,
+          'x-sdk-version': SDK_VERSION
         },
-        body: JSON.stringify({
-          test: true,
-          website: window.location.hostname,
-          user_id: window.__CHURNAIZER_USER_ID__ || 'manual_check_' + Date.now()
-        })
+        body: JSON.stringify(requestData)
       })
       .then(response => response.json())
       .then(data => {
@@ -181,7 +215,7 @@
       });
     },
 
-    // Main tracking function
+    // Main tracking function with enhanced headers
     track: function(userData, apiKey, callback) {
       // Validate required parameters
       if (!userData || !apiKey) {
@@ -452,7 +486,8 @@
       
       xhr.open('POST', `${API_BASE_URL}/sdk-track`, true);
       xhr.setRequestHeader('Content-Type', 'application/json');
-      xhr.setRequestHeader('x-churnaizer-api-key', apiKey);
+      xhr.setRequestHeader('x-churnaizer-api-key', apiKey.trim());
+      xhr.setRequestHeader('Authorization', `Bearer ${apiKey.trim()}`);
       xhr.setRequestHeader('X-SDK-Version', SDK_VERSION);
       
       xhr.onreadystatechange = function() {
@@ -514,7 +549,8 @@
       
       xhr.open('POST', `${API_BASE_URL}/sdk-event`, true);
       xhr.setRequestHeader('Content-Type', 'application/json');
-      xhr.setRequestHeader('X-API-Key', apiKey);
+      xhr.setRequestHeader('X-API-Key', apiKey.trim());
+      xhr.setRequestHeader('Authorization', `Bearer ${apiKey.trim()}`);
       xhr.setRequestHeader('X-SDK-Version', SDK_VERSION);
       
       xhr.onreadystatechange = function() {
@@ -831,5 +867,5 @@
     setTimeout(performAutoIntegrationCheck, 100);
   }
 
-  log('Churnaizer SDK v' + SDK_VERSION + ' loaded successfully with auto integration checks');
+  log('Churnaizer SDK v' + SDK_VERSION + ' loaded successfully with enhanced API key handling');
 })();

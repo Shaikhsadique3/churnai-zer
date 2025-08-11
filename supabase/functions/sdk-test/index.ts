@@ -3,7 +3,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-api-key',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-api-key, x-sdk-version',
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
 }
 
@@ -29,14 +29,21 @@ Deno.serve(async (req) => {
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
     const supabase = createClient(supabaseUrl, supabaseKey)
 
-    // Get API key from headers (x-api-key or Authorization Bearer)
-    let apiKey = req.headers.get('x-api-key')
+    // Enhanced API key extraction with trimming and multiple header support
+    let apiKey = req.headers.get('x-api-key')?.trim()
     if (!apiKey) {
       const authHeader = req.headers.get('authorization')
       if (authHeader && authHeader.startsWith('Bearer ')) {
-        apiKey = authHeader.substring(7)
+        apiKey = authHeader.substring(7).trim()
       }
     }
+
+    console.log('API Key extraction:', {
+      xApiKey: req.headers.get('x-api-key')?.substring(0, 10) + '...',
+      authHeader: req.headers.get('authorization')?.substring(0, 20) + '...',
+      extractedKey: apiKey?.substring(0, 10) + '...',
+      sdkVersion: req.headers.get('x-sdk-version')
+    })
 
     if (!apiKey) {
       return new Response(JSON.stringify({ 
@@ -74,23 +81,39 @@ Deno.serve(async (req) => {
       })
     }
 
-    // Validate API key against api_keys table
+    // Enhanced API key validation with better error logging
+    console.log('Validating API key:', apiKey.substring(0, 10) + '...')
+    
     const { data: apiKeyData, error: apiKeyError } = await supabase
       .from('api_keys')
-      .select('user_id, is_active')
+      .select('user_id, is_active, name')
       .eq('key', apiKey)
       .eq('is_active', true)
       .single()
 
+    if (apiKeyError) {
+      console.log('API key query error:', {
+        error: apiKeyError.message,
+        code: apiKeyError.code,
+        details: apiKeyError.details,
+        hint: apiKeyError.hint
+      })
+    }
+
     if (apiKeyError || !apiKeyData) {
       console.log('API key validation failed:', { 
         apiKey: apiKey.substring(0, 10) + '...', 
-        error: apiKeyError?.message 
+        error: apiKeyError?.message,
+        found: !!apiKeyData
       })
       
       return new Response(JSON.stringify({ 
         code: 401,
-        message: 'Missing or invalid API key' 
+        message: 'Missing or invalid API key',
+        debug: {
+          keyPrefix: apiKey.substring(0, 10) + '...',
+          errorMessage: apiKeyError?.message || 'Key not found'
+        }
       }), {
         status: 401,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -104,7 +127,8 @@ Deno.serve(async (req) => {
       website,
       user_id,
       trace_id: traceId,
-      founder_id: apiKeyData.user_id
+      founder_id: apiKeyData.user_id,
+      api_key_name: apiKeyData.name
     })
 
     // Log integration to sdk_integrations table
@@ -134,7 +158,8 @@ Deno.serve(async (req) => {
       message: 'Integration confirmed',
       trace_id: traceId,
       website,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
+      founder_id: apiKeyData.user_id
     }
 
     // Include log error if logging failed, but don't block the integration
@@ -151,7 +176,8 @@ Deno.serve(async (req) => {
     console.error('SDK test error:', error)
     return new Response(JSON.stringify({ 
       code: 500,
-      message: 'Internal server error'
+      message: 'Internal server error',
+      debug: error.message
     }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },

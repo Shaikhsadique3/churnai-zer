@@ -611,6 +611,36 @@ export type Database = {
         }
         Relationships: []
       }
+      integration_settings_audit: {
+        Row: {
+          action: string
+          changed_at: string | null
+          changed_fields: Json | null
+          id: string
+          ip_address: unknown | null
+          user_agent: string | null
+          user_id: string
+        }
+        Insert: {
+          action: string
+          changed_at?: string | null
+          changed_fields?: Json | null
+          id?: string
+          ip_address?: unknown | null
+          user_agent?: string | null
+          user_id: string
+        }
+        Update: {
+          action?: string
+          changed_at?: string | null
+          changed_fields?: Json | null
+          id?: string
+          ip_address?: unknown | null
+          user_agent?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       integration_test_results: {
         Row: {
           api_key: string
@@ -1355,6 +1385,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      encrypt_sensitive_data: {
+        Args: { data: string }
+        Returns: string
+      }
       generate_api_key: {
         Args: Record<PropertyKey, never>
         Returns: Json
@@ -1374,6 +1408,10 @@ export type Database = {
       validate_api_key: {
         Args: { input_key: string }
         Returns: string
+      }
+      verify_encrypted_credential: {
+        Args: { stored_encrypted: string; input_plain: string }
+        Returns: boolean
       }
     }
     Enums: {

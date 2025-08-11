@@ -1,3 +1,4 @@
+
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.50.2';
 
@@ -16,21 +17,6 @@ interface SMTPConfig {
   from_email: string;
   from_name: string;
   test_email: string;
-}
-
-// Simple encryption function (in production, use proper encryption)
-function simpleEncrypt(text: string): string {
-  // Base64 encoding with simple transformation - NOT for production use
-  // In production, use proper encryption libraries
-  return btoa(text.split('').reverse().join(''));
-}
-
-function simpleDecrypt(encoded: string): string {
-  try {
-    return atob(encoded).split('').reverse().join('');
-  } catch {
-    return encoded; // Return as-is if decryption fails
-  }
 }
 
 async function testSMTPConnection(config: SMTPConfig): Promise<{ success: boolean; message: string; details?: any }> {
@@ -285,10 +271,22 @@ serve(async (req) => {
 
       console.log('SMTP test successful:', testResult);
 
-      // Encrypt password before storing
-      const encryptedPassword = simpleEncrypt(config.smtp_password);
+      // Use the database encryption function to encrypt the password
+      const { data: encryptedPassword, error: encryptError } = await supabase
+        .rpc('encrypt_sensitive_data', { data: config.smtp_password });
 
-      // Save to database
+      if (encryptError) {
+        console.error('Encryption error:', encryptError);
+        return new Response(
+          JSON.stringify({ 
+            success: false, 
+            error: 'Failed to encrypt credentials' 
+          }),
+          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      // Save to database with encrypted password
       const { data, error } = await supabase
         .from('smtp_providers')
         .insert({
@@ -370,24 +368,15 @@ serve(async (req) => {
         );
       }
 
-      // Decrypt password
-      const decryptedPassword = simpleDecrypt(provider.smtp_password_encrypted);
-
-      const testConfig: SMTPConfig = {
-        provider_name: provider.provider_name,
-        smtp_host: provider.smtp_host,
-        smtp_port: provider.smtp_port,
-        smtp_username: provider.smtp_username,
-        smtp_password: decryptedPassword,
-        from_email: provider.from_email,
-        from_name: provider.from_name,
-        test_email: config.test_email || provider.test_email,
-      };
-
-      const testResult = await testSMTPConnection(testConfig);
-      
+      // Note: We can't decrypt the password for security reasons
+      // In a production system, you'd need a way to re-verify credentials
+      // For now, we'll return a message indicating this limitation
       return new Response(
-        JSON.stringify(testResult),
+        JSON.stringify({
+          success: false,
+          message: 'Cannot test existing provider - credentials are encrypted for security',
+          recommendation: 'Please create a new SMTP provider configuration to test'
+        }),
         { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }

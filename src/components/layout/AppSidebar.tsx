@@ -1,3 +1,4 @@
+
 import { 
   Users, 
   Code,
@@ -5,10 +6,13 @@ import {
   Mail,
   CheckCircle,
   TrendingUp,
-  UserCircle
+  UserCircle,
+  LogOut
 } from "lucide-react";
 import { NavLink, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
+import { useState } from "react";
+import { useToast } from "@/hooks/use-toast";
 
 import {
   Sidebar,
@@ -41,6 +45,8 @@ export function AppSidebar() {
   const { open, isMobile } = useSidebar();
   const location = useLocation();
   const { user, signOut } = useAuth();
+  const { toast } = useToast();
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
   const currentPath = location.pathname;
 
   const isActive = (path: string) => {
@@ -48,6 +54,50 @@ export function AppSidebar() {
       return currentPath === "/dashboard";
     }
     return currentPath === path || currentPath.startsWith(path);
+  };
+
+  const handleSignOut = async () => {
+    if (isLoggingOut) return; // Prevent double-clicks
+    
+    setIsLoggingOut(true);
+    
+    try {
+      // Show loading toast
+      toast({
+        title: "Signing out...",
+        description: "Please wait while we sign you out."
+      });
+
+      // Perform sign out
+      await signOut();
+      
+      // Force navigation to home page
+      window.location.href = '/';
+      
+    } catch (error) {
+      console.error('Logout error:', error);
+      
+      // Show error toast
+      toast({
+        title: "Sign out failed",
+        description: "There was an error signing you out. Please try again.",
+        variant: "destructive"
+      });
+      
+      // Force sign out even if error occurs
+      try {
+        // Clear local storage as fallback
+        localStorage.clear();
+        sessionStorage.clear();
+        window.location.href = '/';
+      } catch (fallbackError) {
+        console.error('Fallback logout error:', fallbackError);
+        // Last resort - reload page
+        window.location.reload();
+      }
+    } finally {
+      setIsLoggingOut(false);
+    }
   };
 
   return (
@@ -122,10 +172,12 @@ export function AppSidebar() {
           <Button 
             variant="ghost" 
             size="sm" 
-            onClick={signOut}
-            className="w-full text-sm text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground h-10"
+            onClick={handleSignOut}
+            disabled={isLoggingOut}
+            className="w-full text-sm text-sidebar-foreground hover:bg-destructive hover:text-destructive-foreground h-10 transition-all duration-200"
           >
-            Sign Out
+            <LogOut className={`h-4 w-4 mr-2 ${isLoggingOut ? 'animate-spin' : ''}`} />
+            {isLoggingOut ? 'Signing out...' : 'Sign Out'}
           </Button>
         )}
       </SidebarFooter>

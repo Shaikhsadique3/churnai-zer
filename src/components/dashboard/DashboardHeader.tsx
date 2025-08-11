@@ -8,12 +8,26 @@ import { NotificationBell } from "@/components/common/NotificationBell";
 
 interface DashboardHeaderProps {
   userEmail: string;
-  onLogout: () => void;
+  onLogout: () => Promise<void>;
 }
 
 const DashboardHeader = ({ userEmail, onLogout }: DashboardHeaderProps) => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
   const isMobile = useIsMobile();
+
+  const handleLogoutClick = async () => {
+    if (isLoggingOut) return; // Prevent double-clicks
+    
+    setIsLoggingOut(true);
+    try {
+      await onLogout();
+    } catch (error) {
+      console.error('Logout failed:', error);
+    } finally {
+      setIsLoggingOut(false);
+    }
+  };
 
   return (
     <header className="bg-card border-b border-border shadow-sm sticky top-0 z-50">
@@ -32,9 +46,15 @@ const DashboardHeader = ({ userEmail, onLogout }: DashboardHeaderProps) => {
               Welcome, {userEmail}
             </span>
             <NotificationBell />
-            <Button variant="outline" size="sm" onClick={onLogout}>
-              <LogOut className="h-4 w-4 mr-2" />
-              Logout
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={handleLogoutClick}
+              disabled={isLoggingOut}
+              className="transition-all duration-200 hover:bg-destructive hover:text-destructive-foreground"
+            >
+              <LogOut className={`h-4 w-4 mr-2 ${isLoggingOut ? 'animate-spin' : ''}`} />
+              {isLoggingOut ? 'Signing out...' : 'Logout'}
             </Button>
           </div>
 
@@ -64,11 +84,12 @@ const DashboardHeader = ({ userEmail, onLogout }: DashboardHeaderProps) => {
               <Button 
                 variant="outline" 
                 size="sm" 
-                onClick={onLogout}
-                className="w-full justify-start"
+                onClick={handleLogoutClick}
+                disabled={isLoggingOut}
+                className="w-full justify-start transition-all duration-200 hover:bg-destructive hover:text-destructive-foreground"
               >
-                <LogOut className="h-4 w-4 mr-2" />
-                Logout
+                <LogOut className={`h-4 w-4 mr-2 ${isLoggingOut ? 'animate-spin' : ''}`} />
+                {isLoggingOut ? 'Signing out...' : 'Logout'}
               </Button>
             </div>
           </div>

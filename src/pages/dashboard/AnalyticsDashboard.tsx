@@ -144,7 +144,7 @@ export const AnalyticsDashboard = () => {
     downloadFile(blob, `${filename}.html`);
   };
 
-  const exportData = async (format: 'csv' | 'pdf') => {
+  const exportData = async (exportFormat: 'csv' | 'pdf') => {
     if (!analyticsData || analyticsData.length === 0) {
       toast({
         title: "No data to export",
@@ -158,7 +158,7 @@ export const AnalyticsDashboard = () => {
     
     try {
       // Prepare export data
-      const exportData = analyticsData.map(record => ({
+      const preparedExportData = analyticsData.map(record => ({
         user_id: record.user_id,
         plan: record.plan,
         monthly_revenue: record.usage,
@@ -173,17 +173,17 @@ export const AnalyticsDashboard = () => {
       const timestamp = format(new Date(), 'yyyy-MM-dd_HH-mm');
       const baseFilename = `churnaizer-analytics-${timestamp}`;
 
-      if (format === 'csv') {
-        exportAsCSV(exportData, baseFilename);
+      if (exportFormat === 'csv') {
+        exportAsCSV(preparedExportData, baseFilename);
         toast({
           title: "CSV Export Successful",
-          description: `${exportData.length} records exported successfully.`,
+          description: `${preparedExportData.length} records exported successfully.`,
         });
       } else {
-        await exportAsPDF(exportData, baseFilename);
+        await exportAsPDF(preparedExportData, baseFilename);
         toast({
           title: "PDF Export Successful", 
-          description: `${exportData.length} records exported as HTML (open in browser to print as PDF).`,
+          description: `${preparedExportData.length} records exported as HTML (open in browser to print as PDF).`,
         });
       }
 

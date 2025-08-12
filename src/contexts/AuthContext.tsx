@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
@@ -90,10 +89,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           setSession(session);
           setUser(session.user);
           
-          // Only redirect to dashboard if we're on auth page
+          // For new signups, redirect to upgrade page to choose plan
+          // For existing users, redirect to dashboard
           const currentPath = window.location.pathname;
           if (currentPath === '/auth' || currentPath === '/') {
-            window.location.href = '/dashboard';
+            // Check if this is a new user by looking at created_at
+            const userCreatedAt = new Date(session.user.created_at);
+            const now = new Date();
+            const timeDiff = now.getTime() - userCreatedAt.getTime();
+            const isNewUser = timeDiff < 60000; // Less than 1 minute ago
+            
+            if (isNewUser) {
+              // New user - redirect to upgrade page to choose their plan
+              window.location.href = '/dashboard/upgrade';
+            } else {
+              // Existing user - redirect to dashboard
+              window.location.href = '/dashboard';
+            }
           }
         } else if (session) {
           // Token refreshed or other auth events
@@ -152,7 +164,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         email,
         password,
         options: {
-          emailRedirectTo: `${window.location.origin}/dashboard`
+          emailRedirectTo: `${window.location.origin}/dashboard/upgrade`
         }
       });
       

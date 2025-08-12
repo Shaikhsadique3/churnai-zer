@@ -37,7 +37,7 @@ export interface UserCredits {
 }
 
 export const useSubscription = () => {
-  const { user } = useAuth();
+  const { user, session } = useAuth();
   const { toast } = useToast();
   const [plans, setPlans] = useState<SubscriptionPlan[]>([]);
   const [subscription, setSubscription] = useState<UserSubscription | null>(null);
@@ -45,10 +45,16 @@ export const useSubscription = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (user) {
+    if (user && session) {
       fetchData();
+    } else if (!user) {
+      // Reset state when user logs out
+      setPlans([]);
+      setSubscription(null);
+      setCredits(null);
+      setLoading(false);
     }
-  }, [user]);
+  }, [user, session]);
 
   const fetchData = async () => {
     try {

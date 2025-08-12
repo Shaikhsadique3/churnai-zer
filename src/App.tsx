@@ -1,5 +1,5 @@
 
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate, Outlet } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AuthProvider } from '@/contexts/AuthContext';
 import { Toaster } from '@/components/ui/sonner';
@@ -28,7 +28,7 @@ import IntegrationPage from '@/pages/IntegrationPage';
 import { AnalyticsDashboard } from '@/pages/dashboard/AnalyticsDashboard';
 import { AutomationsPage } from '@/pages/dashboard/AutomationsPage';
 import { PlaybooksBuilderPage } from '@/pages/dashboard/PlaybooksBuilderPage';
-import { AIEmailCampaignsPage } from '@/pages/dashboard/AIEmailCampaignsPage';
+import AIEmailCampaignsPage from '@/pages/dashboard/AIEmailCampaignsPage';
 import { UserDetailPage } from '@/pages/dashboard/UserDetailPage';
 import { NotificationsPage } from '@/pages/dashboard/NotificationsPage';
 import FeatureGuide from '@/pages/dashboard/FeatureGuide';
@@ -87,7 +87,9 @@ function App() {
             {/* Protected dashboard routes */}
             <Route path="/dashboard" element={
               <PrivateRoute>
-                <DashboardLayout />
+                <DashboardLayout>
+                  <Outlet />
+                </DashboardLayout>
               </PrivateRoute>
             }>
               <Route index element={<DashboardOverview />} />

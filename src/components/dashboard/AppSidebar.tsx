@@ -10,6 +10,7 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarHeader,
+  useSidebar,
 } from "@/components/ui/sidebar"
 import { 
   BarChart3, 
@@ -20,7 +21,8 @@ import {
   UserCheck, 
   Book,
   Crown,
-  Zap
+  Zap,
+  Menu
 } from "lucide-react"
 import { Link, useLocation } from "react-router-dom"
 import { Logo } from "@/components/ui/logo"
@@ -28,6 +30,7 @@ import { AccountSection } from "@/components/dashboard/AccountSection"
 import { useSubscription } from "@/hooks/useSubscription"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
+import { useIsMobile } from "@/hooks/use-mobile"
 
 const menuItems = [
   {
@@ -69,18 +72,36 @@ const menuItems = [
 
 export function AppSidebar() {
   const location = useLocation()
+  const isMobile = useIsMobile()
+  const { toggleSidebar } = useSidebar()
   const { credits, getCurrentPlan, isFreePlan, getUsagePercentage } = useSubscription()
   
   const currentPlan = getCurrentPlan()
   const usagePercentage = getUsagePercentage()
 
   return (
-    <Sidebar>
+    <Sidebar 
+      collapsible={isMobile ? "offcanvas" : "none"}
+      className={`${isMobile ? '' : 'border-r border-sidebar-border fixed left-0 top-0 h-screen w-[280px] z-30'}`}
+    >
       <SidebarHeader className="border-b border-sidebar-border p-4">
-        <Link to="/dashboard" className="flex items-center space-x-2">
-          <Logo size="sm" />
-          <h1 className="text-lg font-semibold text-sidebar-foreground">Churnaizer</h1>
-        </Link>
+        <div className="flex items-center justify-between">
+          <Link to="/dashboard" className="flex items-center space-x-2">
+            <Logo size="sm" />
+            <h1 className="text-lg font-semibold text-sidebar-foreground">Churnaizer</h1>
+          </Link>
+          {/* Mobile menu toggle */}
+          {isMobile && (
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={toggleSidebar}
+              className="md:hidden"
+            >
+              <Menu className="h-4 w-4" />
+            </Button>
+          )}
+        </div>
       </SidebarHeader>
 
       <SidebarContent>

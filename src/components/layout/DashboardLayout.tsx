@@ -19,10 +19,19 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) =>
   };
 
   return (
-    <SidebarProvider>
+    <SidebarProvider defaultOpen={true}>
       <div className="min-h-screen flex w-full bg-background">
-        <AppSidebar />
-        <div className="flex-1 flex flex-col overflow-hidden">
+        {/* Fixed sidebar on desktop, collapsible on mobile */}
+        <div className="hidden md:block md:w-[280px] md:flex-shrink-0">
+          <AppSidebar />
+        </div>
+        
+        {/* Mobile sidebar - shown as overlay */}
+        <div className="md:hidden">
+          <AppSidebar />
+        </div>
+        
+        <div className="flex-1 flex flex-col overflow-hidden md:ml-0">
           <DashboardHeader 
             userEmail={user?.email || ''} 
             onLogout={handleLogout} 

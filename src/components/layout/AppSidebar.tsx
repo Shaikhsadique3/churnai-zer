@@ -30,7 +30,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Logo } from "@/components/ui/logo";
 
-// Updated navigation items with Profile tab restored
+// Navigation items
 const navigationItems = [
   { title: "Analytics Hub", url: "/dashboard", icon: TrendingUp },
   { title: "Website Integration", url: "/integration", icon: Code },
@@ -57,12 +57,12 @@ export function AppSidebar() {
   };
 
   const handleSignOut = async () => {
-    if (isLoggingOut) return; // Prevent double-clicks
+    if (isLoggingOut) return;
     
     setIsLoggingOut(true);
     
     try {
-      await secureLogout(true); // Show toast notifications
+      await secureLogout(true);
     } catch (error) {
       console.error('Logout error:', error);
     } finally {

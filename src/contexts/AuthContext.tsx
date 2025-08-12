@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
@@ -7,6 +8,7 @@ interface AuthContextType {
   user: User | null;
   session: Session | null;
   loading: boolean;
+  isAuthenticated: boolean;
   setUser: (user: User | null) => void;
   setSession: (session: Session | null) => void;
   signIn: (email: string, password: string) => Promise<{ error: any }>;
@@ -31,67 +33,107 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
-  const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const [authInitialized, setAuthInitialized] = useState(false);
+
+  const isAuthenticated = !!session && !!user;
 
   useEffect(() => {
-    // Set up auth state listener
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        console.log('Auth state changed:', event, session?.user?.id);
+    let mounted = true;
+
+    const initAuth = async () => {
+      try {
+        // Get initial session
+        const { data: { session: initialSession }, error } = await supabase.auth.getSession();
         
-        if (event === 'SIGNED_OUT' || !session) {
-          // Ensure complete cleanup on sign out
+        if (error) {
+          console.error('Error getting session:', error);
+          cleanupAuthState();
+        }
+
+        if (mounted) {
+          setSession(initialSession);
+          setUser(initialSession?.user ?? null);
+          setAuthInitialized(true);
+          setLoading(false);
+        }
+      } catch (error) {
+        console.error('Auth initialization error:', error);
+        if (mounted) {
           cleanupAuthState();
           setSession(null);
           setUser(null);
+          setAuthInitialized(true);
           setLoading(false);
+        }
+      }
+    };
+
+    // Set up auth state listener
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        console.log('Auth state changed:', event, session?.user?.id);
+        
+        if (!mounted) return;
+
+        if (event === 'SIGNED_OUT' || !session) {
+          // Complete cleanup on sign out
+          cleanupAuthState();
+          setSession(null);
+          setUser(null);
           
-          // Only redirect if we're not already logging out
-          if (!isLoggingOut && window.location.pathname !== '/auth' && window.location.pathname !== '/') {
-            console.log('🔄 Auth state changed to signed out, redirecting to /auth');
-            window.location.href = '/auth';
+          // Only redirect if we're not already on a public route
+          const currentPath = window.location.pathname;
+          if (currentPath !== '/' && currentPath !== '/auth') {
+            window.location.href = '/';
           }
         } else if (event === 'SIGNED_IN' && session) {
           setSession(session);
           setUser(session.user);
-          setLoading(false);
           
-          // Only redirect to dashboard if we're on auth page and not logging out
-          if (!isLoggingOut && window.location.pathname === '/auth') {
-            console.log('🔄 Auth state changed to signed in, redirecting to /dashboard');
+          // Only redirect to dashboard if we're on auth page
+          const currentPath = window.location.pathname;
+          if (currentPath === '/auth' || currentPath === '/') {
             window.location.href = '/dashboard';
           }
-        } else {
+        } else if (session) {
+          // Token refreshed or other auth events
           setSession(session);
           setUser(session?.user ?? null);
+        }
+        
+        if (!authInitialized) {
+          setAuthInitialized(true);
           setLoading(false);
         }
       }
     );
 
-    // Get initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      setLoading(false);
-    });
+    initAuth();
 
-    return () => subscription.unsubscribe();
-  }, [isLoggingOut]);
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+    };
+  }, [authInitialized]);
 
   const signIn = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
-    return { error };
+    try {
+      setLoading(true);
+      const { error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+      return { error };
+    } finally {
+      setLoading(false);
+    }
   };
 
   const signInWithGoogle = async () => {
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: `${window.location.origin}/integration`,
+        redirectTo: `${window.location.origin}/dashboard`,
         queryParams: {
           access_type: 'offline',
           prompt: 'consent',
@@ -104,12 +146,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const signUp = async (email: string, password: string) => {
     try {
       console.log('Starting signup process for:', email);
+      setLoading(true);
       
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
-          emailRedirectTo: `${window.location.origin}/integration`
+          emailRedirectTo: `${window.location.origin}/dashboard`
         }
       });
       
@@ -156,44 +199,40 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     } catch (err) {
       console.error('Network error during signup:', err);
       return { error: { message: 'Network error: Please check your internet connection and try again.' } };
+    } finally {
+      setLoading(false);
     }
   };
 
   const signOut = async () => {
     try {
-      console.log('🔄 Starting enhanced signOut...');
+      console.log('🔄 Starting signOut...');
+      setLoading(true);
       
-      // Set logging out flag to prevent auto-redirects
-      setIsLoggingOut(true);
-      
-      // Clear all auth-related data from localStorage first
+      // Clean up auth state first
       cleanupAuthState();
       
-      // Sign out from Supabase with global scope
+      // Sign out from Supabase
       await supabase.auth.signOut({ scope: 'global' });
       
-      // Force a clean state
+      // Clear local state
       setSession(null);
       setUser(null);
       
-      console.log('✅ Enhanced signOut completed');
+      console.log('✅ SignOut completed successfully');
       
-      // Redirect to auth page after a brief delay
-      setTimeout(() => {
-        setIsLoggingOut(false);
-        window.location.href = '/auth';
-      }, 500);
+      // Redirect to landing page
+      window.location.href = '/';
       
     } catch (error) {
       console.error('Sign out error:', error);
-      // Even if signOut fails, clear local state and redirect to auth
+      // Even if signOut fails, clear local state and redirect
       cleanupAuthState();
       setSession(null);
       setUser(null);
-      setTimeout(() => {
-        setIsLoggingOut(false);
-        window.location.href = '/auth';
-      }, 500);
+      window.location.href = '/';
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -243,6 +282,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     user,
     session,
     loading,
+    isAuthenticated,
     setUser,
     setSession,
     signIn,

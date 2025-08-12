@@ -18,7 +18,7 @@ import NotAuthorized from '@/pages/NotAuthorized';
 import AdminLogin from '@/pages/AdminLogin';
 import AdminPanel from '@/pages/AdminPanel';
 import ProfilePage from '@/pages/ProfilePage';
-import { DashboardOverview } from '@/pages/dashboard/DashboardOverview';
+import DashboardOverview from '@/pages/dashboard/DashboardOverview';
 import { CSVUploadPage } from '@/pages/dashboard/CSVUploadPage';
 import { EmailAutomationPage } from '@/pages/dashboard/EmailAutomationPage';
 import { RecoveredUsersPage } from '@/pages/dashboard/RecoveredUsersPage';

@@ -1,11 +1,14 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
+import { cleanupAuthState } from '@/utils/authCleanup';
 
 interface AuthContextType {
   user: User | null;
   session: Session | null;
   loading: boolean;
+  setUser: (user: User | null) => void;
+  setSession: (session: Session | null) => void;
   signIn: (email: string, password: string) => Promise<{ error: any }>;
   signInWithGoogle: () => Promise<{ error: any }>;
   signUp: (email: string, password: string) => Promise<{ error: any }>;
@@ -34,8 +37,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
         console.log('Auth state changed:', event, session?.user?.id);
-        setSession(session);
-        setUser(session?.user ?? null);
+        
+        if (event === 'SIGNED_OUT') {
+          // Ensure complete cleanup on sign out
+          cleanupAuthState();
+          setSession(null);
+          setUser(null);
+        } else {
+          setSession(session);
+          setUser(session?.user ?? null);
+        }
+        
         setLoading(false);
       }
     );
@@ -132,25 +144,26 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const signOut = async () => {
     try {
-      // Clear all auth-related data from localStorage
-      Object.keys(localStorage).forEach((key) => {
-        if (key.startsWith('supabase.auth.') || key.includes('sb-') || key === 'rememberMe') {
-          localStorage.removeItem(key);
-        }
-      });
+      console.log('🔄 Starting enhanced signOut...');
       
-      // Sign out from Supabase
+      // Clear all auth-related data from localStorage first
+      cleanupAuthState();
+      
+      // Sign out from Supabase with global scope
       await supabase.auth.signOut({ scope: 'global' });
       
       // Force a clean state
       setSession(null);
       setUser(null);
       
+      console.log('✅ Enhanced signOut completed');
+      
       // Redirect to auth page for signup/signin
       window.location.href = '/auth';
     } catch (error) {
       console.error('Sign out error:', error);
       // Even if signOut fails, clear local state and redirect to auth
+      cleanupAuthState();
       setSession(null);
       setUser(null);
       window.location.href = '/auth';
@@ -203,6 +216,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     user,
     session,
     loading,
+    setUser,
+    setSession,
     signIn,
     signInWithGoogle,
     signUp,

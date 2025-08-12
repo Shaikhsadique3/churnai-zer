@@ -1,53 +1,21 @@
+
 import React, { ReactNode } from 'react';
 import { SidebarProvider } from '@/components/ui/sidebar';
 import { AppSidebar } from '@/components/dashboard/AppSidebar';
 import DashboardHeader from '@/components/dashboard/DashboardHeader';
 import { useAuth } from '@/contexts/AuthContext';
-import { useNavigate } from 'react-router-dom';
-import { useToast } from '@/hooks/use-toast';
+import { useSecureLogout } from '@/hooks/useSecureLogout';
 
 interface DashboardLayoutProps {
   children: ReactNode;
 }
 
 export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
-  const { user, signOut } = useAuth();
-  const navigate = useNavigate();
-  const { toast } = useToast();
+  const { user } = useAuth();
+  const { secureLogout } = useSecureLogout();
 
   const handleLogout = async () => {
-    try {
-      // Show loading state
-      toast({
-        title: "Signing out...",
-        description: "Please wait while we sign you out."
-      });
-
-      // Perform sign out (will redirect to /auth automatically)
-      await signOut();
-      
-    } catch (error) {
-      console.error('Logout error:', error);
-      
-      // Show error toast
-      toast({
-        title: "Sign out failed",
-        description: "There was an error signing you out. Please try again.",
-        variant: "destructive"
-      });
-      
-      // Force sign out even if error occurs
-      try {
-        // Clear local storage as fallback
-        localStorage.clear();
-        sessionStorage.clear();
-        window.location.href = '/auth';
-      } catch (fallbackError) {
-        console.error('Fallback logout error:', fallbackError);
-        // Last resort - reload page
-        window.location.reload();
-      }
-    }
+    await secureLogout(true); // Show toast notifications
   };
 
   return (

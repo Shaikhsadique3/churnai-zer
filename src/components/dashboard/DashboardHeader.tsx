@@ -5,24 +5,25 @@ import { Link } from "react-router-dom";
 import { useState } from "react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { NotificationBell } from "@/components/common/NotificationBell";
+import { useSecureLogout } from "@/hooks/useSecureLogout";
 
 interface DashboardHeaderProps {
   userEmail: string;
   onLogout: () => Promise<void>;
 }
 
-const DashboardHeader = ({ userEmail, onLogout }: DashboardHeaderProps) => {
+const DashboardHeader = ({ userEmail }: DashboardHeaderProps) => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const isMobile = useIsMobile();
+  const { secureLogout } = useSecureLogout();
 
   const handleLogoutClick = async () => {
     if (isLoggingOut) return; // Prevent double-clicks
     
     setIsLoggingOut(true);
     try {
-      // This will redirect to /auth automatically
-      await onLogout();
+      await secureLogout(true); // Show toast notifications
     } catch (error) {
       console.error('Logout failed:', error);
     } finally {

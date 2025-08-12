@@ -1,3 +1,4 @@
+
 import { 
   Users, 
   Code,
@@ -11,7 +12,7 @@ import {
 import { NavLink, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useState } from "react";
-import { useToast } from "@/hooks/use-toast";
+import { useSecureLogout } from "@/hooks/useSecureLogout";
 
 import {
   Sidebar,
@@ -43,9 +44,9 @@ const navigationItems = [
 export function AppSidebar() {
   const { open, isMobile } = useSidebar();
   const location = useLocation();
-  const { user, signOut } = useAuth();
-  const { toast } = useToast();
+  const { user } = useAuth();
   const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const { secureLogout } = useSecureLogout();
   const currentPath = location.pathname;
 
   const isActive = (path: string) => {
@@ -61,36 +62,9 @@ export function AppSidebar() {
     setIsLoggingOut(true);
     
     try {
-      // Show loading toast
-      toast({
-        title: "Signing out...",
-        description: "Please wait while we sign you out."
-      });
-
-      // Perform sign out (will redirect to /auth automatically)
-      await signOut();
-      
+      await secureLogout(true); // Show toast notifications
     } catch (error) {
       console.error('Logout error:', error);
-      
-      // Show error toast
-      toast({
-        title: "Sign out failed",
-        description: "There was an error signing you out. Please try again.",
-        variant: "destructive"
-      });
-      
-      // Force sign out even if error occurs
-      try {
-        // Clear local storage as fallback
-        localStorage.clear();
-        sessionStorage.clear();
-        window.location.href = '/auth';
-      } catch (fallbackError) {
-        console.error('Fallback logout error:', fallbackError);
-        // Last resort - reload page
-        window.location.reload();
-      }
     } finally {
       setIsLoggingOut(false);
     }

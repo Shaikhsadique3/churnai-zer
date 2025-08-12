@@ -1,38 +1,44 @@
 
-import React from "react";
 import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetHeader,
-  SheetTitle,
-  SheetTrigger,
-} from "@/components/ui/sheet";
-import { Sidebar } from "@/components/ui/sidebar";
-import {
-  LayoutDashboard,
-  Upload,
-  Mail,
-  Zap,
-  Bot,
-  Users,
-  CheckCircle,
-  BookOpen,
-  Menu,
-  TrendingUp,
-} from "lucide-react";
-import { useSidebar } from "@/components/ui/sidebar";
+  Sidebar,
+  SidebarContent,
+  SidebarFooter,
+  SidebarGroup,
+  SidebarGroupContent,
+  SidebarGroupLabel,
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
+  SidebarHeader,
+} from "@/components/ui/sidebar"
+import { 
+  BarChart3, 
+  Users, 
+  Settings, 
+  Upload, 
+  Mail, 
+  UserCheck, 
+  Book,
+  Crown,
+  Zap
+} from "lucide-react"
+import { Link, useLocation } from "react-router-dom"
+import { Logo } from "@/components/ui/logo"
+import { AccountSection } from "@/components/dashboard/AccountSection"
+import { useSubscription } from "@/hooks/useSubscription"
+import { Button } from "@/components/ui/button"
+import { Badge } from "@/components/ui/badge"
 
-const navigationItems = [
+const menuItems = [
   {
-    title: "Overview",
+    title: "Dashboard",
     url: "/dashboard",
-    icon: LayoutDashboard,
+    icon: BarChart3,
   },
   {
-    title: "Analytics Hub",
-    url: "/dashboard/analytics", 
-    icon: TrendingUp,
+    title: "Users",
+    url: "/users", 
+    icon: Users,
   },
   {
     title: "CSV Upload",
@@ -41,97 +47,121 @@ const navigationItems = [
   },
   {
     title: "Email Automation",
-    url: "/dashboard/email-automation",
+    url: "/dashboard/email-automation", 
     icon: Mail,
   },
   {
-    title: "Automations",
-    url: "/dashboard/automations",
-    icon: Zap,
-  },
-  {
-    title: "AI Campaigns",
-    url: "/dashboard/campaigns",
-    icon: Bot,
-  },
-  {
-    title: "User Predictions",
-    url: "/dashboard/user-predictions",
-    icon: Users,
-  },
-  {
-    title: "Churn Recovery",
+    title: "Recovered Users",
     url: "/dashboard/recovered-users",
-    icon: CheckCircle,
+    icon: UserCheck,
   },
   {
-    title: "Playbooks",
-    url: "/dashboard/playbooks",
-    icon: BookOpen,
+    title: "Integration",
+    url: "/integration",
+    icon: Settings,
   },
-];
+  {
+    title: "Documentation",
+    url: "/docs",
+    icon: Book,
+  },
+]
 
-export const AppSidebar = () => {
-  const { open, setOpen } = useSidebar();
+export function AppSidebar() {
+  const location = useLocation()
+  const { userCredits, getCurrentPlan, isFreePlan, getUsagePercentage } = useSubscription()
+  
+  const currentPlan = getCurrentPlan()
+  const usagePercentage = getUsagePercentage()
 
   return (
-    <>
-      {/* Desktop Sidebar */}
-      <Sidebar className="hidden md:block border-r border-border">
-        <div className="p-4">
-          <h2 className="text-lg font-semibold mb-4">Churnaizer</h2>
-          <nav className="space-y-2">
-            {navigationItems.map((item) => {
-              const IconComponent = item.icon;
-              return (
-                <a
-                  key={item.title}
-                  href={item.url}
-                  className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-accent transition-colors"
-                >
-                  <IconComponent className="h-4 w-4" />
-                  <span className="text-sm">{item.title}</span>
-                </a>
-              );
-            })}
-          </nav>
-        </div>
-      </Sidebar>
+    <Sidebar>
+      <SidebarHeader className="border-b border-sidebar-border p-4">
+        <Link to="/dashboard" className="flex items-center space-x-2">
+          <Logo size="sm" />
+          <h1 className="text-lg font-semibold text-sidebar-foreground">Churnaizer</h1>
+        </Link>
+      </SidebarHeader>
 
-      {/* Mobile Sidebar */}
-      <Sheet open={open} onOpenChange={setOpen}>
-        <SheetTrigger asChild>
-          <button className="md:hidden p-2 hover:bg-sidebar-accent rounded-md transition-colors">
-            <Menu className="h-5 w-5" />
-          </button>
-        </SheetTrigger>
-        <SheetContent side="left" className="w-full sm:w-64 border-r border-border p-0">
-          <SheetHeader className="pl-6 pr-4 pt-4 pb-2.5">
-            <SheetTitle>Churnaizer</SheetTitle>
-            <SheetDescription>
-              Navigate your dashboard
-            </SheetDescription>
-          </SheetHeader>
-          <div className="p-4">
-            <nav className="space-y-2">
-              {navigationItems.map((item) => {
-                const IconComponent = item.icon;
-                return (
-                  <a
-                    key={item.title}
-                    href={item.url}
-                    className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-accent transition-colors"
-                    onClick={() => setOpen(false)}
+      <SidebarContent>
+        <SidebarGroup>
+          <SidebarGroupLabel>Navigation</SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              {menuItems.map((item) => (
+                <SidebarMenuItem key={item.title}>
+                  <SidebarMenuButton 
+                    asChild 
+                    isActive={location.pathname === item.url}
+                    className="w-full justify-start"
                   >
-                    <IconComponent className="h-4 w-4" />
-                    <span className="text-sm">{item.title}</span>
-                  </a>
-                );
-              })}
-            </nav>
-          </div>
-        </SheetContent>
-      </Sheet>
-    </>
-  );
-};
+                    <Link to={item.url} className="flex items-center">
+                      <item.icon className="h-4 w-4 mr-3" />
+                      {item.title}
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              ))}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+
+        {/* Credits Section */}
+        <SidebarGroup>
+          <SidebarGroupLabel>Credits & Plan</SidebarGroupLabel>
+          <SidebarGroupContent className="space-y-3">
+            {/* Current Plan */}
+            <div className="px-3 py-2 bg-sidebar-accent rounded-lg">
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-medium text-sidebar-foreground">
+                  {currentPlan?.name || 'Free'} Plan
+                </span>
+                {currentPlan?.slug === 'pro' && <Zap className="h-4 w-4 text-blue-500" />}
+                {currentPlan?.slug === 'growth' && <Crown className="h-4 w-4 text-purple-500" />}
+              </div>
+            </div>
+
+            {/* Credits Display */}
+            {userCredits && (
+              <div className="px-3 py-2 bg-sidebar-muted rounded-lg">
+                <div className="space-y-2">
+                  <div className="flex justify-between text-sm">
+                    <span className="text-sidebar-foreground/70">Credits</span>
+                    <span className="font-medium text-sidebar-foreground">
+                      {userCredits.credits_available.toLocaleString()} / {userCredits.credits_limit.toLocaleString()}
+                    </span>
+                  </div>
+                  <div className="w-full bg-sidebar-border rounded-full h-1.5">
+                    <div 
+                      className="bg-primary h-1.5 rounded-full transition-all duration-300" 
+                      style={{ width: `${usagePercentage}%` }}
+                    />
+                  </div>
+                  {usagePercentage > 80 && (
+                    <Badge variant="destructive" className="text-xs">
+                      Low Credits
+                    </Badge>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Upgrade Button */}
+            {isFreePlan() && (
+              <Button asChild variant="default" size="sm" className="w-full">
+                <Link to="/dashboard/upgrade">
+                  <Crown className="h-4 w-4 mr-2" />
+                  Upgrade Plan
+                </Link>
+              </Button>
+            )}
+          </SidebarGroupContent>
+        </SidebarGroup>
+      </SidebarContent>
+
+      <SidebarFooter className="border-t border-sidebar-border">
+        <AccountSection />
+      </SidebarFooter>
+    </Sidebar>
+  )
+}

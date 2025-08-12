@@ -743,6 +743,56 @@ export type Database = {
         }
         Relationships: []
       }
+      payment_transactions: {
+        Row: {
+          amount: number
+          created_at: string | null
+          currency: string | null
+          id: string
+          is_test_mode: boolean | null
+          lemon_squeezy_order_id: string | null
+          plan_id: string | null
+          status: string
+          transaction_data: Json | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string | null
+          currency?: string | null
+          id?: string
+          is_test_mode?: boolean | null
+          lemon_squeezy_order_id?: string | null
+          plan_id?: string | null
+          status: string
+          transaction_data?: Json | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string | null
+          currency?: string | null
+          id?: string
+          is_test_mode?: boolean | null
+          lemon_squeezy_order_id?: string | null
+          plan_id?: string | null
+          status?: string
+          transaction_data?: Json | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payment_transactions_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "subscription_plans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       playbook_actions_queue: {
         Row: {
           action_data: Json
@@ -1126,6 +1176,45 @@ export type Database = {
         }
         Relationships: []
       }
+      subscription_plans: {
+        Row: {
+          created_at: string | null
+          credits_per_month: number
+          features: Json | null
+          id: string
+          is_active: boolean | null
+          name: string
+          price_monthly: number
+          price_yearly: number
+          slug: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          credits_per_month: number
+          features?: Json | null
+          id?: string
+          is_active?: boolean | null
+          name: string
+          price_monthly: number
+          price_yearly: number
+          slug: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          credits_per_month?: number
+          features?: Json | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          price_monthly?: number
+          price_yearly?: number
+          slug?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       support_interactions: {
         Row: {
           category: string | null
@@ -1198,6 +1287,39 @@ export type Database = {
         }
         Relationships: []
       }
+      user_credits: {
+        Row: {
+          created_at: string | null
+          credits_available: number
+          credits_limit: number
+          credits_used: number
+          id: string
+          reset_date: string | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          credits_available?: number
+          credits_limit?: number
+          credits_used?: number
+          id?: string
+          reset_date?: string | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          credits_available?: number
+          credits_limit?: number
+          credits_used?: number
+          id?: string
+          reset_date?: string | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_data: {
         Row: {
           action_recommended: string | null
@@ -1266,6 +1388,59 @@ export type Database = {
           user_stage?: string | null
         }
         Relationships: []
+      }
+      user_subscriptions: {
+        Row: {
+          billing_cycle: string
+          created_at: string | null
+          current_period_end: string | null
+          current_period_start: string | null
+          id: string
+          is_test_mode: boolean | null
+          lemon_squeezy_order_id: string | null
+          lemon_squeezy_subscription_id: string | null
+          plan_id: string
+          status: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          billing_cycle?: string
+          created_at?: string | null
+          current_period_end?: string | null
+          current_period_start?: string | null
+          id?: string
+          is_test_mode?: boolean | null
+          lemon_squeezy_order_id?: string | null
+          lemon_squeezy_subscription_id?: string | null
+          plan_id: string
+          status?: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          billing_cycle?: string
+          created_at?: string | null
+          current_period_end?: string | null
+          current_period_start?: string | null
+          id?: string
+          is_test_mode?: boolean | null
+          lemon_squeezy_order_id?: string | null
+          lemon_squeezy_subscription_id?: string | null
+          plan_id?: string
+          status?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_subscriptions_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "subscription_plans"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       waitlist: {
         Row: {
@@ -1385,6 +1560,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      deduct_user_credits: {
+        Args: { user_uuid: string; credits_to_deduct: number }
+        Returns: boolean
+      }
       encrypt_sensitive_data: {
         Args: { data: string }
         Returns: string
@@ -1400,6 +1579,10 @@ export type Database = {
       is_admin_user: {
         Args: Record<PropertyKey, never>
         Returns: boolean
+      }
+      reset_monthly_credits: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
       }
       update_existing_user_insights: {
         Args: Record<PropertyKey, never>

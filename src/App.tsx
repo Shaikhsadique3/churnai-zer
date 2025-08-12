@@ -1,119 +1,83 @@
 
-import React from "react";
-import { Toaster } from "@/components/ui/toaster";
-import { Toaster as Sonner } from "@/components/ui/sonner";
-import { TooltipProvider } from "@/components/ui/tooltip";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { Toaster } from "@/components/ui/toaster";
 import { AuthProvider } from "@/contexts/AuthContext";
-import { SidebarProvider } from "@/components/ui/sidebar";
 
-// Pages
-import Index from "./pages/Index";
-import { AnalyticsDashboard } from "./pages/dashboard/AnalyticsDashboard";
-import { CSVUploadPage } from "./pages/dashboard/CSVUploadPage";
-import { EmailAutomationPage } from "./pages/dashboard/EmailAutomationPage";
-import { RecoveredUsersPage } from "./pages/dashboard/RecoveredUsersPage";
-import { UsersPage } from "./pages/UsersPage";
-import IntegrationPage from "./pages/IntegrationPage";
-import ProfilePage from "./pages/ProfilePage";
-import Auth from "./pages/Auth";
+// Import pages
+import Index from "@/pages/Index";
+import Auth from "@/pages/Auth";
+import Pricing from "@/pages/Pricing";
+import Contact from "@/pages/Contact";
+import Docs from "@/pages/Docs";
+import Privacy from "@/pages/Privacy";
+import Terms from "@/pages/Terms";
+import RefundPolicy from "@/pages/RefundPolicy";
+import ForgotPassword from "@/pages/ForgotPassword";
+import ResetPassword from "@/pages/ResetPassword";
+import NotFound from "@/pages/NotFound";
 
-// Components
-import { MainLayout } from "@/components/layout/MainLayout";
+// Dashboard pages
+import DashboardOverview from "@/pages/dashboard/DashboardOverview";
+import CSVUploadPage from "@/pages/dashboard/CSVUploadPage";
+import EmailAutomationPage from "@/pages/dashboard/EmailAutomationPage";
+import RecoveredUsersPage from "@/pages/dashboard/RecoveredUsersPage";
+import UpgradePage from "@/pages/dashboard/UpgradePage";
+import UsersPage from "@/pages/UsersPage";
+import IntegrationPage from "@/pages/IntegrationPage";
+import ProfilePage from "@/pages/ProfilePage";
+
+// Admin pages
+import AdminLogin from "@/pages/AdminLogin";
+import AdminDashboard from "@/pages/admin/AdminDashboard";
+
+// Route components
 import PrivateRoute from "@/components/auth/PrivateRoute";
 import PublicRoute from "@/components/auth/PublicRoute";
+import AdminRoute from "@/components/auth/AdminRoute";
 
 const queryClient = new QueryClient();
 
-const App: React.FC = () => {
+function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
-        <TooltipProvider>
+        <BrowserRouter>
+          <Routes>
+            {/* Public Routes */}
+            <Route path="/" element={<PublicRoute><Index /></PublicRoute>} />
+            <Route path="/auth" element={<PublicRoute><Auth /></PublicRoute>} />
+            <Route path="/pricing" element={<Pricing />} />
+            <Route path="/contact" element={<Contact />} />
+            <Route path="/docs" element={<Docs />} />
+            <Route path="/privacy" element={<Privacy />} />
+            <Route path="/terms" element={<Terms />} />
+            <Route path="/refund-policy" element={<RefundPolicy />} />
+            <Route path="/forgot-password" element={<ForgotPassword />} />
+            <Route path="/reset-password" element={<ResetPassword />} />
+
+            {/* Protected Routes */}
+            <Route path="/dashboard" element={<PrivateRoute><DashboardOverview /></PrivateRoute>} />
+            <Route path="/dashboard/csv-upload" element={<PrivateRoute><CSVUploadPage /></PrivateRoute>} />
+            <Route path="/dashboard/email-automation" element={<PrivateRoute><EmailAutomationPage /></PrivateRoute>} />
+            <Route path="/dashboard/recovered-users" element={<PrivateRoute><RecoveredUsersPage /></PrivateRoute>} />
+            <Route path="/dashboard/upgrade" element={<PrivateRoute><UpgradePage /></PrivateRoute>} />
+            <Route path="/users" element={<PrivateRoute><UsersPage /></PrivateRoute>} />
+            <Route path="/integration" element={<PrivateRoute><IntegrationPage /></PrivateRoute>} />
+            <Route path="/profile" element={<PrivateRoute><ProfilePage /></PrivateRoute>} />
+
+            {/* Admin Routes */}
+            <Route path="/admin-login" element={<AdminLogin />} />
+            <Route path="/admin" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
+
+            {/* Catch all */}
+            <Route path="*" element={<NotFound />} />
+          </Routes>
           <Toaster />
-          <Sonner />
-          <BrowserRouter>
-            <SidebarProvider>
-              <Routes>
-                {/* Public Routes */}
-                <Route path="/" element={<Index />} />
-                <Route 
-                  path="/auth" 
-                  element={
-                    <PublicRoute>
-                      <Auth />
-                    </PublicRoute>
-                  } 
-                />
-                
-                {/* Protected Routes */}
-                <Route 
-                  path="/dashboard" 
-                  element={
-                    <PrivateRoute>
-                      <MainLayout><AnalyticsDashboard /></MainLayout>
-                    </PrivateRoute>
-                  } 
-                />
-                <Route 
-                  path="/dashboard/csv-upload" 
-                  element={
-                    <PrivateRoute>
-                      <MainLayout><CSVUploadPage /></MainLayout>
-                    </PrivateRoute>
-                  } 
-                />
-                <Route 
-                  path="/dashboard/email-automation" 
-                  element={
-                    <PrivateRoute>
-                      <MainLayout><EmailAutomationPage /></MainLayout>
-                    </PrivateRoute>
-                  } 
-                />
-                <Route 
-                  path="/dashboard/recovered-users" 
-                  element={
-                    <PrivateRoute>
-                      <MainLayout><RecoveredUsersPage /></MainLayout>
-                    </PrivateRoute>
-                  } 
-                />
-                <Route 
-                  path="/users" 
-                  element={
-                    <PrivateRoute>
-                      <MainLayout><UsersPage /></MainLayout>
-                    </PrivateRoute>
-                  } 
-                />
-                <Route 
-                  path="/integration" 
-                  element={
-                    <PrivateRoute>
-                      <MainLayout><IntegrationPage /></MainLayout>
-                    </PrivateRoute>
-                  } 
-                />
-                <Route 
-                  path="/profile" 
-                  element={
-                    <PrivateRoute>
-                      <MainLayout><ProfilePage /></MainLayout>
-                    </PrivateRoute>
-                  } 
-                />
-                
-                {/* Catch all route - redirect to landing page */}
-                <Route path="*" element={<Navigate to="/" replace />} />
-              </Routes>
-            </SidebarProvider>
-          </BrowserRouter>
-        </TooltipProvider>
+        </BrowserRouter>
       </AuthProvider>
     </QueryClientProvider>
-  );
-};
+  )
+}
 
-export default App;
+export default App

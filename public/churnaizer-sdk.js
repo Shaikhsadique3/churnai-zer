@@ -1,12 +1,13 @@
+
 /**
  * Churnaizer SDK - JavaScript Library for User Retention & Churn Prediction
- * Version: 1.1.1 - Enhanced with Robust API Key Handling
+ * Version: 1.0.2 - Production-Ready with Fixed API Key Authentication
  * 
  * This SDK helps SaaS founders track user behavior and predict churn risk.
- * Now includes automatic integration verification with improved reliability.
+ * Supports auto-integration verification with proper API key handling.
  * 
  * Usage:
- * <script src="https://cdn.churnaizer.com/churnaizer-sdk.js"></script>
+ * <script src="https://churnaizer.com/churnaizer-sdk.js"></script>
  * <script>
  *   window.__CHURNAIZER_API_KEY__ = "YOUR_API_KEY_HERE";
  *   
@@ -29,12 +30,16 @@
 (function() {
   'use strict';
 
-  const SDK_VERSION = '1.1.1';
+  const SDK_VERSION = '1.0.2';
   const API_BASE_URL = 'https://ntbkydpgjaswmwruegyl.supabase.co/functions/v1';
   
-  // Get debug setting from global config
+  // Global SDK state
+  let integrationCheckPerformed = false;
+  let integrationCheckInProgress = false;
+  
+  // Debug configuration
   function isDebugEnabled() {
-    return window.ChurnaizerConfig?.debug !== false;
+    return window.Churnaizer?.debug === true || window.ChurnaizerConfig?.debug !== false;
   }
 
   function log(...args) {
@@ -47,11 +52,36 @@
     console.error('[Churnaizer SDK Error]', ...args);
   }
 
-  // Enhanced Auto Integration Check - waits for API key and sends dual headers
+  function logSuccess(...args) {
+    console.log('[Churnaizer SDK ✅]', ...args);
+  }
+
+  function logWarning(...args) {
+    console.warn('[Churnaizer SDK ⚠️]', ...args);
+  }
+
+  // Enhanced Auto Integration Check with retry logic
   function performAutoIntegrationCheck() {
-    // Wait for API key to be available (up to 5 seconds)
+    // Prevent duplicate checks
+    if (integrationCheckPerformed || integrationCheckInProgress) {
+      log('Integration check already performed or in progress, skipping');
+      return;
+    }
+
+    integrationCheckInProgress = true;
+
+    // Don't run check on localhost or development environments
+    if (window.location.hostname === 'localhost' || 
+        window.location.hostname.includes('127.0.0.1') ||
+        window.location.hostname.includes('localhost')) {
+      log('Skipping integration check on localhost/development environment');
+      integrationCheckInProgress = false;
+      return;
+    }
+
+    // Wait for API key with retry logic
     let attempts = 0;
-    const maxAttempts = 50; // 5 seconds with 100ms intervals
+    const maxAttempts = 25; // 5 seconds with 200ms intervals
     
     const checkForApiKey = () => {
       attempts++;
@@ -59,106 +89,111 @@
       
       if (!apiKey) {
         if (attempts < maxAttempts) {
-          setTimeout(checkForApiKey, 100);
+          setTimeout(checkForApiKey, 200);
           return;
         }
-        console.warn('[Churnaizer SDK] ⚠️ API key not found after 5 seconds. Set window.__CHURNAIZER_API_KEY__ for integration verification.');
+        logWarning('API key not found after 5 seconds. Set window.__CHURNAIZER_API_KEY__ for integration verification.');
+        integrationCheckInProgress = false;
         return;
       }
 
-      // Don't run check on localhost or development environments
-      if (window.location.hostname === 'localhost' || window.location.hostname.includes('127.0.0.1')) {
-        log('Skipping integration check on localhost');
-        return;
-      }
+      // Generate unique trace ID for this check
+      const traceId = crypto?.randomUUID?.() || `trace_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
-      // Log the request details for debugging
       const requestData = {
         test: true,
         website: window.location.hostname,
-        user_id: window.__CHURNAIZER_USER_ID__ || 'auto_check_' + Date.now()
+        user_id: window.__CHURNAIZER_USER_ID__ || 'auto_check_' + Date.now(),
+        trace_id: traceId
       };
 
-      log('Starting integration check with API key:', apiKey.substring(0, 10) + '...');
+      log('Starting integration check with API key:', apiKey.substring(0, 6) + '...');
       log('Request data:', requestData);
 
-      try {
-        fetch(`${API_BASE_URL}/sdk-test`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'x-api-key': apiKey.trim(), // Send via x-api-key header
-            'Authorization': `Bearer ${apiKey.trim()}`, // Also send via Authorization header
-            'x-sdk-version': SDK_VERSION
-          },
-          body: JSON.stringify(requestData)
-        })
-        .then(response => {
-          log('Response status:', response.status);
-          return response.json();
-        })
-        .then(data => {
-          log('Response data:', data);
-          
-          if (data && data.status === 'ok') {
-            console.log(`✅ Churnaizer SDK integration confirmed for ${window.location.hostname}`);
-            log('Integration check successful:', data);
-            
-            // Store successful check status
-            try {
-              localStorage.setItem('churnaizer_integration_status', JSON.stringify({
-                status: 'success',
-                timestamp: new Date().toISOString(),
-                trace_id: data.trace_id
-              }));
-            } catch (e) {
-              // localStorage might be disabled
-            }
-          } else {
-            console.warn('⚠️ Churnaizer SDK integration check failed:', data);
-            logError('Integration check failed:', data);
-            
-            // Store failed check status
-            try {
-              localStorage.setItem('churnaizer_integration_status', JSON.stringify({
-                status: 'error',
-                timestamp: new Date().toISOString(),
-                error: data.message || 'Unknown error',
-                code: data.code
-              }));
-            } catch (e) {
-              // localStorage might be disabled
-            }
-          }
-        })
-        .catch(error => {
-          console.error('❌ SDK integration check error:', error);
-          logError('Integration check network error:', error);
-          
-          // Store network error status
-          try {
-            localStorage.setItem('churnaizer_integration_status', JSON.stringify({
-              status: 'network_error',
-              timestamp: new Date().toISOString(),
-              error: error.message
-            }));
-          } catch (e) {
-            // localStorage might be disabled
-          }
-        });
-      } catch (e) {
-        console.error('❌ SDK auto-check failed to run:', e);
-        logError('Auto-check execution error:', e);
-      }
+      // Perform integration check with proper headers
+      performIntegrationRequest(requestData, apiKey, traceId);
     };
 
-    // Start checking for API key
     checkForApiKey();
+  }
+
+  function performIntegrationRequest(requestData, apiKey, traceId) {
+    fetch(`${API_BASE_URL}/sdk-test`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': apiKey.trim(), // Use x-api-key instead of Authorization
+        'x-sdk-version': SDK_VERSION,
+        'x-trace-id': traceId
+      },
+      body: JSON.stringify(requestData)
+    })
+    .then(response => {
+      log('Response status:', response.status);
+      return response.json().then(data => ({ status: response.status, data }));
+    })
+    .then(({ status, data }) => {
+      integrationCheckPerformed = true;
+      integrationCheckInProgress = false;
+      
+      if (status === 200 && data && data.status === 'ok') {
+        logSuccess(`Integration confirmed for ${window.location.hostname}`);
+        log('Integration details:', data);
+        
+        // Store successful check status
+        try {
+          localStorage.setItem('churnaizer_integration_status', JSON.stringify({
+            status: 'success',
+            timestamp: new Date().toISOString(),
+            trace_id: traceId,
+            website: window.location.hostname
+          }));
+        } catch (e) {
+          // localStorage might be disabled
+          log('Could not store integration status in localStorage');
+        }
+      } else {
+        logWarning('Integration check failed:', data);
+        logError('Status:', status, 'Response:', data);
+        
+        // Store failed check status
+        try {
+          localStorage.setItem('churnaizer_integration_status', JSON.stringify({
+            status: 'error',
+            timestamp: new Date().toISOString(),
+            error: data.message || 'Unknown error',
+            code: data.code || status,
+            trace_id: traceId
+          }));
+        } catch (e) {
+          // localStorage might be disabled
+        }
+      }
+    })
+    .catch(error => {
+      integrationCheckPerformed = true;
+      integrationCheckInProgress = false;
+      
+      logError('Integration check network error:', error);
+      
+      // Store network error status
+      try {
+        localStorage.setItem('churnaizer_integration_status', JSON.stringify({
+          status: 'network_error',
+          timestamp: new Date().toISOString(),
+          error: error.message,
+          trace_id: traceId
+        }));
+      } catch (e) {
+        // localStorage might be disabled
+      }
+    });
   }
 
   // Main Churnaizer SDK Object
   window.Churnaizer = {
     version: SDK_VERSION,
+    debug: false, // Can be set to true for verbose logging
     
     // Display SDK info
     info: function() {
@@ -177,7 +212,7 @@
       }
     },
 
-    // Manual integration check with enhanced headers
+    // Manual integration check
     checkIntegration: function(callback) {
       const apiKey = window.__CHURNAIZER_API_KEY__;
       
@@ -188,34 +223,42 @@
         return;
       }
 
+      const traceId = crypto?.randomUUID?.() || `manual_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
       const requestData = {
         test: true,
         website: window.location.hostname,
-        user_id: window.__CHURNAIZER_USER_ID__ || 'manual_check_' + Date.now()
+        user_id: window.__CHURNAIZER_USER_ID__ || 'manual_check_' + Date.now(),
+        trace_id: traceId
       };
 
-      log('Manual integration check with API key:', apiKey.substring(0, 10) + '...');
+      log('Manual integration check with API key:', apiKey.substring(0, 6) + '...');
 
       fetch(`${API_BASE_URL}/sdk-test`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'x-api-key': apiKey.trim(),
-          'Authorization': `Bearer ${apiKey.trim()}`,
-          'x-sdk-version': SDK_VERSION
+          'x-sdk-version': SDK_VERSION,
+          'x-trace-id': traceId
         },
         body: JSON.stringify(requestData)
       })
-      .then(response => response.json())
-      .then(data => {
-        if (callback) callback(data, null);
+      .then(response => response.json().then(data => ({ status: response.status, data })))
+      .then(({ status, data }) => {
+        if (callback) {
+          if (status === 200) {
+            callback(data, null);
+          } else {
+            callback(null, data.message || 'Integration check failed');
+          }
+        }
       })
       .catch(error => {
         if (callback) callback(null, error.message);
       });
     },
 
-    // Main tracking function with enhanced headers
+    // Main tracking function with proper API key headers
     track: function(userData, apiKey, callback) {
       // Validate required parameters
       if (!userData || !apiKey) {
@@ -238,13 +281,10 @@
 
       log('Tracking user data for:', userData.user_id);
 
-      // Expose last used API key for diagnostics
-      try { window.__Churnaizer_lastApiKey = apiKey; } catch (_) {}
+      // Generate unique trace session ID
+      const traceId = userData.trace_id || (crypto?.randomUUID?.() || `${Date.now()}-${Math.random().toString(16).slice(2)}`);
 
-      // Generate unique trace session ID for end-to-end logging
-      const traceId = userData.trace_id || (crypto && crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(16).slice(2)}`);
-
-      // Prepare tracking data with all expected fields
+      // Prepare tracking data
       const trackingData = {
         user_id: userData.user_id,
         email: userData.email || userData.customer_email,
@@ -261,8 +301,6 @@
         last_login_days_ago: userData.last_login_days_ago || 0,
         billing_issue_count: userData.billing_issue_count || 0,
         trace_id: traceId,
-        
-        // Additional metadata
         timestamp: new Date().toISOString(),
         session_id: this._generateSessionId(),
         user_agent: navigator.userAgent,
@@ -270,36 +308,11 @@
         sdk_version: SDK_VERSION
       };
 
-      // Send tracking request with callback wrapper to also track login event
-      const wrappedCallback = (result, error) => {
-        if (!error && result && result.status === 'ok') {
-          // Also track login event after successful prediction (non-blocking)
-          try {
-            this.trackEvent({
-              event: 'login',
-              user_id: userData.user_id,
-              email: userData.email || userData.customer_email,
-              customer_name: userData.customer_name,
-              monthly_revenue: userData.monthly_revenue || 0,
-              trace_id: traceId // Propagate trace_id to event tracking
-            }, apiKey, function(eventResult, eventError) {
-              // Event tracking is optional - don't fail main flow if it fails
-              if (eventError) {
-                console.warn('Event tracking failed but main flow continues:', eventError);
-              }
-            });
-          } catch (eventError) {
-            console.warn('Event tracking failed but main flow continues:', eventError);
-          }
-        }
-        if (callback) callback(result, error);
-      };
-
       // Send tracking request
-      this._sendTrackingRequest(trackingData, apiKey, wrappedCallback);
+      this._sendTrackingRequest(trackingData, apiKey, callback);
     },
 
-    // Test function specifically for integration testing
+    // Test function for integration testing
     testTrackingIntegration: function(apiKey, traceId, callback) {
       log('Running SDK integration test with trace ID:', traceId);
 
@@ -326,13 +339,11 @@
         sdk_version: SDK_VERSION
       };
 
-      // Send the test tracking request
       this._sendTrackingRequest(testUserData, apiKey, callback);
     },
 
-    // New trackEvent function for recovery tracking
+    // Event tracking function
     trackEvent: function(eventData, apiKey, callback) {
-      // Validate required parameters
       if (!eventData || !apiKey) {
         const error = 'Missing required parameters: eventData and apiKey are required';
         if (callback) callback(null, error);
@@ -340,7 +351,6 @@
         return;
       }
 
-      // Validate required event fields
       const requiredFields = ['event', 'user_id', 'email'];
       const missingFields = requiredFields.filter(field => !eventData[field]);
       
@@ -351,15 +361,10 @@
         return;
       }
 
-      // Generate trace_id if not provided (backward compatibility)
       const traceId = eventData.trace_id || (crypto?.randomUUID?.() || `${Date.now()}-${Math.random().toString(16).slice(2)}`);
       
       log('Tracking event:', eventData.event, 'for user:', eventData.user_id);
 
-      // Expose last used API key for diagnostics
-      try { window.__Churnaizer_lastApiKey = apiKey; } catch (_) {}
-
-      // Prepare event data
       const trackingEventData = {
         event: eventData.event,
         user_id: eventData.user_id,
@@ -374,106 +379,7 @@
         sdk_version: SDK_VERSION
       };
 
-      console.log(`[TRACE 1 | trace_id: ${traceId}] SDK Event Payload:`, trackingEventData);
-
-      // Send event tracking request
       this._sendEventRequest(trackingEventData, apiKey, callback);
-    },
-
-    // Batch tracking for multiple users
-    trackBatch: function(usersData, apiKey, callback) {
-      if (!Array.isArray(usersData) || !apiKey) {
-        const error = 'Missing required parameters: usersData (array) and apiKey are required';
-        if (callback) callback(null, error);
-        logError(error);
-        return;
-      }
-
-      log('Batch tracking', usersData.length, 'users');
-
-      // Validate each user
-      const requiredFields = ['user_id', 'customer_email'];
-      for (let i = 0; i < usersData.length; i++) {
-        const missingFields = requiredFields.filter(field => !usersData[i][field]);
-        if (missingFields.length > 0) {
-          const error = `User at index ${i} missing required fields: ${missingFields.join(', ')}`;
-          if (callback) callback(null, error);
-          logError(error);
-          return;
-        }
-      }
-
-      // Prepare batch data
-      const batchData = usersData.map(userData => ({
-        user_id: userData.user_id,
-        customer_name: userData.customer_name || userData.customer_email?.split('@')[0] || 'Unknown',
-        customer_email: userData.customer_email,
-        days_since_signup: userData.days_since_signup || 0,
-        monthly_revenue: userData.monthly_revenue || 0,
-        subscription_plan: userData.subscription_plan || 'Free',
-        number_of_logins_last30days: userData.number_of_logins_last30days || 1,
-        active_features_used: userData.active_features_used || 1,
-        support_tickets_opened: userData.support_tickets_opened || 0,
-        last_payment_status: userData.last_payment_status || 'active',
-        email_opens_last30days: userData.email_opens_last30days || 0,
-        last_login_days_ago: userData.last_login_days_ago || 0,
-        billing_issue_count: userData.billing_issue_count || 0,
-        timestamp: new Date().toISOString(),
-        session_id: this._generateSessionId(),
-        user_agent: navigator.userAgent,
-        url: window.location.href,
-        sdk_version: SDK_VERSION
-      }));
-
-      this._sendTrackingRequest(batchData, apiKey, callback);
-    },
-
-    // Initialize retention monitoring
-    initRetentionMonitoring: function(options = {}) {
-      const config = {
-        checkInterval: options.checkInterval || 5000, // 5 seconds default
-        modalEnabled: options.modalEnabled !== false, // enabled by default
-        autoTrigger: options.autoTrigger !== false, // enabled by default
-        customModalCallback: options.customModalCallback,
-        ...options
-      };
-
-      log('Initializing retention monitoring with config:', config);
-
-      this._retentionConfig = config;
-
-      if (config.autoTrigger) {
-        this._startRetentionMonitoring();
-      }
-    },
-
-    // Show retention badge (for high-risk users)
-    showBadge: function(message, type = 'warning') {
-      const badge = document.createElement('div');
-      badge.style.cssText = `
-        position: fixed;
-        top: 20px;
-        right: 20px;
-        background: ${type === 'warning' ? '#ff6b6b' : '#4CAF50'};
-        color: white;
-        padding: 12px 20px;
-        border-radius: 8px;
-        z-index: 999999;
-        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-        font-size: 14px;
-        font-weight: 500;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-        animation: slideIn 0.3s ease;
-      `;
-      badge.textContent = message;
-
-      document.body.appendChild(badge);
-
-      setTimeout(() => {
-        if (badge.parentNode) {
-          badge.parentNode.removeChild(badge);
-        }
-      }, 5000);
     },
 
     // Private methods
@@ -486,9 +392,8 @@
       
       xhr.open('POST', `${API_BASE_URL}/sdk-track`, true);
       xhr.setRequestHeader('Content-Type', 'application/json');
-      xhr.setRequestHeader('x-churnaizer-api-key', apiKey.trim());
-      xhr.setRequestHeader('Authorization', `Bearer ${apiKey.trim()}`);
-      xhr.setRequestHeader('X-SDK-Version', SDK_VERSION);
+      xhr.setRequestHeader('x-api-key', apiKey.trim()); // Use x-api-key instead of Authorization
+      xhr.setRequestHeader('x-sdk-version', SDK_VERSION);
       
       xhr.onreadystatechange = function() {
         if (xhr.readyState === 4) {
@@ -496,45 +401,19 @@
             const response = JSON.parse(xhr.responseText);
             
             if (xhr.status === 200 || xhr.status === 201) {
-              log('Tracking successful - Full response:', response);
-              
-              // Check if it's a single result or batch results
+              log('Tracking successful:', response);
               const result = response.results?.[0] || response.result || response;
-              log('Extracted result:', result);
-              
-              // Validate required fields for SDK response
-              const requiredFields = ['churn_score', 'churn_reason', 'risk_level'];
-              const missingFields = requiredFields.filter(field => result[field] === undefined && result[field] !== null);
-              
-              if (missingFields.length > 0) {
-                const error = `API response missing required fields: ${missingFields.join(', ')}`;
-                logError('Missing fields error. Full response:', response);
-                logError('Extracted result:', result);
-                logError('Missing fields:', missingFields);
-                if (callback) callback(null, error);
-                return;
-              }
-              
-              // Auto-sync to dashboard
-              this._syncToDashboard(data, result);
-              
-              // Handle high-risk users
-              if (result?.risk_level === 'high' && this._retentionConfig?.modalEnabled) {
-                this._showRetentionModal(result);
-              }
-              
-              // Execute callback
               if (callback) callback(result, null);
             } else {
               logError('Tracking failed:', response);
-              if (callback) callback(null, response.error || 'Tracking failed');
+              if (callback) callback(null, response.error || response.message || 'Tracking failed');
             }
           } catch (e) {
             logError('Invalid response format:', e);
             if (callback) callback(null, 'Invalid response format');
           }
         }
-      }.bind(this);
+      };
 
       xhr.onerror = function() {
         logError('Network error during tracking request');
@@ -549,9 +428,8 @@
       
       xhr.open('POST', `${API_BASE_URL}/sdk-event`, true);
       xhr.setRequestHeader('Content-Type', 'application/json');
-      xhr.setRequestHeader('X-API-Key', apiKey.trim());
-      xhr.setRequestHeader('Authorization', `Bearer ${apiKey.trim()}`);
-      xhr.setRequestHeader('X-SDK-Version', SDK_VERSION);
+      xhr.setRequestHeader('x-api-key', apiKey.trim()); // Use x-api-key instead of Authorization
+      xhr.setRequestHeader('x-sdk-version', SDK_VERSION);
       
       xhr.onreadystatechange = function() {
         if (xhr.readyState === 4) {
@@ -563,7 +441,7 @@
               if (callback) callback(response, null);
             } else {
               logError('Event tracking failed:', response);
-              if (callback) callback(null, response.error || 'Event tracking failed');
+              if (callback) callback(null, response.error || response.message || 'Event tracking failed');
             }
           } catch (e) {
             logError('Invalid event response format:', e);
@@ -578,266 +456,10 @@
       };
 
       xhr.send(JSON.stringify(eventData));
-    },
-
-    _syncToDashboard: async function(userData, result) {
-      try {
-        const syncData = {
-          ...userData,
-          ...result,
-          shouldTriggerEmail: result.risk_level === 'high',
-          synced_at: new Date().toISOString(),
-          trace_id: userData.trace_id // Propagate trace_id to dashboard sync
-        };
-
-        const response = await fetch(DASHBOARD_SYNC_URL, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify(syncData)
-        });
-
-        if (response.ok) {
-          log('Dashboard sync successful');
-          
-          // Trigger email automation for high-risk users
-          if (result.risk_level === 'high' && result.shouldTriggerEmail) {
-            this._triggerEmailAutomation(userData, result);
-          }
-        } else {
-          log('Dashboard sync failed:', response.status);
-        }
-      } catch (error) {
-        log('Dashboard sync error:', error.message);
-      }
-    },
-
-    _triggerEmailAutomation: async function(userData, result) {
-      try {
-        log('Triggering email automation for high-risk user:', userData.user_id);
-        
-        const emailData = {
-          user_id: userData.user_id,
-          customer_email: userData.customer_email,
-          customer_name: userData.customer_name,
-          churn_score: result.churn_score,
-          risk_level: result.risk_level,
-          churn_reason: result.insights?.churn_reason || 'High churn risk detected',
-          subscription_plan: userData.subscription_plan,
-          shouldTriggerEmail: true,
-          trace_id: userData.trace_id // Propagate trace_id to email automation
-        };
-
-        const response = await fetch(`${API_BASE_URL}/auto-email-trigger`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'X-SDK-Version': SDK_VERSION
-          },
-          body: JSON.stringify(emailData)
-        });
-
-        const emailResult = await response.json();
-        
-        if (response.ok && emailResult.triggered) {
-          log('Email automation triggered successfully:', emailResult);
-        } else {
-          log('Email automation skipped or failed:', emailResult.message || 'Unknown error');
-        }
-      } catch (error) {
-        logError('Email automation failed:', error.message);
-      }
-    },
-
-    _startRetentionMonitoring: function() {
-      // Monitor for user behavior patterns that indicate churn risk
-      let inactivityTimer;
-      let interactionCount = 0;
-      
-      const resetInactivityTimer = () => {
-        clearTimeout(inactivityTimer);
-        inactivityTimer = setTimeout(() => {
-          if (interactionCount < 3) {
-            this._triggerRetentionCheck();
-          }
-          interactionCount = 0;
-        }, this._retentionConfig.checkInterval);
-      };
-
-      // Track user interactions
-      ['click', 'scroll', 'keypress', 'mousemove'].forEach(event => {
-        document.addEventListener(event, () => {
-          interactionCount++;
-          resetInactivityTimer();
-        }, { passive: true });
-      });
-
-      resetInactivityTimer();
-      log('Retention monitoring started');
-    },
-
-    _triggerRetentionCheck: function() {
-      log('Triggering retention check due to low engagement');
-      
-      // Could trigger additional API calls to check current risk level
-      if (this._retentionConfig.modalEnabled) {
-        this._showRetentionModal({
-          risk_level: 'medium',
-          churn_score: 0.6,
-          reason: 'Low engagement detected'
-        });
-      }
-    },
-
-    _showRetentionModal: function(riskData) {
-      // Check if custom modal callback exists
-      if (this._retentionConfig?.customModalCallback) {
-        this._retentionConfig.customModalCallback(riskData);
-        return;
-      }
-
-      // Create default retention modal
-      const modal = this._createRetentionModal(riskData);
-      document.body.appendChild(modal);
-      
-      // Show modal with animation
-      setTimeout(() => {
-        modal.style.opacity = '1';
-        modal.querySelector('.churnaizer-modal-content').style.transform = 'scale(1)';
-      }, 10);
-    },
-
-    _createRetentionModal: function(riskData) {
-      const modal = document.createElement('div');
-      modal.className = 'churnaizer-retention-modal';
-      modal.style.cssText = `
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background: rgba(0, 0, 0, 0.7);
-        z-index: 999999;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        opacity: 0;
-        transition: opacity 0.3s ease;
-        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      `;
-
-      const modalContent = document.createElement('div');
-      modalContent.className = 'churnaizer-modal-content';
-      modalContent.style.cssText = `
-        background: white;
-        padding: 32px;
-        border-radius: 12px;
-        max-width: 480px;
-        margin: 20px;
-        text-align: center;
-        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
-        transform: scale(0.9);
-        transition: transform 0.3s ease;
-      `;
-
-      modalContent.innerHTML = `
-        <div style="margin-bottom: 24px;">
-          <div style="width: 64px; height: 64px; background: #ff6b6b; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px;">
-            <span style="color: white; font-size: 24px;">⚠️</span>
-          </div>
-          <h2 style="margin: 0 0 8px; color: #333; font-size: 24px; font-weight: 600;">Wait! Don't go yet</h2>
-          <p style="margin: 0; color: #666; font-size: 16px; line-height: 1.5;">
-            We noticed you might be having trouble. Let us help you get the most out of your experience.
-          </p>
-        </div>
-        
-        <div style="margin-bottom: 24px;">
-          <button id="churnaizer-help-btn" style="
-            background: #1C4E80;
-            color: white;
-            border: none;
-            padding: 12px 24px;
-            border-radius: 8px;
-            font-size: 16px;
-            font-weight: 500;
-            cursor: pointer;
-            margin-right: 12px;
-            transition: background 0.2s ease;
-          ">Get Help</button>
-          
-          <button id="churnaizer-dismiss-btn" style="
-            background: transparent;
-            color: #666;
-            border: 1px solid #ddd;
-            padding: 12px 24px;
-            border-radius: 8px;
-            font-size: 16px;
-            cursor: pointer;
-            transition: all 0.2s ease;
-          ">Maybe Later</button>
-        </div>
-        
-        <p style="margin: 0; color: #999; font-size: 12px;">
-          Risk Level: ${riskData.risk_level} • Score: ${Math.round((riskData.churn_score || 0) * 100)}%
-        </p>
-      `;
-
-      modal.appendChild(modalContent);
-
-      // Add event listeners
-      modal.querySelector('#churnaizer-help-btn').addEventListener('click', () => {
-        this._handleRetentionAction('help_requested', riskData);
-        this._closeModal(modal);
-      });
-
-      modal.querySelector('#churnaizer-dismiss-btn').addEventListener('click', () => {
-        this._handleRetentionAction('dismissed', riskData);
-        this._closeModal(modal);
-      });
-
-      // Close on backdrop click
-      modal.addEventListener('click', (e) => {
-        if (e.target === modal) {
-          this._handleRetentionAction('dismissed', riskData);
-          this._closeModal(modal);
-        }
-      });
-
-      return modal;
-    },
-
-    _handleRetentionAction: function(action, riskData) {
-      log('Retention action:', action, riskData);
-      this._sendRetentionEvent(action, riskData);
-    },
-
-    _sendRetentionEvent: function(action, riskData) {
-      const xhr = new XMLHttpRequest();
-      xhr.open('POST', `${API_BASE_URL}/retention-event`, true);
-      xhr.setRequestHeader('Content-Type', 'application/json');
-      xhr.setRequestHeader('X-SDK-Version', SDK_VERSION);
-      
-      xhr.send(JSON.stringify({
-        action: action,
-        risk_data: riskData,
-        timestamp: new Date().toISOString(),
-        page_url: window.location.href,
-        sdk_version: SDK_VERSION
-      }));
-    },
-
-    _closeModal: function(modal) {
-      modal.style.opacity = '0';
-      setTimeout(() => {
-        if (modal.parentNode) {
-          modal.parentNode.removeChild(modal);
-        }
-      }, 300);
     }
   };
 
-  // ✅ Enhanced global verification object
+  // SDK status object for integration verification
   window.__CHURNAIZER_SDK_STATUS__ = {
     installed: true,
     apiKey: window.__CHURNAIZER_API_KEY__ || 'not-set',
@@ -846,15 +468,58 @@
     autoCheckEnabled: true
   };
 
-  // Listen for SDK status requests
+  // Listen for SDK status requests from integration tests
   window.addEventListener("message", function(event) {
+    if (event.data && event.data.type === 'CHURNAIZER_SDK_TEST') {
+      const apiKey = event.data.apiKey || window.__CHURNAIZER_API_KEY__;
+      const traceId = event.data.traceId;
+      
+      if (!apiKey) {
+        try {
+          event.source?.postMessage({
+            type: 'CHURNAIZER_SDK_TEST_RESULT',
+            result: {
+              success: false,
+              error: 'API key not configured',
+              domain: window.location.hostname
+            }
+          }, event.origin);
+        } catch (error) {
+          log('PostMessage failed:', error.message);
+        }
+        return;
+      }
+
+      // Perform test tracking
+      window.Churnaizer.testTrackingIntegration(apiKey, traceId, function(result, error) {
+        try {
+          event.source?.postMessage({
+            type: 'CHURNAIZER_SDK_TEST_RESULT',
+            result: {
+              success: !error,
+              error: error,
+              domain: window.location.hostname,
+              apiKeyUsed: !!apiKey,
+              churnScore: result?.churn_score,
+              riskLevel: result?.risk_level,
+              churnReason: result?.churn_reason,
+              emailSent: result?.email_sent,
+              traceId: traceId
+            }
+          }, event.origin);
+        } catch (postError) {
+          log('PostMessage failed:', postError.message);
+        }
+      });
+    }
+
     if (event.data && event.data.action === "GET_CHURNAIZER_SDK_STATUS") {
       try {
-        window.parent.postMessage({
+        event.source?.postMessage({
           __CHURNAIZER_SDK_STATUS__: window.__CHURNAIZER_SDK_STATUS__
-        }, "*");
+        }, event.origin);
       } catch (error) {
-        log('PostMessage failed: ' + error.message);
+        log('PostMessage failed:', error.message);
       }
     }
   });
@@ -863,9 +528,9 @@
   if (document.readyState === 'loading') {
     window.addEventListener('DOMContentLoaded', performAutoIntegrationCheck);
   } else {
-    // DOM already loaded
+    // DOM already loaded, start check after short delay
     setTimeout(performAutoIntegrationCheck, 100);
   }
 
-  log('Churnaizer SDK v' + SDK_VERSION + ' loaded successfully with enhanced API key handling');
+  logSuccess(`Churnaizer SDK v${SDK_VERSION} loaded successfully with proper API key authentication`);
 })();

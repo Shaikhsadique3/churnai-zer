@@ -1,46 +1,288 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SDK Integration Test</title>
+    <title>Churnaizer SDK Integration Test</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        .test-section {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+            border-left: 4px solid #007bff;
+        }
+        .success { border-left-color: #28a745; }
+        .error { border-left-color: #dc3545; }
+        .warning { border-left-color: #ffc107; }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            cursor: pointer;
+            margin: 10px 5px;
+        }
+        button:hover { background: #0056b3; }
+        pre {
+            background: #212529;
+            color: #f8f9fa;
+            padding: 15px;
+            border-radius: 6px;
+            overflow-x: auto;
+            white-space: pre-wrap;
+        }
+        .config {
+            background: #e9ecef;
+            padding: 15px;
+            border-radius: 6px;
+            margin: 10px 0;
+        }
+        input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ced4da;
+            border-radius: 4px;
+            margin: 5px 0;
+        }
+    </style>
 </head>
 <body>
-    <h1>SDK Test</h1>
-    <button onclick="testSDK()">Test SDK</button>
-    <div id="output"></div>
+    <h1>🔧 Churnaizer SDK Integration Test</h1>
+    <p>This page tests the Churnaizer SDK integration to ensure it works like other production SaaS SDKs.</p>
+
+    <div class="test-section">
+        <h3>📋 Configuration</h3>
+        <label>API Key:</label>
+        <input type="text" id="apiKeyInput" placeholder="Enter your API key (cg_...)" value="">
+        <button onclick="setApiKey()">Set API Key</button>
+        <div class="config">
+            <strong>SDK Version:</strong> <span id="sdkVersion">Not loaded</span><br>
+            <strong>Current API Key:</strong> <span id="currentApiKey">Not set</span><br>
+            <strong>Debug Mode:</strong> <span id="debugMode">Disabled</span>
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h3>🔍 Integration Tests</h3>
+        <button onclick="testAutoIntegration()">Test Auto Integration Check</button>
+        <button onclick="testManualIntegration()">Test Manual Integration Check</button>
+        <button onclick="testTracking()">Test User Tracking</button>
+        <button onclick="testEventTracking()">Test Event Tracking</button>
+        <button onclick="toggleDebug()">Toggle Debug Mode</button>
+    </div>
+
+    <div class="test-section">
+        <h3>📊 Test Results</h3>
+        <div id="results"></div>
+    </div>
+
+    <div class="test-section">
+        <h3>💻 Console Output</h3>
+        <pre id="console"></pre>
+    </div>
 
     <script src="./churnaizer-sdk.js"></script>
     <script>
-        window.ChurnaizerConfig = { debug: true };
+        // Configuration
+        let testApiKey = 'cg_test_key_12345';
+        
+        // Console capture
+        const originalLog = console.log;
+        const originalError = console.error;
+        const originalWarn = console.warn;
+        const consoleOutput = document.getElementById('console');
+        
+        function addToConsole(type, ...args) {
+            const timestamp = new Date().toLocaleTimeString();
+            const message = args.map(arg => 
+                typeof arg === 'object' ? JSON.stringify(arg, null, 2) : String(arg)
+            ).join(' ');
+            consoleOutput.textContent += `[${timestamp}] ${type}: ${message}\n`;
+            consoleOutput.scrollTop = consoleOutput.scrollHeight;
+        }
+        
+        console.log = (...args) => {
+            originalLog.apply(console, args);
+            addToConsole('LOG', ...args);
+        };
+        
+        console.error = (...args) => {
+            originalError.apply(console, args);
+            addToConsole('ERROR', ...args);
+        };
+        
+        console.warn = (...args) => {
+            originalWarn.apply(console, args);
+            addToConsole('WARN', ...args);
+        };
 
-        function testSDK() {
-            const output = document.getElementById('output');
-            output.innerHTML = 'Testing...';
+        // Update UI
+        function updateUI() {
+            document.getElementById('sdkVersion').textContent = window.Churnaizer?.version || 'Not loaded';
+            document.getElementById('currentApiKey').textContent = window.__CHURNAIZER_API_KEY__ ? 
+                window.__CHURNAIZER_API_KEY__.substring(0, 10) + '...' : 'Not set';
+            document.getElementById('debugMode').textContent = window.Churnaizer?.debug ? 'Enabled' : 'Disabled';
+        }
+
+        function setApiKey() {
+            const apiKey = document.getElementById('apiKeyInput').value.trim();
+            if (apiKey) {
+                window.__CHURNAIZER_API_KEY__ = apiKey;
+                testApiKey = apiKey;
+                updateUI();
+                showResult('success', 'API Key Set', `API key updated to: ${apiKey.substring(0, 10)}...`);
+            } else {
+                showResult('error', 'Invalid API Key', 'Please enter a valid API key');
+            }
+        }
+
+        function toggleDebug() {
+            window.Churnaizer.debug = !window.Churnaizer.debug;
+            updateUI();
+            showResult('success', 'Debug Mode Toggled', `Debug mode is now ${window.Churnaizer.debug ? 'enabled' : 'disabled'}`);
+        }
+
+        function showResult(type, title, message, details = null) {
+            const results = document.getElementById('results');
+            const resultDiv = document.createElement('div');
+            resultDiv.className = `test-section ${type}`;
+            
+            let html = `<h4>${title}</h4><p>${message}</p>`;
+            if (details) {
+                html += `<pre>${typeof details === 'object' ? JSON.stringify(details, null, 2) : details}</pre>`;
+            }
+            resultDiv.innerHTML = html;
+            
+            results.insertBefore(resultDiv, results.firstChild);
+        }
+
+        function testAutoIntegration() {
+            if (!testApiKey) {
+                showResult('error', 'Auto Integration Test', 'Please set an API key first');
+                return;
+            }
+
+            showResult('warning', 'Auto Integration Test', 'Checking integration status...');
+            
+            // Check current integration status
+            const status = window.Churnaizer.getIntegrationStatus();
+            if (status) {
+                showResult('success', 'Auto Integration Test', 'Integration status found in localStorage', status);
+            } else {
+                showResult('warning', 'Auto Integration Test', 'No integration status found. SDK should perform auto-check on page load.');
+            }
+        }
+
+        function testManualIntegration() {
+            if (!testApiKey) {
+                showResult('error', 'Manual Integration Test', 'Please set an API key first');
+                return;
+            }
+
+            showResult('warning', 'Manual Integration Test', 'Performing manual integration check...');
+            
+            window.Churnaizer.checkIntegration(function(result, error) {
+                if (error) {
+                    showResult('error', 'Manual Integration Test Failed', error, result);
+                } else {
+                    showResult('success', 'Manual Integration Test Passed', 'Integration check successful!', result);
+                }
+            });
+        }
+
+        function testTracking() {
+            if (!testApiKey) {
+                showResult('error', 'Tracking Test', 'Please set an API key first');
+                return;
+            }
+
+            showResult('warning', 'Tracking Test', 'Sending test tracking data...');
 
             const testData = {
-                user_id: "test_user_001",
+                user_id: "test_user_" + Date.now(),
+                email: "test@example.com",
+                customer_name: "Test User",
                 customer_email: "test@example.com",
                 days_since_signup: 30,
                 monthly_revenue: 29.99,
                 subscription_plan: "Pro",
-                number_of_logins_last30days: 3,
-                active_features_used: 2,
+                number_of_logins_last30days: 15,
+                active_features_used: 5,
                 support_tickets_opened: 1,
-                last_payment_status: "failed",
-                email_opens_last30days: 1,
-                last_login_days_ago: 7,
-                billing_issue_count: 2
+                last_payment_status: "active",
+                email_opens_last30days: 8,
+                last_login_days_ago: 2,
+                billing_issue_count: 0
             };
 
-            window.Churnaizer.track(testData, "cg_test_key_12345", function(result, error) {
+            window.Churnaizer.track(testData, testApiKey, function(result, error) {
                 if (error) {
-                    output.innerHTML = `<pre style="color: red;">Error: ${error}</pre>`;
+                    showResult('error', 'Tracking Test Failed', error, result);
                 } else {
-                    output.innerHTML = `<pre style="color: green;">Success: ${JSON.stringify(result, null, 2)}</pre>`;
+                    showResult('success', 'Tracking Test Passed', 'User tracking successful!', result);
                 }
             });
         }
+
+        function testEventTracking() {
+            if (!testApiKey) {
+                showResult('error', 'Event Tracking Test', 'Please set an API key first');
+                return;
+            }
+
+            showResult('warning', 'Event Tracking Test', 'Sending test event...');
+
+            const eventData = {
+                event: "login",
+                user_id: "test_user_" + Date.now(),
+                email: "test@example.com",
+                customer_name: "Test User",
+                monthly_revenue: 29.99
+            };
+
+            window.Churnaizer.trackEvent(eventData, testApiKey, function(result, error) {
+                if (error) {
+                    showResult('error', 'Event Tracking Test Failed', error, result);
+                } else {
+                    showResult('success', 'Event Tracking Test Passed', 'Event tracking successful!', result);
+                }
+            });
+        }
+
+        // Initialize
+        window.addEventListener('load', function() {
+            updateUI();
+            
+            // Show SDK info
+            if (window.Churnaizer) {
+                window.Churnaizer.info();
+                showResult('success', 'SDK Loaded', `Churnaizer SDK v${window.Churnaizer.version} loaded successfully`);
+            } else {
+                showResult('error', 'SDK Loading Failed', 'Churnaizer SDK failed to load');
+            }
+        });
+
+        // Listen for integration check results
+        window.addEventListener('storage', function(e) {
+            if (e.key === 'churnaizer_integration_status') {
+                const status = JSON.parse(e.newValue);
+                if (status.status === 'success') {
+                    showResult('success', 'Auto Integration Check', 'SDK auto-integration check completed successfully!', status);
+                } else {
+                    showResult('error', 'Auto Integration Check', 'SDK auto-integration check failed', status);
+                }
+            }
+        });
     </script>
 </body>
 </html>

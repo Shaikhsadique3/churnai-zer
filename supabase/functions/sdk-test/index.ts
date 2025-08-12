@@ -3,7 +3,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-api-key, x-sdk-version',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-api-key, x-sdk-version, x-trace-id',
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
 }
 
@@ -29,26 +29,34 @@ Deno.serve(async (req) => {
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
     const supabase = createClient(supabaseUrl, supabaseKey)
 
-    // Enhanced API key extraction with trimming and multiple header support
+    // Extract API key from x-api-key header (preferred) or Authorization header (fallback)
     let apiKey = req.headers.get('x-api-key')?.trim()
+    
+    // Only use Authorization header if x-api-key is not present and it's not a JWT
     if (!apiKey) {
       const authHeader = req.headers.get('authorization')
       if (authHeader && authHeader.startsWith('Bearer ')) {
-        apiKey = authHeader.substring(7).trim()
+        const token = authHeader.substring(7).trim()
+        // Only use if it looks like our API key format (cg_...) not a JWT
+        if (token.startsWith('cg_')) {
+          apiKey = token
+        }
       }
     }
 
-    console.log('API Key extraction:', {
-      xApiKey: req.headers.get('x-api-key')?.substring(0, 10) + '...',
-      authHeader: req.headers.get('authorization')?.substring(0, 20) + '...',
-      extractedKey: apiKey?.substring(0, 10) + '...',
-      sdkVersion: req.headers.get('x-sdk-version')
-    })
+    // Get trace ID for debugging
+    const traceId = req.headers.get('x-trace-id') || crypto.randomUUID()
+    const sdkVersion = req.headers.get('x-sdk-version') || 'unknown'
+
+    console.log(`[TRACE ${traceId}] SDK Test Request - Version: ${sdkVersion}`)
+    console.log(`[TRACE ${traceId}] API Key provided: ${apiKey ? 'Yes (' + apiKey.substring(0, 6) + '...)' : 'No'}`)
 
     if (!apiKey) {
+      console.log(`[TRACE ${traceId}] ERROR: Missing API key`)
       return new Response(JSON.stringify({ 
         code: 401,
-        message: 'Missing or invalid API key' 
+        message: 'Missing or invalid API key',
+        trace_id: traceId
       }), {
         status: 401,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -60,9 +68,11 @@ Deno.serve(async (req) => {
     try {
       requestBody = await req.json()
     } catch (error) {
+      console.log(`[TRACE ${traceId}] ERROR: Invalid JSON in request body`)
       return new Response(JSON.stringify({ 
         code: 400,
-        message: 'Invalid JSON in request body' 
+        message: 'Invalid JSON in request body',
+        trace_id: traceId
       }), {
         status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -72,43 +82,40 @@ Deno.serve(async (req) => {
     const { test, website, user_id } = requestBody
 
     if (!website || !user_id) {
+      console.log(`[TRACE ${traceId}] ERROR: Missing required fields`)
       return new Response(JSON.stringify({ 
         code: 400,
-        message: 'Missing required fields: website, user_id' 
+        message: 'Missing required fields: website, user_id',
+        trace_id: traceId
       }), {
         status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       })
     }
 
-    // Enhanced API key validation using secure hashing
-    console.log('Validating API key:', apiKey.substring(0, 10) + '...')
+    // Validate API key against api_keys table directly (no JWT decoding)
+    console.log(`[TRACE ${traceId}] Validating API key against database...`)
     
-    const { data: userId, error: apiKeyError } = await supabase
-      .rpc('validate_api_key', { input_key: apiKey })
+    const { data: apiKeyRecord, error: apiKeyError } = await supabase
+      .from('api_keys')
+      .select('user_id, name, is_active')
+      .eq('key', apiKey)
+      .eq('is_active', true)
+      .single()
 
-    if (apiKeyError) {
-      console.log('API key query error:', {
-        error: apiKeyError.message,
-        code: apiKeyError.code,
-        details: apiKeyError.details,
-        hint: apiKeyError.hint
-      })
-    }
-
-    if (apiKeyError || !userId) {
-      console.log('API key validation failed:', { 
-        apiKey: apiKey.substring(0, 10) + '...', 
+    if (apiKeyError || !apiKeyRecord) {
+      console.log(`[TRACE ${traceId}] ERROR: API key validation failed:`, {
         error: apiKeyError?.message,
-        found: !!userId
+        found: !!apiKeyRecord
       })
       
       return new Response(JSON.stringify({ 
         code: 401,
         message: 'Missing or invalid API key',
+        trace_id: traceId,
         debug: {
-          keyPrefix: apiKey.substring(0, 10) + '...',
-          errorMessage: apiKeyError?.message || 'Key not found'
+          keyPrefix: apiKey.substring(0, 6) + '...',
+          errorMessage: apiKeyError?.message || 'Key not found or inactive'
         }
       }), {
         status: 401,
@@ -116,15 +123,9 @@ Deno.serve(async (req) => {
       })
     }
 
-    // Generate trace ID for tracking
-    const traceId = crypto.randomUUID()
+    const founderId = apiKeyRecord.user_id
     
-    console.log('SDK integration confirmed:', {
-      website,
-      user_id,
-      trace_id: traceId,
-      founder_id: userId
-    })
+    console.log(`[TRACE ${traceId}] API key validation successful for founder: ${founderId}`)
 
     // Log integration to sdk_integrations table
     let logError = null
@@ -135,32 +136,37 @@ Deno.serve(async (req) => {
           website,
           user_id,
           trace_id: traceId,
-          api_key_hash: apiKey.substring(0, 10) + '...' // Store partial key for security
+          api_key_hash: apiKey.substring(0, 6) + '...' // Store partial key for security
         })
 
       if (insertError) {
-        console.error('Failed to log SDK integration:', insertError)
+        console.error(`[TRACE ${traceId}] Failed to log SDK integration:`, insertError)
         logError = 'Failed to log integration attempt'
+      } else {
+        console.log(`[TRACE ${traceId}] Integration logged successfully`)
       }
     } catch (error) {
-      console.error('Error logging SDK integration:', error)
+      console.error(`[TRACE ${traceId}] Error logging SDK integration:`, error)
       logError = 'Database logging error'
     }
 
-    // Prepare response - always return success to not block integration
+    // Prepare success response
     const responseData: any = {
       status: 'ok',
       message: 'Integration confirmed',
       trace_id: traceId,
       website,
       timestamp: new Date().toISOString(),
-      founder_id: userId
+      founder_id: founderId,
+      sdk_version: sdkVersion
     }
 
     // Include log error if logging failed, but don't block the integration
     if (logError) {
-      responseData.log_error = logError
+      responseData.log_warning = logError
     }
+
+    console.log(`[TRACE ${traceId}] SUCCESS: Integration confirmed for ${website}`)
 
     return new Response(JSON.stringify(responseData), {
       status: 200,
@@ -168,10 +174,13 @@ Deno.serve(async (req) => {
     })
 
   } catch (error) {
-    console.error('SDK test error:', error)
+    const traceId = req.headers.get('x-trace-id') || crypto.randomUUID()
+    console.error(`[TRACE ${traceId}] SDK test error:`, error)
+    
     return new Response(JSON.stringify({ 
       code: 500,
       message: 'Internal server error',
+      trace_id: traceId,
       debug: error.message
     }), {
       status: 500,

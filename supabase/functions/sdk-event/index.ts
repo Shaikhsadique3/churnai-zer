@@ -1,9 +1,10 @@
+
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.50.2';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-churnaizer-api-key, x-api-key, X-API-Key, X-SDK-Version',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-api-key, x-sdk-version',
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
 };
 
@@ -18,7 +19,7 @@ interface EventData {
   user_agent?: string;
   url?: string;
   sdk_version?: string;
-  trace_id?: string; // Add trace_id support
+  trace_id?: string;
 }
 
 serve(async (req) => {
@@ -43,18 +44,34 @@ serve(async (req) => {
     const trace_id = eventData.trace_id || crypto.randomUUID()
     
     if (!eventData.trace_id) {
-      console.warn(`[TRACE WARNING | trace_id: ${trace_id}] No trace_id provided in SDK event request, auto-generated`)
+      console.warn(`[TRACE ${trace_id}] No trace_id provided in SDK event request, auto-generated`)
     }
 
-    console.log(`[TRACE 2 | trace_id: ${trace_id}] SDK Event received:`, eventData);
+    console.log(`[TRACE ${trace_id}] SDK Event received:`, {
+      event: eventData.event,
+      user_id: eventData.user_id,
+      email: eventData.email
+    });
 
-    // Get API key from headers (check multiple header variations)
-    const apiKey = req.headers.get('x-churnaizer-api-key') || req.headers.get('x-api-key') || req.headers.get('X-API-Key') || req.headers.get('X-Api-Key');
+    // Extract API key from x-api-key header (preferred) or Authorization header (fallback)
+    let apiKey = req.headers.get('x-api-key')?.trim()
+    
     if (!apiKey) {
-      console.error(`[TRACE ERROR | trace_id: ${trace_id}] Missing API key in headers`)
+      const authHeader = req.headers.get('authorization')
+      if (authHeader && authHeader.startsWith('Bearer ')) {
+        const token = authHeader.substring(7).trim()
+        // Only use if it looks like our API key format (cg_...) not a JWT
+        if (token.startsWith('cg_')) {
+          apiKey = token
+        }
+      }
+    }
+
+    if (!apiKey) {
+      console.error(`[TRACE ${trace_id}] Missing API key in headers`)
       return new Response(
         JSON.stringify({ 
-          error: 'Missing API key in headers',
+          error: 'Missing API key. Use x-api-key header.',
           trace_id: trace_id 
         }),
         { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -69,13 +86,13 @@ serve(async (req) => {
     // Validate API key and get owner_id
     const { data: apiKeyData, error: apiKeyError } = await supabase
       .from('api_keys')
-      .select('user_id')
+      .select('user_id, is_active')
       .eq('key', apiKey)
       .eq('is_active', true)
       .single();
 
     if (apiKeyError || !apiKeyData) {
-      console.error(`[TRACE ERROR | trace_id: ${trace_id}] Invalid API key:`, apiKey);
+      console.error(`[TRACE ${trace_id}] Invalid API key:`, apiKey.substring(0, 6) + '...');
       return new Response(
         JSON.stringify({ 
           error: 'Invalid or inactive API key',
@@ -91,7 +108,7 @@ serve(async (req) => {
     const requiredFields = ['event', 'user_id', 'email'];
     for (const field of requiredFields) {
       if (!eventData[field]) {
-        console.error(`[TRACE ERROR | trace_id: ${trace_id}] Missing required field:`, field)
+        console.error(`[TRACE ${trace_id}] Missing required field:`, field)
         return new Response(
           JSON.stringify({ 
             error: `Missing required field: ${field}`,
@@ -114,7 +131,7 @@ serve(async (req) => {
       });
 
     if (activityError) {
-      console.error(`[TRACE ERROR | trace_id: ${trace_id}] Failed to save user activity:`, activityError);
+      console.error(`[TRACE ${trace_id}] Failed to save user activity:`, activityError);
       return new Response(
         JSON.stringify({ 
           error: 'Failed to save activity', 
@@ -159,7 +176,7 @@ serve(async (req) => {
           .eq('owner_id', ownerId);
 
         if (updateError) {
-          console.error(`[TRACE ERROR | trace_id: ${trace_id}] Failed to update user status:`, updateError);
+          console.error(`[TRACE ${trace_id}] Failed to update user status:`, updateError);
         }
 
         // Insert recovery log
@@ -175,10 +192,10 @@ serve(async (req) => {
           });
 
         if (recoveryError) {
-          console.error(`[TRACE ERROR | trace_id: ${trace_id}] Failed to save recovery log:`, recoveryError);
+          console.error(`[TRACE ${trace_id}] Failed to save recovery log:`, recoveryError);
         }
 
-        console.log(`[TRACE SUCCESS | trace_id: ${trace_id}] Recovery triggered for user ${eventData.user_id}: ${recoveryReason}, Revenue saved: ${revenueSaved}`);
+        console.log(`[TRACE ${trace_id}] Recovery triggered for user ${eventData.user_id}: ${recoveryReason}, Revenue saved: ${revenueSaved}`);
       }
     }
 
@@ -199,8 +216,8 @@ serve(async (req) => {
     );
 
   } catch (error) {
-    const trace_id = crypto.randomUUID() // Generate fallback trace_id for errors
-    console.error(`[TRACE ERROR | trace_id: ${trace_id}] SDK Event error:`, error);
+    const trace_id = crypto.randomUUID()
+    console.error(`[TRACE ${trace_id}] SDK Event error:`, error);
     return new Response(
       JSON.stringify({ 
         error: 'Internal server error', 

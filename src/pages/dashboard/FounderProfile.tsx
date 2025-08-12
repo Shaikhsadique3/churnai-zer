@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -19,7 +20,8 @@ import {
   TrendingUp,
   BarChart3,
   Edit,
-  AlertCircle
+  AlertCircle,
+  Shield
 } from 'lucide-react';
 
 interface FounderProfileData {
@@ -132,6 +134,18 @@ const FounderProfile: React.FC = () => {
   return (
     <div className="min-h-screen bg-background p-6">
       <div className="max-w-6xl mx-auto space-y-6">
+        
+        {/* Security Notice */}
+        <Card className="border-blue-200 bg-blue-50">
+          <CardContent className="p-4">
+            <div className="flex items-center space-x-2 text-blue-700">
+              <Shield className="h-5 w-5" />
+              <p className="text-sm font-medium">
+                Your business data is protected with enterprise-grade security and is only visible to you.
+              </p>
+            </div>
+          </CardContent>
+        </Card>
         
         {/* Header Section */}
         <div className="flex flex-col md:flex-row items-start md:items-center justify-between space-y-4 md:space-y-0">

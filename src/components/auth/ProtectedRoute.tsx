@@ -11,12 +11,39 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
   const { user, loading } = useAuth();
   const location = useLocation();
 
-  // Check auth status on route change to prevent access to authenticated routes after logout
+  // Enhanced route protection - check auth status on route change
   useEffect(() => {
     if (!loading && !user && location.pathname !== '/auth') {
       console.log('🔒 Protected route accessed without authentication, redirecting to /auth');
+      // Force immediate redirect for better security
+      window.location.href = '/auth';
     }
   }, [user, loading, location.pathname]);
+
+  // Additional check for stale sessions
+  useEffect(() => {
+    const checkAuthStatus = () => {
+      if (!loading && !user) {
+        console.log('🔒 Auth status check failed, clearing any stale data and redirecting');
+        // Clear any potential stale data
+        localStorage.removeItem('supabase.auth.token');
+        Object.keys(localStorage).forEach((key) => {
+          if (key.startsWith('supabase.auth.') || key.includes('sb-')) {
+            localStorage.removeItem(key);
+          }
+        });
+        window.location.href = '/auth';
+      }
+    };
+
+    // Check immediately and on focus
+    checkAuthStatus();
+    window.addEventListener('focus', checkAuthStatus);
+    
+    return () => {
+      window.removeEventListener('focus', checkAuthStatus);
+    };
+  }, [user, loading]);
 
   if (loading) {
     return (

@@ -40,25 +40,35 @@ export const useSecureLogout = () => {
       setUser(null);
       setSession(null);
 
-      // Show appropriate feedback
+      // Show appropriate feedback with proper timing
       if (showToast) {
         if (result.success) {
           toast({
             title: "✅ Logged out successfully",
             description: "You have been securely signed out.",
-            duration: 3000
+            duration: 1000
           });
+          
+          // Redirect after showing success message
+          setTimeout(() => {
+            window.location.href = '/auth';
+          }, 1000);
         } else {
           toast({
             title: "⚠️ Logout completed with warnings",
             description: "Local session cleared. Some remote cleanup may have failed.",
-            duration: 4000
+            duration: 1000
           });
+          
+          // Redirect after showing warning message
+          setTimeout(() => {
+            window.location.href = '/auth';
+          }, 1000);
         }
+      } else {
+        // Immediate redirect if no toast
+        window.location.href = '/auth';
       }
-
-      // Force redirect to login page
-      window.location.href = '/auth';
 
     } catch (error) {
       console.error('Critical logout error:', error);
@@ -72,12 +82,17 @@ export const useSecureLogout = () => {
           title: "❌ Logout error",
           description: "Emergency logout performed. Please clear your browser cache.",
           variant: "destructive",
-          duration: 5000
+          duration: 1000
         });
+        
+        // Force redirect even on error after showing message
+        setTimeout(() => {
+          window.location.href = '/auth';
+        }, 1000);
+      } else {
+        // Force redirect immediately on error
+        window.location.href = '/auth';
       }
-      
-      // Force redirect even on error
-      window.location.href = '/auth';
     }
   }, [navigate, toast, setUser, setSession]);
 

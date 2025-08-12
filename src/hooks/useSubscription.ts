@@ -80,7 +80,7 @@ export const useSubscription = () => {
     // Transform features from JSONB to string array
     const transformedPlans = data?.map(plan => ({
       ...plan,
-      features: Array.isArray(plan.features) ? plan.features : []
+      features: Array.isArray(plan.features) ? plan.features.filter((f): f is string => typeof f === 'string') : []
     })) || [];
 
     setPlans(transformedPlans);
@@ -110,7 +110,8 @@ export const useSubscription = () => {
         ...data,
         plan: {
           ...data.plan,
-          features: Array.isArray(data.plan.features) ? data.plan.features : []
+          features: Array.isArray(data.plan.features) ? 
+            data.plan.features.filter((f): f is string => typeof f === 'string') : []
         }
       };
       setSubscription(transformedData);
@@ -185,15 +186,23 @@ export const useSubscription = () => {
     return subscription?.plan?.slug === 'free' || !subscription;
   };
 
+  const getUsagePercentage = (): number => {
+    if (!credits) return 0;
+    return (credits.credits_used / credits.credits_limit) * 100;
+  };
+
   return {
     plans,
     subscription,
+    userSubscription: subscription, // Add alias for backward compatibility
     credits,
+    userCredits: credits, // Add alias for backward compatibility
     loading,
     deductCredits,
     hasCredits,
     getCurrentPlan,
     isFreePlan,
+    getUsagePercentage,
     refetch: fetchData
   };
 };

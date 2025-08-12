@@ -9,11 +9,10 @@ import { Badge } from '@/components/ui/badge'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Check, Crown, Zap, AlertTriangle } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
-import { DashboardLayout } from '@/components/layout/DashboardLayout'
 
 export default function UpgradePage() {
   const { user } = useAuth()
-  const { plans, userSubscription, userCredits, loading, getCurrentPlan } = useSubscription()
+  const { plans, subscription, credits, loading, getCurrentPlan } = useSubscription()
   const { toast } = useToast()
   const [billingCycle, setBillingCycle] = useState<'monthly' | 'yearly'>('monthly')
   const [processingPlan, setProcessingPlan] = useState<string | null>(null)
@@ -78,158 +77,154 @@ export default function UpgradePage() {
 
   if (loading) {
     return (
-      <DashboardLayout>
-        <div className="flex items-center justify-center min-h-96">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-        </div>
-      </DashboardLayout>
+      <div className="flex items-center justify-center min-h-96">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      </div>
     )
   }
 
   return (
-    <DashboardLayout>
-      <div className="space-y-6">
-        {/* Test Mode Banner */}
-        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-          <div className="flex items-center space-x-2">
-            <AlertTriangle className="h-5 w-5 text-yellow-600" />
-            <div className="text-yellow-800">
-              <h3 className="font-semibold">Test Mode Active</h3>
-              <p className="text-sm">No real charges will be made. This is for testing purposes only.</p>
-            </div>
+    <div className="space-y-6">
+      {/* Test Mode Banner */}
+      <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+        <div className="flex items-center space-x-2">
+          <AlertTriangle className="h-5 w-5 text-yellow-600" />
+          <div className="text-yellow-800">
+            <h3 className="font-semibold">Test Mode Active</h3>
+            <p className="text-sm">No real charges will be made. This is for testing purposes only.</p>
           </div>
         </div>
+      </div>
 
-        {/* Current Usage */}
-        {userCredits && (
-          <Card>
-            <CardHeader>
-              <CardTitle>Current Usage</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div>
-                  <p className="text-sm text-muted-foreground">Credits Used</p>
-                  <p className="text-2xl font-bold">{userCredits.credits_used.toLocaleString()}</p>
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Credits Available</p>
-                  <p className="text-2xl font-bold">{userCredits.credits_available.toLocaleString()}</p>
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Monthly Limit</p>
-                  <p className="text-2xl font-bold">{userCredits.credits_limit.toLocaleString()}</p>
-                </div>
-              </div>
-              <div className="mt-4">
-                <div className="w-full bg-gray-200 rounded-full h-2">
-                  <div 
-                    className="bg-primary h-2 rounded-full" 
-                    style={{ 
-                      width: `${(userCredits.credits_used / userCredits.credits_limit) * 100}%` 
-                    }}
-                  ></div>
-                </div>
-                <p className="text-sm text-muted-foreground mt-1">
-                  {((userCredits.credits_used / userCredits.credits_limit) * 100).toFixed(1)}% used this month
-                </p>
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Billing Cycle Toggle */}
-        <div className="text-center">
-          <Tabs value={billingCycle} onValueChange={(value) => setBillingCycle(value as 'monthly' | 'yearly')}>
-            <TabsList>
-              <TabsTrigger value="monthly">Monthly</TabsTrigger>
-              <TabsTrigger value="yearly">
-                Yearly
-                <Badge variant="secondary" className="ml-2">Save 10%</Badge>
-              </TabsTrigger>
-            </TabsList>
-          </Tabs>
-        </div>
-
-        {/* Pricing Plans */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {plans.map((plan) => (
-            <Card key={plan.id} className={`relative ${isCurrentPlan(plan.slug) ? 'border-primary' : ''}`}>
-              {isCurrentPlan(plan.slug) && (
-                <Badge className="absolute -top-3 left-1/2 transform -translate-x-1/2">
-                  Current Plan
-                </Badge>
-              )}
-              
-              <CardHeader className="text-center">
-                <div className="flex justify-center mb-2">
-                  {getPlanIcon(plan.slug)}
-                </div>
-                <CardTitle className="text-xl">{plan.name}</CardTitle>
-                <div className="space-y-1">
-                  <p className="text-3xl font-bold">
-                    ${billingCycle === 'monthly' ? plan.price_monthly : plan.price_yearly}
-                  </p>
-                  <p className="text-sm text-muted-foreground">
-                    per {billingCycle === 'monthly' ? 'month' : 'year'}
-                  </p>
-                </div>
-              </CardHeader>
-
-              <CardContent className="space-y-4">
-                <div className="text-center">
-                  <p className="text-lg font-semibold">{plan.credits_per_month.toLocaleString()} credits/month</p>
-                </div>
-
-                <ul className="space-y-2">
-                  {plan.features.map((feature, index) => (
-                    <li key={index} className="flex items-center space-x-2">
-                      <Check className="h-4 w-4 text-green-500" />
-                      <span className="text-sm">{feature}</span>
-                    </li>
-                  ))}
-                </ul>
-
-                <Button
-                  className="w-full"
-                  onClick={() => handleUpgrade(plan.slug)}
-                  disabled={processingPlan === plan.slug || isCurrentPlan(plan.slug) || plan.slug === 'free'}
-                  variant={isCurrentPlan(plan.slug) ? 'outline' : 'default'}
-                >
-                  {getButtonText(plan.slug)}
-                </Button>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-
-        {/* FAQ Section */}
+      {/* Current Usage */}
+      {credits && (
         <Card>
           <CardHeader>
-            <CardTitle>Frequently Asked Questions</CardTitle>
+            <CardTitle>Current Usage</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
-            <div>
-              <h4 className="font-semibold">What happens when I upgrade?</h4>
-              <p className="text-sm text-muted-foreground">
-                Your credit limit will increase immediately, and you'll get access to advanced features included in your plan.
-              </p>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <p className="text-sm text-muted-foreground">Credits Used</p>
+                <p className="text-2xl font-bold">{credits.credits_used.toLocaleString()}</p>
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">Credits Available</p>
+                <p className="text-2xl font-bold">{credits.credits_available.toLocaleString()}</p>
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">Monthly Limit</p>
+                <p className="text-2xl font-bold">{credits.credits_limit.toLocaleString()}</p>
+              </div>
             </div>
-            <div>
-              <h4 className="font-semibold">Can I downgrade later?</h4>
-              <p className="text-sm text-muted-foreground">
-                Yes, you can change your plan at any time. Changes will take effect at your next billing cycle.
-              </p>
-            </div>
-            <div>
-              <h4 className="font-semibold">What is Test Mode?</h4>
-              <p className="text-sm text-muted-foreground">
-                Test Mode allows you to try the upgrade process without being charged. No real payments will be processed.
+            <div className="mt-4">
+              <div className="w-full bg-gray-200 rounded-full h-2">
+                <div 
+                  className="bg-primary h-2 rounded-full" 
+                  style={{ 
+                    width: `${(credits.credits_used / credits.credits_limit) * 100}%` 
+                  }}
+                ></div>
+              </div>
+              <p className="text-sm text-muted-foreground mt-1">
+                {((credits.credits_used / credits.credits_limit) * 100).toFixed(1)}% used this month
               </p>
             </div>
           </CardContent>
         </Card>
+      )}
+
+      {/* Billing Cycle Toggle */}
+      <div className="text-center">
+        <Tabs value={billingCycle} onValueChange={(value) => setBillingCycle(value as 'monthly' | 'yearly')}>
+          <TabsList>
+            <TabsTrigger value="monthly">Monthly</TabsTrigger>
+            <TabsTrigger value="yearly">
+              Yearly
+              <Badge variant="secondary" className="ml-2">Save 10%</Badge>
+            </TabsTrigger>
+          </TabsList>
+        </Tabs>
       </div>
-    </DashboardLayout>
+
+      {/* Pricing Plans */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        {plans.map((plan) => (
+          <Card key={plan.id} className={`relative ${isCurrentPlan(plan.slug) ? 'border-primary' : ''}`}>
+            {isCurrentPlan(plan.slug) && (
+              <Badge className="absolute -top-3 left-1/2 transform -translate-x-1/2">
+                Current Plan
+              </Badge>
+            )}
+            
+            <CardHeader className="text-center">
+              <div className="flex justify-center mb-2">
+                {getPlanIcon(plan.slug)}
+              </div>
+              <CardTitle className="text-xl">{plan.name}</CardTitle>
+              <div className="space-y-1">
+                <p className="text-3xl font-bold">
+                  ${billingCycle === 'monthly' ? plan.price_monthly : plan.price_yearly}
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  per {billingCycle === 'monthly' ? 'month' : 'year'}
+                </p>
+              </div>
+            </CardHeader>
+
+            <CardContent className="space-y-4">
+              <div className="text-center">
+                <p className="text-lg font-semibold">{plan.credits_per_month.toLocaleString()} credits/month</p>
+              </div>
+
+              <ul className="space-y-2">
+                {plan.features.map((feature, index) => (
+                  <li key={index} className="flex items-center space-x-2">
+                    <Check className="h-4 w-4 text-green-500" />
+                    <span className="text-sm">{feature}</span>
+                  </li>
+                ))}
+              </ul>
+
+              <Button
+                className="w-full"
+                onClick={() => handleUpgrade(plan.slug)}
+                disabled={processingPlan === plan.slug || isCurrentPlan(plan.slug) || plan.slug === 'free'}
+                variant={isCurrentPlan(plan.slug) ? 'outline' : 'default'}
+              >
+                {getButtonText(plan.slug)}
+              </Button>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+
+      {/* FAQ Section */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Frequently Asked Questions</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div>
+            <h4 className="font-semibold">What happens when I upgrade?</h4>
+            <p className="text-sm text-muted-foreground">
+              Your credit limit will increase immediately, and you'll get access to advanced features included in your plan.
+            </p>
+          </div>
+          <div>
+            <h4 className="font-semibold">Can I downgrade later?</h4>
+            <p className="text-sm text-muted-foreground">
+              Yes, you can change your plan at any time. Changes will take effect at your next billing cycle.
+            </p>
+          </div>
+          <div>
+            <h4 className="font-semibold">What is Test Mode?</h4>
+            <p className="text-sm text-muted-foreground">
+              Test Mode allows you to try the upgrade process without being charged. No real payments will be processed.
+            </p>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
   )
 }

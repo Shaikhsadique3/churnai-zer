@@ -8,9 +8,9 @@ import { Link } from 'react-router-dom'
 import { useSubscription } from '@/hooks/useSubscription'
 
 export const CreditUsageCard = () => {
-  const { userCredits, isFreePlan, getUsagePercentage } = useSubscription()
+  const { credits, isFreePlan, getUsagePercentage } = useSubscription()
 
-  if (!userCredits) return null
+  if (!credits) return null
 
   const usagePercentage = getUsagePercentage()
   const isLowCredits = usagePercentage > 80
@@ -28,12 +28,12 @@ export const CreditUsageCard = () => {
           <div className="flex justify-between text-sm">
             <span>Used this month</span>
             <span className="font-medium">
-              {userCredits.credits_used.toLocaleString()} / {userCredits.credits_limit.toLocaleString()}
+              {credits.credits_used.toLocaleString()} / {credits.credits_limit.toLocaleString()}
             </span>
           </div>
           <Progress value={usagePercentage} className="h-2" />
           <div className="text-xs text-muted-foreground">
-            {userCredits.credits_available.toLocaleString()} credits remaining
+            {credits.credits_available.toLocaleString()} credits remaining
           </div>
         </div>
 
@@ -57,7 +57,7 @@ export const CreditUsageCard = () => {
         )}
 
         <div className="text-xs text-muted-foreground">
-          Credits reset on {new Date(userCredits.reset_date).toLocaleDateString()}
+          Credits reset on {new Date(credits.reset_date).toLocaleDateString()}
         </div>
       </CardContent>
     </Card>

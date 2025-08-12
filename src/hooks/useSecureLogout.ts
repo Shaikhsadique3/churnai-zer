@@ -4,12 +4,13 @@ import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 import { performSecureLogout, setupMultiTabLogoutListener } from '@/utils/authCleanup';
 import { useAuth } from '@/contexts/AuthContext';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 
 export const useSecureLogout = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { setUser, setSession } = useAuth();
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
 
   // Handle multi-tab logout coordination
   useEffect(() => {
@@ -17,14 +18,18 @@ export const useSecureLogout = () => {
       // Force local state cleanup and redirect
       setUser(null);
       setSession(null);
-      navigate('/auth', { replace: true });
+      window.location.href = '/auth';
     });
 
     return cleanup;
-  }, [navigate, setUser, setSession]);
+  }, [setUser, setSession]);
 
   const secureLogout = useCallback(async (showToast: boolean = true) => {
+    if (isLoggingOut) return; // Prevent duplicate logout calls
+    
     try {
+      setIsLoggingOut(true);
+      
       // Show immediate loading state
       if (showToast) {
         toast({
@@ -40,35 +45,28 @@ export const useSecureLogout = () => {
       setUser(null);
       setSession(null);
 
-      // Show appropriate feedback with proper timing
+      // Show success message and redirect
       if (showToast) {
         if (result.success) {
           toast({
-            title: "✅ Logged out successfully",
+            title: "✅ Successfully logged out",
             description: "You have been securely signed out.",
-            duration: 1000
+            duration: 2000
           });
-          
-          // Redirect after showing success message
-          setTimeout(() => {
-            window.location.href = '/auth';
-          }, 1000);
         } else {
           toast({
-            title: "⚠️ Logout completed with warnings",
+            title: "⚠️ Logout completed",
             description: "Local session cleared. Some remote cleanup may have failed.",
-            duration: 1000
+            duration: 2000
           });
-          
-          // Redirect after showing warning message
-          setTimeout(() => {
-            window.location.href = '/auth';
-          }, 1000);
         }
-      } else {
-        // Immediate redirect if no toast
-        window.location.href = '/auth';
       }
+
+      // Always redirect to auth page after logout
+      setTimeout(() => {
+        setIsLoggingOut(false);
+        window.location.href = '/auth';
+      }, showToast ? 1500 : 0);
 
     } catch (error) {
       console.error('Critical logout error:', error);
@@ -82,19 +80,17 @@ export const useSecureLogout = () => {
           title: "❌ Logout error",
           description: "Emergency logout performed. Please clear your browser cache.",
           variant: "destructive",
-          duration: 1000
+          duration: 2000
         });
-        
-        // Force redirect even on error after showing message
-        setTimeout(() => {
-          window.location.href = '/auth';
-        }, 1000);
-      } else {
-        // Force redirect immediately on error
-        window.location.href = '/auth';
       }
+      
+      // Force redirect even on error
+      setTimeout(() => {
+        setIsLoggingOut(false);
+        window.location.href = '/auth';
+      }, showToast ? 1500 : 0);
     }
-  }, [navigate, toast, setUser, setSession]);
+  }, [toast, setUser, setSession, isLoggingOut]);
 
-  return { secureLogout };
+  return { secureLogout, isLoggingOut };
 };

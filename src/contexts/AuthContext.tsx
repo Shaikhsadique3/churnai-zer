@@ -31,6 +31,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
 
   useEffect(() => {
     // Set up auth state listener
@@ -38,17 +39,33 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       (event, session) => {
         console.log('Auth state changed:', event, session?.user?.id);
         
-        if (event === 'SIGNED_OUT') {
+        if (event === 'SIGNED_OUT' || !session) {
           // Ensure complete cleanup on sign out
           cleanupAuthState();
           setSession(null);
           setUser(null);
+          setLoading(false);
+          
+          // Only redirect if we're not already logging out
+          if (!isLoggingOut && window.location.pathname !== '/auth' && window.location.pathname !== '/') {
+            console.log('🔄 Auth state changed to signed out, redirecting to /auth');
+            window.location.href = '/auth';
+          }
+        } else if (event === 'SIGNED_IN' && session) {
+          setSession(session);
+          setUser(session.user);
+          setLoading(false);
+          
+          // Only redirect to dashboard if we're on auth page and not logging out
+          if (!isLoggingOut && window.location.pathname === '/auth') {
+            console.log('🔄 Auth state changed to signed in, redirecting to /dashboard');
+            window.location.href = '/dashboard';
+          }
         } else {
           setSession(session);
           setUser(session?.user ?? null);
+          setLoading(false);
         }
-        
-        setLoading(false);
       }
     );
 
@@ -60,7 +77,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     });
 
     return () => subscription.unsubscribe();
-  }, []);
+  }, [isLoggingOut]);
 
   const signIn = async (email: string, password: string) => {
     const { error } = await supabase.auth.signInWithPassword({
@@ -146,6 +163,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       console.log('🔄 Starting enhanced signOut...');
       
+      // Set logging out flag to prevent auto-redirects
+      setIsLoggingOut(true);
+      
       // Clear all auth-related data from localStorage first
       cleanupAuthState();
       
@@ -158,15 +178,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       console.log('✅ Enhanced signOut completed');
       
-      // Redirect to auth page for signup/signin
-      window.location.href = '/auth';
+      // Redirect to auth page after a brief delay
+      setTimeout(() => {
+        setIsLoggingOut(false);
+        window.location.href = '/auth';
+      }, 500);
+      
     } catch (error) {
       console.error('Sign out error:', error);
       // Even if signOut fails, clear local state and redirect to auth
       cleanupAuthState();
       setSession(null);
       setUser(null);
-      window.location.href = '/auth';
+      setTimeout(() => {
+        setIsLoggingOut(false);
+        window.location.href = '/auth';
+      }, 500);
     }
   };
 

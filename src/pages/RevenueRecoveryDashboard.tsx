@@ -22,6 +22,8 @@ export interface CompanyInfo {
   companyName: string;
   industry: string;
   productType: string;
+  monthlyRevenue?: number;
+  churnRate?: number;
 }
 
 interface RevenueRecoveryDashboardProps {

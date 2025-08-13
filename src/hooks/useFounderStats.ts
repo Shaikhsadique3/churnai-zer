@@ -97,19 +97,48 @@ export const useFounderStats = () => {
     if (!user) return;
 
     try {
-      const { error } = await supabase
+      // Check if profile exists first
+      const { data: existingProfile } = await supabase
         .from('founder_profile')
-        .upsert({
-          user_id: user.id,
-          company_name: companyData.companyName,
-          monthly_revenue: companyData.monthlyRevenue,
-          current_churn_rate: companyData.churnRate,
-          updated_at: new Date().toISOString()
-        }, {
-          onConflict: 'user_id'
-        });
+        .select('*')
+        .eq('user_id', user.id)
+        .single();
 
-      if (error) throw error;
+      if (existingProfile) {
+        // Update existing profile
+        const { error } = await supabase
+          .from('founder_profile')
+          .update({
+            company_name: companyData.companyName || existingProfile.company_name,
+            monthly_revenue: companyData.monthlyRevenue || existingProfile.monthly_revenue,
+            current_churn_rate: companyData.churnRate || existingProfile.current_churn_rate,
+            updated_at: new Date().toISOString()
+          })
+          .eq('user_id', user.id);
+
+        if (error) throw error;
+      } else {
+        // Create new profile with required fields
+        const { error } = await supabase
+          .from('founder_profile')
+          .insert({
+            user_id: user.id,
+            company_name: companyData.companyName || 'Unknown Company',
+            industry: 'SaaS',
+            company_size: '1-10',
+            location: 'Unknown',
+            pricing_model: 'subscription',
+            product_description: 'SaaS Product',
+            target_market: 'B2B',
+            revenue_model: 'subscription',
+            monthly_revenue: companyData.monthlyRevenue || 0,
+            current_churn_rate: companyData.churnRate || 0,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          });
+
+        if (error) throw error;
+      }
 
       // Update local state
       setStats(prev => ({ ...prev, ...companyData }));

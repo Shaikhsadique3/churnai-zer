@@ -1,48 +1,50 @@
-
-import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import React, { useState } from 'react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
-import { Calculator, DollarSign } from 'lucide-react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Slider } from '@/components/ui/slider';
+import { useToast } from "@/hooks/use-toast";
 import { CalculationData, CompanyInfo } from '@/pages/RevenueRecoveryDashboard';
+import { useFounderStats } from '@/hooks/useFounderStats';
 
 interface RevenueCalculatorProps {
   onCalculate: (data: CalculationData) => void;
   companyInfo: CompanyInfo;
-  onCompanyInfoChange: (info: CompanyInfo) => void;
+  onCompanyInfoChange: (info: (prevState: CompanyInfo) => CompanyInfo) => void;
 }
 
-export const RevenueCalculator: React.FC<RevenueCalculatorProps> = ({
-  onCalculate,
-  companyInfo,
-  onCompanyInfoChange
+export const RevenueCalculator: React.FC<RevenueCalculatorProps> = ({ 
+  onCalculate, 
+  companyInfo, 
+  onCompanyInfoChange 
 }) => {
-  const [mrr, setMrr] = useState<string>('');
-  const [churnRate, setChurnRate] = useState<string>('');
-  const [activeCustomers, setActiveCustomers] = useState<string>('');
+  const [mrr, setMrr] = useState(companyInfo.monthlyRevenue || 10000);
+  const [churnRate, setChurnRate] = useState(companyInfo.churnRate || 2.0);
+  const [activeCustomers, setActiveCustomers] = useState(500);
+  const { toast } = useToast();
+  
+  const { updateActivityStat, saveCompanyData } = useFounderStats();
 
-  const calculateRevenueLoss = () => {
-    const mrrNum = parseFloat(mrr) || 0;
-    const churnRateNum = parseFloat(churnRate) || 0;
-    const activeCustomersNum = parseInt(activeCustomers) || 0;
-
-    if (mrrNum <= 0 || churnRateNum <= 0 || activeCustomersNum <= 0) {
+  const handleCalculate = async () => {
+    if (mrr <= 0 || churnRate <= 0 || activeCustomers <= 0) {
+      toast({
+        title: "Invalid Input",
+        description: "Please enter valid positive numbers for all fields.",
+        variant: "destructive"
+      });
       return;
     }
 
-    // Calculate monthly revenue loss: MRR * (churn_rate / 100)
-    const monthlyRevenueLoss = mrrNum * (churnRateNum / 100);
-    
-    // Calculate recovery scenarios (reducing churn by 10%, 20%, 30%)
-    const recovery10 = monthlyRevenueLoss * 0.1; // 10% of loss recovered
-    const recovery20 = monthlyRevenueLoss * 0.2; // 20% of loss recovered  
-    const recovery30 = monthlyRevenueLoss * 0.3; // 30% of loss recovered
+    const monthlyRevenueLoss = (mrr * churnRate) / 100;
+    const recovery10 = monthlyRevenueLoss * 0.10;
+    const recovery20 = monthlyRevenueLoss * 0.20;
+    const recovery30 = monthlyRevenueLoss * 0.30;
 
-    const calculationData: CalculationData = {
-      mrr: mrrNum,
-      churnRate: churnRateNum,
-      activeCustomers: activeCustomersNum,
+    const calculationData = {
+      mrr,
+      churnRate,
+      activeCustomers,
       monthlyRevenueLoss,
       recovery10,
       recovery20,
@@ -50,104 +52,105 @@ export const RevenueCalculator: React.FC<RevenueCalculatorProps> = ({
     };
 
     onCalculate(calculationData);
+
+    // Update activity stats and save company data
+    await updateActivityStat('calculationsUsed');
+    await saveCompanyData({
+      companyName: companyInfo.companyName,
+      monthlyRevenue: mrr,
+      churnRate: churnRate
+    });
+
+    toast({
+      title: "Calculation Complete",
+      description: "Your churn impact has been calculated successfully.",
+    });
   };
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-      {/* Company Information */}
+    <div className="grid gap-4 grid-cols-1 md:grid-cols-2">
+      {/* Company Information Card */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <DollarSign className="h-5 w-5" />
-            Company Information
-          </CardTitle>
-          <CardDescription>
-            Tell us about your business for personalized recommendations
-          </CardDescription>
+          <CardTitle>Company Information</CardTitle>
+          <CardDescription>Enter your company details to personalize your recovery strategy.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div>
-            <Label htmlFor="company-name">Company Name</Label>
+          <div className="space-y-2">
+            <Label htmlFor="companyName">Company Name</Label>
             <Input
-              id="company-name"
-              placeholder="e.g., Acme SaaS"
+              id="companyName"
               value={companyInfo.companyName}
-              onChange={(e) => onCompanyInfoChange({ ...companyInfo, companyName: e.target.value })}
+              onChange={(e) => onCompanyInfoChange(prevState => ({ ...prevState, companyName: e.target.value }))}
+              placeholder="Your Company Name"
             />
           </div>
-          <div>
+          <div className="space-y-2">
             <Label htmlFor="industry">Industry</Label>
             <Input
               id="industry"
-              placeholder="e.g., Marketing, Healthcare, E-commerce"
               value={companyInfo.industry}
-              onChange={(e) => onCompanyInfoChange({ ...companyInfo, industry: e.target.value })}
+              onChange={(e) => onCompanyInfoChange(prevState => ({ ...prevState, industry: e.target.value }))}
+              placeholder="e.g., SaaS, E-commerce"
             />
           </div>
-          <div>
-            <Label htmlFor="product-type">Product Type</Label>
+          <div className="space-y-2">
+            <Label htmlFor="productType">Product Type</Label>
             <Input
-              id="product-type"
-              placeholder="e.g., CRM Software, Analytics Platform"
+              id="productType"
               value={companyInfo.productType}
-              onChange={(e) => onCompanyInfoChange({ ...companyInfo, productType: e.target.value })}
+              onChange={(e) => onCompanyInfoChange(prevState => ({ ...prevState, productType: e.target.value }))}
+              placeholder="e.g., Subscription, One-time Purchase"
             />
           </div>
         </CardContent>
       </Card>
 
-      {/* Revenue Metrics */}
+      {/* Revenue Impact Calculator Card */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Calculator className="h-5 w-5" />
-            Revenue Metrics
-          </CardTitle>
-          <CardDescription>
-            Enter your current SaaS metrics to calculate churn impact
-          </CardDescription>
+          <CardTitle>Revenue Impact Calculator</CardTitle>
+          <CardDescription>Calculate potential revenue loss due to churn.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div>
-            <Label htmlFor="mrr">Monthly Recurring Revenue (MRR)</Label>
+          <div className="space-y-2">
+            <Label htmlFor="mrr">Monthly Recurring Revenue ($)</Label>
             <Input
+              type="number"
               id="mrr"
-              type="number"
-              placeholder="50000"
               value={mrr}
-              onChange={(e) => setMrr(e.target.value)}
+              onChange={(e) => setMrr(Number(e.target.value))}
+              placeholder="Enter MRR"
             />
-            <p className="text-sm text-muted-foreground mt-1">Your total monthly subscription revenue</p>
           </div>
-          <div>
-            <Label htmlFor="churn-rate">Monthly Churn Rate (%)</Label>
+          <div className="space-y-2">
+            <Label htmlFor="churnRate">Churn Rate (%)</Label>
             <Input
-              id="churn-rate"
               type="number"
-              step="0.1"
-              placeholder="5.5"
+              id="churnRate"
               value={churnRate}
-              onChange={(e) => setChurnRate(e.target.value)}
+              onChange={(e) => setChurnRate(Number(e.target.value))}
+              placeholder="Enter Churn Rate"
             />
-            <p className="text-sm text-muted-foreground mt-1">Percentage of customers who cancel each month</p>
+            <Slider
+              defaultValue={[churnRate]}
+              max={10}
+              step={0.1}
+              onValueChange={(value) => setChurnRate(value[0])}
+            />
           </div>
-          <div>
-            <Label htmlFor="active-customers">Active Customers</Label>
+          <div className="space-y-2">
+            <Label htmlFor="activeCustomers">Active Customers</Label>
             <Input
-              id="active-customers"
               type="number"
-              placeholder="1200"
+              id="activeCustomers"
               value={activeCustomers}
-              onChange={(e) => setActiveCustomers(e.target.value)}
+              onChange={(e) => setActiveCustomers(Number(e.target.value))}
+              placeholder="Enter Active Customers"
             />
-            <p className="text-sm text-muted-foreground mt-1">Total number of paying customers</p>
           </div>
-          <Button 
-            onClick={calculateRevenueLoss} 
-            className="w-full"
-            disabled={!mrr || !churnRate || !activeCustomers}
-          >
-            Calculate Revenue Impact
+          <Button onClick={handleCalculate} className="w-full">
+            Calculate Impact
           </Button>
         </CardContent>
       </Card>

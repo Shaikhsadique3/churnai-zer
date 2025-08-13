@@ -13,13 +13,10 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar"
 import { 
-  BarChart3, 
-  Users, 
-  Settings, 
-  Upload, 
+  Calculator, 
   Mail, 
-  UserCheck, 
-  Book,
+  BookOpen, 
+  TrendingUp,
   Crown,
   Zap,
   Menu
@@ -34,39 +31,24 @@ import { useIsMobile } from "@/hooks/use-mobile"
 
 const menuItems = [
   {
-    title: "Dashboard",
+    title: "Revenue Calculator",
     url: "/dashboard",
-    icon: BarChart3,
+    icon: Calculator,
   },
   {
-    title: "Users",
-    url: "/users", 
-    icon: Users,
-  },
-  {
-    title: "CSV Upload",
-    url: "/dashboard/csv-upload",
-    icon: Upload,
-  },
-  {
-    title: "Email Automation",
-    url: "/dashboard/email-automation", 
+    title: "Email Generator",
+    url: "/dashboard/email-generator", 
     icon: Mail,
   },
   {
-    title: "Recovered Users",
-    url: "/dashboard/recovered-users",
-    icon: UserCheck,
+    title: "Retention Playbooks",
+    url: "/dashboard/playbooks",
+    icon: BookOpen,
   },
   {
-    title: "Integration",
-    url: "/integration",
-    icon: Settings,
-  },
-  {
-    title: "Documentation",
-    url: "/docs",
-    icon: Book,
+    title: "Full Report",
+    url: "/dashboard/report",
+    icon: TrendingUp,
   },
 ]
 
@@ -106,7 +88,7 @@ export function AppSidebar() {
 
       <SidebarContent>
         <SidebarGroup>
-          <SidebarGroupLabel>Navigation</SidebarGroupLabel>
+          <SidebarGroupLabel>Revenue Recovery</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {menuItems.map((item) => (

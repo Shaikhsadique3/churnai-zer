@@ -24,7 +24,11 @@ export interface CompanyInfo {
   productType: string;
 }
 
-export default function RevenueRecoveryDashboard() {
+interface RevenueRecoveryDashboardProps {
+  defaultTab?: string;
+}
+
+export default function RevenueRecoveryDashboard({ defaultTab = "calculator" }: RevenueRecoveryDashboardProps) {
   const [calculationData, setCalculationData] = useState<CalculationData | null>(null);
   const [companyInfo, setCompanyInfo] = useState<CompanyInfo>({
     companyName: '',
@@ -39,7 +43,7 @@ export default function RevenueRecoveryDashboard() {
       icon={<TrendingUp className="h-8 w-8 text-primary" />}
     >
       <div className="max-w-7xl mx-auto space-y-8">
-        <Tabs defaultValue="calculator" className="w-full">
+        <Tabs defaultValue={defaultTab} className="w-full">
           <TabsList className="grid w-full grid-cols-4 mb-8">
             <TabsTrigger value="calculator" className="flex items-center gap-2">
               <Calculator className="h-4 w-4" />

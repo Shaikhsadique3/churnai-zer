@@ -36,6 +36,21 @@ const App = () => (
                 <RevenueRecoveryDashboard />
               </PrivateRoute>
             } />
+            <Route path="/dashboard/email-generator" element={
+              <PrivateRoute>
+                <RevenueRecoveryDashboard defaultTab="emails" />
+              </PrivateRoute>
+            } />
+            <Route path="/dashboard/playbooks" element={
+              <PrivateRoute>
+                <RevenueRecoveryDashboard defaultTab="playbooks" />
+              </PrivateRoute>
+            } />
+            <Route path="/dashboard/report" element={
+              <PrivateRoute>
+                <RevenueRecoveryDashboard defaultTab="report" />
+              </PrivateRoute>
+            } />
           </Routes>
         </BrowserRouter>
       </AuthProvider>

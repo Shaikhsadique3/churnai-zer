@@ -1,46 +1,34 @@
 
-import React from 'react';
-import { TrendingUp } from 'lucide-react';
+import React, { ReactNode } from 'react';
+import { DashboardLayout } from './DashboardLayout';
 
 interface PageLayoutProps {
-  children: React.ReactNode;
+  children: ReactNode;
   title: string;
   description?: string;
-  icon?: React.ReactNode;
-  headerActions?: React.ReactNode;
+  icon?: ReactNode;
 }
 
 export const PageLayout: React.FC<PageLayoutProps> = ({ 
   children, 
   title, 
-  description, 
-  icon,
-  headerActions 
+  description,
+  icon 
 }) => {
   return (
-    <div className="space-y-6 p-6 min-h-screen bg-background">
-      {/* Header */}
-      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-bold text-foreground flex items-center gap-2">
-            {icon || <TrendingUp className="h-8 w-8 text-primary" />}
-            {title}
-          </h1>
-          {description && (
-            <p className="text-muted-foreground text-lg mt-2">{description}</p>
-          )}
-        </div>
-        {headerActions && (
-          <div className="flex items-center gap-4">
-            {headerActions}
-          </div>
-        )}
-      </div>
-      
-      {/* Content */}
+    <DashboardLayout>
       <div className="space-y-6">
+        <div className="flex items-center space-x-3">
+          {icon}
+          <div>
+            <h1 className="text-3xl font-bold text-foreground">{title}</h1>
+            {description && (
+              <p className="text-muted-foreground">{description}</p>
+            )}
+          </div>
+        </div>
         {children}
       </div>
-    </div>
+    </DashboardLayout>
   );
 };

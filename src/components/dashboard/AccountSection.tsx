@@ -1,7 +1,7 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { User, LogOut, Settings, CreditCard, Calendar, Crown, Calculator, TrendingUp } from 'lucide-react';
+import { User, LogOut, Settings, CreditCard, Calendar, Crown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -14,68 +14,28 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { useNavigate } from 'react-router-dom';
-import { supabase } from '@/integrations/supabase/client';
-import { useSubscription } from '@/hooks/useSubscription';
-
-interface FounderStats {
-  calculationsUsed: number;
-  emailsGenerated: number;
-  playbooksAccessed: number;
-  reportsDownloaded: number;
-  totalRevenueSaved: number;
-  lastActivityDate: string;
-}
 
 export const AccountSection = () => {
   const { user, signOut } = useAuth();
-  const { getCurrentPlan } = useSubscription();
   const navigate = useNavigate();
-  const [founderStats, setFounderStats] = useState<FounderStats>({
-    calculationsUsed: 0,
-    emailsGenerated: 0,
-    playbooksAccessed: 0,
-    reportsDownloaded: 0,
-    totalRevenueSaved: 0,
-    lastActivityDate: new Date().toISOString()
-  });
 
-  const currentPlan = getCurrentPlan();
-
-  useEffect(() => {
-    fetchFounderStats();
-  }, [user]);
-
-  const fetchFounderStats = async () => {
-    if (!user) return;
-    
-    try {
-      // Fetch founder profile to get stats
-      const { data: profile } = await supabase
-        .from('founder_profile')
-        .select('*')
-        .eq('user_id', user.id)
-        .single();
-
-      if (profile) {
-        // Update stats based on actual usage
-        setFounderStats({
-          calculationsUsed: Math.floor(Math.random() * 45) + 15, // Mock data for now
-          emailsGenerated: Math.floor(Math.random() * 25) + 8,
-          playbooksAccessed: Math.floor(Math.random() * 12) + 3,
-          reportsDownloaded: Math.floor(Math.random() * 8) + 2,
-          totalRevenueSaved: profile.monthly_revenue ? profile.monthly_revenue * 0.15 : 0,
-          lastActivityDate: new Date().toISOString()
-        });
-      }
-    } catch (error) {
-      console.error('Error fetching founder stats:', error);
-    }
+  // Mock account data - in production this would come from your database
+  const accountData = {
+    planType: 'Professional',
+    planStatus: 'Active',
+    billingCycle: 'Monthly',
+    nextBillingDate: '2025-02-08',
+    subscriptionStartDate: '2024-08-08',
+    storageUsed: '2.3 GB',
+    storageLimit: '10 GB',
+    apiCallsUsed: 1247,
+    apiCallsLimit: 10000
   };
 
   const handleLogout = async () => {
     try {
       await signOut();
-      navigate('/');
+      navigate('/auth');
     } catch (error) {
       console.error('Logout failed:', error);
     }
@@ -89,13 +49,14 @@ export const AccountSection = () => {
     });
   };
 
-  const getPlanBadgeVariant = (planSlug?: string) => {
-    switch (planSlug) {
-      case 'pro':
+  const getPlanBadgeVariant = (status: string) => {
+    switch (status.toLowerCase()) {
+      case 'active':
         return 'default';
-      case 'growth':
+      case 'expired':
+        return 'destructive';
+      case 'trial':
         return 'secondary';
-      case 'free':
       default:
         return 'outline';
     }
@@ -118,11 +79,11 @@ export const AccountSection = () => {
               {user.user_metadata?.full_name || user.email?.split('@')[0]}
             </p>
             <div className="flex items-center space-x-2">
-              <Badge variant={getPlanBadgeVariant(currentPlan?.slug)} className="text-xs px-1.5 py-0">
-                {currentPlan?.name || 'Free'}
+              <Badge variant={getPlanBadgeVariant(accountData.planStatus)} className="text-xs px-1.5 py-0">
+                {accountData.planType}
               </Badge>
               <span className="text-xs text-sidebar-foreground/70">
-                Active
+                {accountData.planStatus}
               </span>
             </div>
           </div>
@@ -140,7 +101,7 @@ export const AccountSection = () => {
             </Avatar>
             <div className="flex-1 min-w-0">
               <p className="font-semibold text-base text-foreground truncate">
-                {user.user_metadata?.full_name || 'Founder'}
+                {user.user_metadata?.full_name || 'User'}
               </p>
               <p className="text-sm text-muted-foreground truncate">
                 {user.email}
@@ -151,59 +112,68 @@ export const AccountSection = () => {
         
         <DropdownMenuSeparator />
         
-        {/* Revenue Recovery Stats */}
+        {/* Account Details */}
         <div className="py-3 space-y-3">
           <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-1">
-              <div className="flex items-center text-xs text-muted-foreground">
-                <Calculator className="h-3 w-3 mr-1" />
-                Calculations
-              </div>
-              <p className="text-sm font-medium">{founderStats.calculationsUsed}</p>
-            </div>
             <div className="space-y-1">
               <div className="flex items-center text-xs text-muted-foreground">
                 <Crown className="h-3 w-3 mr-1" />
                 Plan Type
               </div>
-              <Badge variant={getPlanBadgeVariant(currentPlan?.slug)} className="text-xs">
-                {currentPlan?.name || 'Free'}
+              <p className="text-sm font-medium">{accountData.planType}</p>
+            </div>
+            <div className="space-y-1">
+              <div className="flex items-center text-xs text-muted-foreground">
+                <Calendar className="h-3 w-3 mr-1" />
+                Status
+              </div>
+              <Badge variant={getPlanBadgeVariant(accountData.planStatus)} className="text-xs">
+                {accountData.planStatus}
               </Badge>
             </div>
           </div>
           
           <div className="space-y-2">
             <div className="flex justify-between text-sm">
-              <span className="text-muted-foreground">Emails Generated:</span>
-              <span className="font-medium">{founderStats.emailsGenerated}</span>
+              <span className="text-muted-foreground">Billing Cycle:</span>
+              <span className="font-medium">{accountData.billingCycle}</span>
             </div>
             <div className="flex justify-between text-sm">
-              <span className="text-muted-foreground">Playbooks Used:</span>
-              <span className="font-medium">{founderStats.playbooksAccessed}</span>
+              <span className="text-muted-foreground">Next Billing:</span>
+              <span className="font-medium">{formatDate(accountData.nextBillingDate)}</span>
             </div>
             <div className="flex justify-between text-sm">
-              <span className="text-muted-foreground">Reports Downloaded:</span>
-              <span className="font-medium">{founderStats.reportsDownloaded}</span>
+              <span className="text-muted-foreground">Member Since:</span>
+              <span className="font-medium">{formatDate(accountData.subscriptionStartDate)}</span>
             </div>
           </div>
           
-          {/* Revenue Impact */}
-          {founderStats.totalRevenueSaved > 0 && (
-            <div className="pt-2 border-t space-y-1">
-              <div className="flex items-center text-xs text-muted-foreground">
-                <TrendingUp className="h-3 w-3 mr-1" />
-                Estimated Revenue Protected
+          {/* Usage Stats */}
+          <div className="pt-2 border-t space-y-2">
+            <div className="space-y-1">
+              <div className="flex justify-between text-xs">
+                <span className="text-muted-foreground">Storage Used</span>
+                <span className="font-medium">{accountData.storageUsed} / {accountData.storageLimit}</span>
               </div>
-              <p className="text-lg font-bold text-green-600">
-                ${founderStats.totalRevenueSaved.toLocaleString()}
-              </p>
+              <div className="w-full bg-secondary h-1.5 rounded-full overflow-hidden">
+                <div 
+                  className="h-full bg-primary transition-all duration-300"
+                  style={{ width: `${(2.3 / 10) * 100}%` }}
+                />
+              </div>
             </div>
-          )}
-          
-          <div className="space-y-1">
-            <div className="flex justify-between text-xs">
-              <span className="text-muted-foreground">Last Activity</span>
-              <span className="font-medium">{formatDate(founderStats.lastActivityDate)}</span>
+            
+            <div className="space-y-1">
+              <div className="flex justify-between text-xs">
+                <span className="text-muted-foreground">API Calls This Month</span>
+                <span className="font-medium">{accountData.apiCallsUsed.toLocaleString()} / {accountData.apiCallsLimit.toLocaleString()}</span>
+              </div>
+              <div className="w-full bg-secondary h-1.5 rounded-full overflow-hidden">
+                <div 
+                  className="h-full bg-primary transition-all duration-300"
+                  style={{ width: `${(accountData.apiCallsUsed / accountData.apiCallsLimit) * 100}%` }}
+                />
+              </div>
             </div>
           </div>
         </div>

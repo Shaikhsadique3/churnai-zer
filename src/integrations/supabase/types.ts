@@ -7,7 +7,7 @@ export type Json =
   | Json[]
 
 export type Database = {
-  // Allows to automatically instanciate createClient with right options
+  // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
     PostgrestVersion: "12.2.3 (519615d)"
@@ -128,6 +128,107 @@ export type Database = {
         }
         Relationships: []
       }
+      brand_assets: {
+        Row: {
+          asset_type: string
+          brand_profile_id: string | null
+          created_at: string
+          description: string | null
+          file_name: string
+          file_path: string
+          file_size: number | null
+          id: string
+          is_primary: boolean | null
+          mime_type: string | null
+          user_id: string
+        }
+        Insert: {
+          asset_type: string
+          brand_profile_id?: string | null
+          created_at?: string
+          description?: string | null
+          file_name: string
+          file_path: string
+          file_size?: number | null
+          id?: string
+          is_primary?: boolean | null
+          mime_type?: string | null
+          user_id: string
+        }
+        Update: {
+          asset_type?: string
+          brand_profile_id?: string | null
+          created_at?: string
+          description?: string | null
+          file_name?: string
+          file_path?: string
+          file_size?: number | null
+          id?: string
+          is_primary?: boolean | null
+          mime_type?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "brand_assets_brand_profile_id_fkey"
+            columns: ["brand_profile_id"]
+            isOneToOne: false
+            referencedRelation: "brand_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      brand_profiles: {
+        Row: {
+          brand_guidelines: string | null
+          brand_keywords: string[] | null
+          brand_name: string
+          created_at: string
+          do_not_use: string[] | null
+          font_preferences: string | null
+          id: string
+          preferred_style: string | null
+          primary_color: string | null
+          secondary_color: string | null
+          target_audience: string | null
+          tone_of_voice: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          brand_guidelines?: string | null
+          brand_keywords?: string[] | null
+          brand_name: string
+          created_at?: string
+          do_not_use?: string[] | null
+          font_preferences?: string | null
+          id?: string
+          preferred_style?: string | null
+          primary_color?: string | null
+          secondary_color?: string | null
+          target_audience?: string | null
+          tone_of_voice?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          brand_guidelines?: string | null
+          brand_keywords?: string[] | null
+          brand_name?: string
+          created_at?: string
+          do_not_use?: string[] | null
+          font_preferences?: string | null
+          id?: string
+          preferred_style?: string | null
+          primary_color?: string | null
+          secondary_color?: string | null
+          target_audience?: string | null
+          tone_of_voice?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       churn_predictions: {
         Row: {
           churn_probability: number | null
@@ -200,6 +301,163 @@ export type Database = {
           trigger_reason?: string | null
           triggered_at?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      content_exports: {
+        Row: {
+          content_generation_id: string | null
+          created_at: string
+          error_message: string | null
+          export_data: Json | null
+          export_type: string
+          export_url: string | null
+          exported_at: string | null
+          id: string
+          status: Database["public"]["Enums"]["export_status"] | null
+          user_id: string
+        }
+        Insert: {
+          content_generation_id?: string | null
+          created_at?: string
+          error_message?: string | null
+          export_data?: Json | null
+          export_type: string
+          export_url?: string | null
+          exported_at?: string | null
+          id?: string
+          status?: Database["public"]["Enums"]["export_status"] | null
+          user_id: string
+        }
+        Update: {
+          content_generation_id?: string | null
+          created_at?: string
+          error_message?: string | null
+          export_data?: Json | null
+          export_type?: string
+          export_url?: string | null
+          exported_at?: string | null
+          id?: string
+          status?: Database["public"]["Enums"]["export_status"] | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "content_exports_content_generation_id_fkey"
+            columns: ["content_generation_id"]
+            isOneToOne: false
+            referencedRelation: "content_generations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      content_generations: {
+        Row: {
+          brand_profile_id: string | null
+          character_count: number | null
+          created_at: string
+          engagement_stats: Json | null
+          generated_content: string
+          hashtags: string[] | null
+          id: string
+          is_published: boolean | null
+          mentions: string[] | null
+          original_prompt: string
+          platform: Database["public"]["Enums"]["content_platform"]
+          published_at: string | null
+          scheduled_for: string | null
+          tone: Database["public"]["Enums"]["content_tone"] | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          brand_profile_id?: string | null
+          character_count?: number | null
+          created_at?: string
+          engagement_stats?: Json | null
+          generated_content: string
+          hashtags?: string[] | null
+          id?: string
+          is_published?: boolean | null
+          mentions?: string[] | null
+          original_prompt: string
+          platform: Database["public"]["Enums"]["content_platform"]
+          published_at?: string | null
+          scheduled_for?: string | null
+          tone?: Database["public"]["Enums"]["content_tone"] | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          brand_profile_id?: string | null
+          character_count?: number | null
+          created_at?: string
+          engagement_stats?: Json | null
+          generated_content?: string
+          hashtags?: string[] | null
+          id?: string
+          is_published?: boolean | null
+          mentions?: string[] | null
+          original_prompt?: string
+          platform?: Database["public"]["Enums"]["content_platform"]
+          published_at?: string | null
+          scheduled_for?: string | null
+          tone?: Database["public"]["Enums"]["content_tone"] | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "content_generations_brand_profile_id_fkey"
+            columns: ["brand_profile_id"]
+            isOneToOne: false
+            referencedRelation: "brand_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      content_templates: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          is_favorite: boolean | null
+          name: string
+          platform: Database["public"]["Enums"]["content_platform"]
+          template_content: string
+          tone: Database["public"]["Enums"]["content_tone"] | null
+          updated_at: string
+          usage_count: number | null
+          user_id: string
+          variables: Json | null
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_favorite?: boolean | null
+          name: string
+          platform: Database["public"]["Enums"]["content_platform"]
+          template_content: string
+          tone?: Database["public"]["Enums"]["content_tone"] | null
+          updated_at?: string
+          usage_count?: number | null
+          user_id: string
+          variables?: Json | null
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_favorite?: boolean | null
+          name?: string
+          platform?: Database["public"]["Enums"]["content_platform"]
+          template_content?: string
+          tone?: Database["public"]["Enums"]["content_tone"] | null
+          updated_at?: string
+          usage_count?: number | null
+          user_id?: string
+          variables?: Json | null
         }
         Relationships: []
       }
@@ -1561,7 +1819,7 @@ export type Database = {
     }
     Functions: {
       deduct_user_credits: {
-        Args: { user_uuid: string; credits_to_deduct: number }
+        Args: { credits_to_deduct: number; user_uuid: string }
         Returns: boolean
       }
       encrypt_sensitive_data: {
@@ -1593,11 +1851,26 @@ export type Database = {
         Returns: string
       }
       verify_encrypted_credential: {
-        Args: { stored_encrypted: string; input_plain: string }
+        Args: { input_plain: string; stored_encrypted: string }
         Returns: boolean
       }
     }
     Enums: {
+      content_platform:
+        | "twitter"
+        | "linkedin"
+        | "instagram"
+        | "email"
+        | "facebook"
+        | "blog"
+      content_tone:
+        | "professional"
+        | "witty"
+        | "minimal"
+        | "persuasive"
+        | "friendly"
+        | "authoritative"
+      export_status: "pending" | "completed" | "failed"
       notification_type: "risk" | "recovery" | "email"
       plan_type: "Free" | "Pro" | "Enterprise"
       risk_level: "low" | "medium" | "high"
@@ -1729,6 +2002,23 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      content_platform: [
+        "twitter",
+        "linkedin",
+        "instagram",
+        "email",
+        "facebook",
+        "blog",
+      ],
+      content_tone: [
+        "professional",
+        "witty",
+        "minimal",
+        "persuasive",
+        "friendly",
+        "authoritative",
+      ],
+      export_status: ["pending", "completed", "failed"],
       notification_type: ["risk", "recovery", "email"],
       plan_type: ["Free", "Pro", "Enterprise"],
       risk_level: ["low", "medium", "high"],

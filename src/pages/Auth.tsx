@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -6,13 +5,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Checkbox } from "@/components/ui/checkbox";
-
 import { Shield, AlertCircle, Eye, EyeOff, RefreshCw, Copy, Check } from "lucide-react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "@/hooks/use-toast";
-import { supabase } from "@/integrations/supabase/client";
-import { APP_CONFIG } from "@/lib/config";
 import { validateEmail } from "@/lib/utils";
 
 const Auth = () => {
@@ -23,14 +19,14 @@ const Auth = () => {
   const [rememberMe, setRememberMe] = useState(false);
   const [passwordCopied, setPasswordCopied] = useState(false);
   const [errors, setErrors] = useState<{email?: string; password?: string}>({});
-  const { signIn, signInWithGoogle, signUp, resetPassword, user } = useAuth();
-  const navigate = useNavigate();
+  const { signIn, signInWithGoogle, signUp, user } = useAuth();
 
+  // If already logged in, redirect will be handled by PublicRoute
   useEffect(() => {
     if (user) {
-      navigate('/dashboard');
+      console.log('User already logged in, PublicRoute will handle redirect');
     }
-  }, [user, navigate]);
+  }, [user]);
 
   const validatePassword = (password: string) => {
     return password.length >= 8;
@@ -132,49 +128,10 @@ const Auth = () => {
         title: "Welcome back!",
         description: "You have successfully signed in.",
       });
-      navigate('/dashboard');
+      // Redirect will be handled by AuthContext
     }
     
     setLoading(false);
-  };
-
-
-  const checkIfNewUser = async (userId: string) => {
-    try {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('id')
-        .eq('id', userId)
-        .single();
-      
-      // If no profile exists or this is their first time, they're new
-      return !data || error;
-    } catch {
-      return true; // Assume new user if there's an error
-    }
-  };
-
-  const handleSuccessfulAuth = async (user: any, isSignUp = false) => {
-    const isNewUser = isSignUp || await checkIfNewUser(user.id);
-    
-    if (rememberMe) {
-      localStorage.setItem('rememberMe', 'true');
-    }
-    
-    // Show appropriate welcome message
-    if (isNewUser) {
-      toast({
-        title: `Welcome, ${user.user_metadata?.full_name || user.email}!`,
-        description: "Let's get you set up with your account.",
-      });
-      navigate('/dashboard'); // Navigate to dashboard for new users
-    } else {
-      toast({
-        title: "Welcome back!",
-        description: "You have successfully signed in.",
-      });
-      navigate('/dashboard');
-    }
   };
 
   const handleSignUp = async (e: React.FormEvent) => {
@@ -195,28 +152,11 @@ const Auth = () => {
         variant: "destructive",
       });
     } else {
-      // Send welcome email
-      try {
-        await supabase.functions.invoke('send-welcome-email', {
-          body: { 
-            email,
-            name: email.split('@')[0] // Use email prefix as name
-          }
-        });
-      } catch (emailError) {
-        console.warn('Failed to send welcome email:', emailError);
-        // Don't fail signup if welcome email fails
-      }
-
       toast({
         title: "🎉 Account created successfully!",
-        description: "Welcome to churnaizer.com! Check your email for a welcome message.",
+        description: "Welcome to churnaizer.com! Redirecting to dashboard...",
       });
-      
-      // For new signups, we can assume they are new users
-      // The user will be available in the auth context after successful signup
-      const signInTab = document.querySelector('[value="signin"]') as HTMLElement;
-      signInTab?.click();
+      // Redirect will be handled by AuthContext
     }
     
     setLoading(false);
@@ -491,7 +431,6 @@ const Auth = () => {
           </Link>
         </div>
       </div>
-
     </div>
   );
 };

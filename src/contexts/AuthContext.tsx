@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
@@ -8,8 +9,6 @@ interface AuthContextType {
   session: Session | null;
   loading: boolean;
   isAuthenticated: boolean;
-  setUser: (user: User | null) => void;
-  setSession: (session: Session | null) => void;
   signIn: (email: string, password: string) => Promise<{ error: any }>;
   signInWithGoogle: () => Promise<{ error: any }>;
   signUp: (email: string, password: string) => Promise<{ error: any }>;
@@ -32,16 +31,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
-  const [authInitialized, setAuthInitialized] = useState(false);
 
   const isAuthenticated = !!session && !!user;
 
   useEffect(() => {
     let mounted = true;
 
+    // Initialize auth state
     const initAuth = async () => {
       try {
-        // Get initial session
         const { data: { session: initialSession }, error } = await supabase.auth.getSession();
         
         if (error) {
@@ -52,7 +50,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         if (mounted) {
           setSession(initialSession);
           setUser(initialSession?.user ?? null);
-          setAuthInitialized(true);
           setLoading(false);
         }
       } catch (error) {
@@ -61,7 +58,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           cleanupAuthState();
           setSession(null);
           setUser(null);
-          setAuthInitialized(true);
           setLoading(false);
         }
       }
@@ -69,53 +65,29 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
+      (event, session) => {
         console.log('Auth state changed:', event, session?.user?.id);
         
         if (!mounted) return;
 
+        setSession(session);
+        setUser(session?.user ?? null);
+        setLoading(false);
+
+        // Handle redirects based on auth events
+        const currentPath = window.location.pathname;
+        
         if (event === 'SIGNED_OUT' || !session) {
-          // Complete cleanup on sign out
           cleanupAuthState();
-          setSession(null);
-          setUser(null);
-          
-          // Only redirect if we're not already on a public route
-          const currentPath = window.location.pathname;
-          if (currentPath !== '/' && currentPath !== '/auth') {
-            window.location.href = '/';
+          // Only redirect if not already on public routes
+          if (currentPath.startsWith('/dashboard') || currentPath === '/profile' || currentPath === '/users') {
+            window.location.href = '/auth';
           }
         } else if (event === 'SIGNED_IN' && session) {
-          setSession(session);
-          setUser(session.user);
-          
-          // For new signups, redirect to upgrade page to choose plan
-          // For existing users, redirect to dashboard
-          const currentPath = window.location.pathname;
+          // Only redirect if currently on auth pages
           if (currentPath === '/auth' || currentPath === '/') {
-            // Check if this is a new user by looking at created_at
-            const userCreatedAt = new Date(session.user.created_at);
-            const now = new Date();
-            const timeDiff = now.getTime() - userCreatedAt.getTime();
-            const isNewUser = timeDiff < 60000; // Less than 1 minute ago
-            
-            if (isNewUser) {
-              // New user - redirect to upgrade page to choose their plan
-              window.location.href = '/dashboard/upgrade';
-            } else {
-              // Existing user - redirect to dashboard
-              window.location.href = '/dashboard';
-            }
+            window.location.href = '/dashboard';
           }
-        } else if (session) {
-          // Token refreshed or other auth events
-          setSession(session);
-          setUser(session?.user ?? null);
-        }
-        
-        if (!authInitialized) {
-          setAuthInitialized(true);
-          setLoading(false);
         }
       }
     );
@@ -126,7 +98,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       mounted = false;
       subscription.unsubscribe();
     };
-  }, [authInitialized]);
+  }, []);
 
   const signIn = async (email: string, password: string) => {
     try {
@@ -135,6 +107,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         email,
         password,
       });
+      
+      if (!error) {
+        // Redirect will be handled by onAuthStateChange
+        setTimeout(() => {
+          window.location.href = '/dashboard';
+        }, 100);
+      }
+      
       return { error };
     } finally {
       setLoading(false);
@@ -164,7 +144,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         email,
         password,
         options: {
-          emailRedirectTo: `${window.location.origin}/dashboard/upgrade`
+          emailRedirectTo: `${window.location.origin}/dashboard`
         }
       });
       
@@ -173,13 +153,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       // If signup successful, trigger welcome and admin notification emails
       if (!error && data.user) {
         try {
-          // Get the new session for the user
           const { data: { session } } = await supabase.auth.getSession();
           const authHeaders = session?.access_token ? {
             Authorization: `Bearer ${session.access_token}`
           } : {};
 
-          // Send welcome email using unified function
+          // Send welcome email
           await supabase.functions.invoke('send-auth-email', {
             headers: authHeaders,
             body: { 
@@ -203,8 +182,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           console.log('Welcome and admin notification emails triggered');
         } catch (emailError) {
           console.error('Failed to send signup emails:', emailError);
-          // Don't fail signup if emails fail
         }
+
+        // Redirect will be handled by onAuthStateChange
+        setTimeout(() => {
+          window.location.href = '/dashboard';
+        }, 100);
       }
       
       return { error };
@@ -218,27 +201,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const signOut = async () => {
     try {
-      console.log('🔄 Starting signOut...');
+      console.log('Starting signOut...');
       setLoading(true);
       
-      // Clean up auth state first
       cleanupAuthState();
-      
-      // Sign out from Supabase
       await supabase.auth.signOut({ scope: 'global' });
       
-      // Clear local state
       setSession(null);
       setUser(null);
       
-      console.log('✅ SignOut completed successfully');
-      
-      // Redirect to landing page
+      console.log('SignOut completed successfully');
       window.location.href = '/';
       
     } catch (error) {
       console.error('Sign out error:', error);
-      // Even if signOut fails, clear local state and redirect
       cleanupAuthState();
       setSession(null);
       setUser(null);
@@ -250,13 +226,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const resetPassword = async (email: string) => {
     try {
-      // Get current session (may be null for password reset)
       const { data: { session } } = await supabase.auth.getSession();
       const authHeaders = session?.access_token ? {
         Authorization: `Bearer ${session.access_token}`
       } : {};
 
-      // Use our unified auth email function
       const { data, error } = await supabase.functions.invoke('send-auth-email', {
         headers: authHeaders,
         body: { 
@@ -295,8 +269,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     session,
     loading,
     isAuthenticated,
-    setUser,
-    setSession,
     signIn,
     signInWithGoogle,
     signUp,

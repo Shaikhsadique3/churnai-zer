@@ -22,9 +22,7 @@ const PrivateRoute = ({ children }: PrivateRouteProps) => {
 
   // If not authenticated, redirect to auth page
   if (!isAuthenticated) {
-    // Store the attempted route for redirect after login
-    const redirectTo = location.pathname !== '/auth' ? location.pathname : '/dashboard';
-    return <Navigate to="/auth" state={{ from: redirectTo }} replace />;
+    return <Navigate to="/auth" state={{ from: location.pathname }} replace />;
   }
 
   // User is authenticated, render the protected content

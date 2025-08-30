@@ -271,13 +271,23 @@ const ChurnDashboard = () => {
             </div>
           )}
 
-          {/* Predictions Table */}
+          {/* Risk Analysis Table */}
           <Card>
             <CardHeader>
-              <CardTitle>Customer Risk Analysis</CardTitle>
-              <CardDescription>
-                Detailed churn predictions and recommended actions for each customer
-              </CardDescription>
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                <div>
+                  <CardTitle>Risky Users Analysis</CardTitle>
+                  <CardDescription>
+                    Customers sorted by cancel-intent probability (highest risk first)
+                  </CardDescription>
+                </div>
+                <div className="flex gap-2">
+                  <Button onClick={exportToCsv} variant="outline" size="sm">
+                    <Download className="h-4 w-4 mr-2" />
+                    Export
+                  </Button>
+                </div>
+              </div>
             </CardHeader>
             <CardContent>
               {predictionsLoading ? (
@@ -290,73 +300,185 @@ const ChurnDashboard = () => {
                   No predictions found for this analysis
                 </div>
               ) : (
-                <Tabs defaultValue="high" className="w-full">
-                  <TabsList className="grid w-full grid-cols-3">
-                    <TabsTrigger value="high">High Risk ({predictions.filter(p => p.risk_level === 'high').length})</TabsTrigger>
-                    <TabsTrigger value="medium">Medium Risk ({predictions.filter(p => p.risk_level === 'medium').length})</TabsTrigger>
-                    <TabsTrigger value="low">Low Risk ({predictions.filter(p => p.risk_level === 'low').length})</TabsTrigger>
-                  </TabsList>
-                  
-                  {['high', 'medium', 'low'].map(riskLevel => (
-                    <TabsContent key={riskLevel} value={riskLevel} className="mt-6">
-                      <div className="space-y-4">
-                        {predictions
-                          .filter(p => p.risk_level === riskLevel)
-                          .map((prediction) => (
-                            <Card key={prediction.id} className="border-l-4 border-l-primary">
-                              <CardContent className="pt-6">
-                                <div className="grid lg:grid-cols-4 gap-4">
-                                  <div>
-                                    <h4 className="font-medium mb-2">{prediction.customer_id}</h4>
-                                    <div className="space-y-1 text-sm text-muted-foreground">
-                                      <p>Plan: {prediction.subscription_plan}</p>
-                                      <p>Revenue: ${prediction.monthly_revenue?.toFixed(2) || 0}/mo</p>
-                                    </div>
-                                  </div>
-                                  
-                                  <div>
-                                    <div className="flex items-center gap-2 mb-2">
-                                      <span className="text-sm font-medium">Churn Risk:</span>
-                                      <Badge className={getRiskColor(prediction.risk_level)}>
-                                        {(prediction.churn_probability * 100).toFixed(1)}%
-                                      </Badge>
-                                    </div>
-                                    <Badge className={getRiskColor(prediction.risk_level)}>
-                                      {prediction.risk_level.toUpperCase()}
-                                    </Badge>
-                                  </div>
-                                  
-                                  <div>
-                                    <h5 className="text-sm font-medium mb-2">Key Risk Factors:</h5>
-                                    <ul className="text-xs text-muted-foreground space-y-1">
-                                      {prediction.contributing_factors.slice(0, 3).map((factor, i) => (
-                                        <li key={i}>• {factor}</li>
-                                      ))}
-                                    </ul>
-                                  </div>
-                                  
-                                  <div>
-                                    <h5 className="text-sm font-medium mb-2">Recommended Actions:</h5>
-                                    <ul className="text-xs text-muted-foreground space-y-1">
-                                      {prediction.recommended_actions.slice(0, 3).map((action, i) => (
-                                        <li key={i}>• {action}</li>
-                                      ))}
-                                    </ul>
-                                  </div>
+                <div className="overflow-x-auto">
+                  <table className="w-full border-collapse">
+                    <thead>
+                      <tr className="border-b border-border">
+                        <th className="text-left py-3 px-4 font-semibold">User ID</th>
+                        <th className="text-left py-3 px-4 font-semibold">Cancel Probability %</th>
+                        <th className="text-left py-3 px-4 font-semibold">Risk Level</th>
+                        <th className="text-left py-3 px-4 font-semibold">Reason(s) Detected</th>
+                        <th className="text-left py-3 px-4 font-semibold">Suggested Action</th>
+                        <th className="text-left py-3 px-4 font-semibold">Monthly Revenue</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {predictions
+                        .sort((a, b) => (b.churn_probability || 0) - (a.churn_probability || 0)) // Sort by highest risk first
+                        .map((prediction) => {
+                          const churnPercentage = ((prediction.churn_probability || 0) * 100).toFixed(1);
+                          const reasons = Array.isArray(prediction.contributing_factors) 
+                            ? prediction.contributing_factors.join('; ')
+                            : prediction.contributing_factors || 'No specific reasons detected';
+                          const actions = Array.isArray(prediction.recommended_actions) 
+                            ? prediction.recommended_actions.join('; ')
+                            : prediction.recommended_actions || 'Monitor engagement closely';
+                          
+                          return (
+                            <tr key={prediction.id} className="border-b border-border/50 hover:bg-muted/30 transition-colors">
+                              <td className="py-4 px-4">
+                                <div className="font-medium text-foreground">
+                                  {prediction.customer_id}
                                 </div>
-                              </CardContent>
-                            </Card>
-                          ))}
-                        
-                        {predictions.filter(p => p.risk_level === riskLevel).length === 0 && (
-                          <div className="text-center py-8 text-muted-foreground">
-                            No {riskLevel} risk customers found
+                                <div className="text-sm text-muted-foreground">
+                                  {prediction.subscription_plan || 'Unknown'}
+                                </div>
+                              </td>
+                              <td className="py-4 px-4">
+                                <div className="flex items-center gap-2">
+                                  <span className={`text-lg font-bold ${
+                                    prediction.risk_level === 'high' ? 'text-red-600' :
+                                    prediction.risk_level === 'medium' ? 'text-yellow-600' :
+                                    'text-green-600'
+                                  }`}>
+                                    {churnPercentage}%
+                                  </span>
+                                </div>
+                              </td>
+                              <td className="py-4 px-4">
+                                <Badge className={getRiskColor(prediction.risk_level)}>
+                                  {prediction.risk_level?.toUpperCase() || 'UNKNOWN'}
+                                </Badge>
+                              </td>
+                              <td className="py-4 px-4 max-w-xs">
+                                <div className="text-sm text-muted-foreground line-clamp-3">
+                                  {reasons}
+                                </div>
+                              </td>
+                              <td className="py-4 px-4 max-w-xs">
+                                <div className="text-sm font-medium text-foreground">
+                                  {actions}
+                                </div>
+                              </td>
+                              <td className="py-4 px-4">
+                                <div className="font-medium text-foreground">
+                                  ${(prediction.monthly_revenue || 0).toFixed(2)}
+                                </div>
+                                <div className="text-xs text-muted-foreground">
+                                  /month
+                                </div>
+                              </td>
+                            </tr>
+                          );
+                        })}
+                    </tbody>
+                  </table>
+                  
+                  {/* Risk Level Filter Tabs */}
+                  <div className="mt-6">
+                    <Tabs defaultValue="all" className="w-full">
+                      <TabsList className="grid w-full grid-cols-4">
+                        <TabsTrigger value="all">
+                          All ({predictions.length})
+                        </TabsTrigger>
+                        <TabsTrigger value="high">
+                          High Risk ({predictions.filter(p => p.risk_level === 'high').length})
+                        </TabsTrigger>
+                        <TabsTrigger value="medium">
+                          Medium Risk ({predictions.filter(p => p.risk_level === 'medium').length})
+                        </TabsTrigger>
+                        <TabsTrigger value="low">
+                          Low Risk ({predictions.filter(p => p.risk_level === 'low').length})
+                        </TabsTrigger>
+                      </TabsList>
+                      
+                      <TabsContent value="all" className="mt-4">
+                        <div className="text-sm text-muted-foreground">
+                          Showing all {predictions.length} customers sorted by cancel-intent probability
+                        </div>
+                      </TabsContent>
+                      
+                      {['high', 'medium', 'low'].map(riskLevel => (
+                        <TabsContent key={riskLevel} value={riskLevel} className="mt-4">
+                          <div className="overflow-x-auto">
+                            <table className="w-full border-collapse">
+                              <thead>
+                                <tr className="border-b border-border">
+                                  <th className="text-left py-3 px-4 font-semibold">User ID</th>
+                                  <th className="text-left py-3 px-4 font-semibold">Cancel Probability %</th>
+                                  <th className="text-left py-3 px-4 font-semibold">Reason(s) Detected</th>
+                                  <th className="text-left py-3 px-4 font-semibold">Suggested Action</th>
+                                  <th className="text-left py-3 px-4 font-semibold">Monthly Revenue</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {predictions
+                                  .filter(p => p.risk_level === riskLevel)
+                                  .sort((a, b) => (b.churn_probability || 0) - (a.churn_probability || 0))
+                                  .map((prediction) => {
+                                    const churnPercentage = ((prediction.churn_probability || 0) * 100).toFixed(1);
+                                    const reasons = Array.isArray(prediction.contributing_factors) 
+                                      ? prediction.contributing_factors.join('; ')
+                                      : prediction.contributing_factors || 'No specific reasons detected';
+                                    const actions = Array.isArray(prediction.recommended_actions) 
+                                      ? prediction.recommended_actions.join('; ')
+                                      : prediction.recommended_actions || 'Monitor engagement closely';
+                                    
+                                    return (
+                                      <tr key={prediction.id} className="border-b border-border/50 hover:bg-muted/30 transition-colors">
+                                        <td className="py-4 px-4">
+                                          <div className="font-medium text-foreground">
+                                            {prediction.customer_id}
+                                          </div>
+                                          <div className="text-sm text-muted-foreground">
+                                            {prediction.subscription_plan || 'Unknown'}
+                                          </div>
+                                        </td>
+                                        <td className="py-4 px-4">
+                                          <span className={`text-lg font-bold ${
+                                            prediction.risk_level === 'high' ? 'text-red-600' :
+                                            prediction.risk_level === 'medium' ? 'text-yellow-600' :
+                                            'text-green-600'
+                                          }`}>
+                                            {churnPercentage}%
+                                          </span>
+                                        </td>
+                                        <td className="py-4 px-4 max-w-xs">
+                                          <div className="text-sm text-muted-foreground line-clamp-3">
+                                            {reasons}
+                                          </div>
+                                        </td>
+                                        <td className="py-4 px-4 max-w-xs">
+                                          <div className="text-sm font-medium text-foreground">
+                                            {actions}
+                                          </div>
+                                        </td>
+                                        <td className="py-4 px-4">
+                                          <div className="font-medium text-foreground">
+                                            ${(prediction.monthly_revenue || 0).toFixed(2)}
+                                          </div>
+                                          <div className="text-xs text-muted-foreground">
+                                            /month
+                                          </div>
+                                        </td>
+                                      </tr>
+                                    );
+                                  })}
+                                {predictions.filter(p => p.risk_level === riskLevel).length === 0 && (
+                                  <tr>
+                                    <td colSpan={5} className="text-center py-8 text-muted-foreground">
+                                      No {riskLevel} risk customers found
+                                    </td>
+                                  </tr>
+                                )}
+                              </tbody>
+                            </table>
                           </div>
-                        )}
-                      </div>
-                    </TabsContent>
-                  ))}
-                </Tabs>
+                        </TabsContent>
+                      ))}
+                    </Tabs>
+                  </div>
+                </div>
               )}
             </CardContent>
           </Card>

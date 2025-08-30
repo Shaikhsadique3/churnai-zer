@@ -188,62 +188,138 @@ async function processCsvRow(row: CSVRow, analysisId: string, userId: string): P
     
     if (churnApiUrl && churnApiKey) {
       try {
-        console.log('🧠 Attempting Flask API prediction for:', mapped.user_id);
+        console.log('🧠 Attempting AI model prediction for:', mapped.user_id);
         
-        // Prepare payload for Flask API
+        // Prepare payload for AI model - using your specific endpoint structure
         const payload = {
           user_id: mapped.user_id,
           plan: mapped.plan,
-          last_login: mapped.last_login,
-          avg_session_duration: mapped.avg_session_duration,
+          last_login_days_ago: calculateDaysSince(mapped.last_login),
+          avg_session_duration_minutes: mapped.avg_session_duration,
           billing_status: mapped.billing_status,
           monthly_revenue: mapped.monthly_revenue,
           feature_usage_count: mapped.feature_usage_count,
-          support_tickets: mapped.support_tickets
+          support_tickets_count: mapped.support_tickets
         };
         
-        const response = await fetch(`${churnApiUrl}/predict`, {
+        // Use your specific AI model endpoint
+        const aiModelUrl = churnApiUrl || 'https://ai-model-rumc.onrender.com';
+        const response = await fetch(`${aiModelUrl}/predict`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${churnApiKey}`,
-            'X-API-Key': churnApiKey
+            'Accept': 'application/json'
           },
           body: JSON.stringify(payload),
-          signal: AbortSignal.timeout(10000) // 10 second timeout
+          signal: AbortSignal.timeout(15000) // 15 second timeout for external API
         });
         
         if (response.ok) {
           const result = await response.json();
-          console.log('✅ Flask API success:', result);
+          console.log('✅ AI Model success:', result);
           
-          churnProbability = result.churn_probability || result.score || 0;
-          contributing_factors = result.factors || result.reasons || [];
-          recommended_actions = result.actions || result.recommendations || [];
+          // Parse response from your AI model
+          churnProbability = result.churn_probability || result.prediction || result.score || 0;
+          contributing_factors = Array.isArray(result.reasons) ? result.reasons : 
+                               Array.isArray(result.factors) ? result.factors : 
+                               result.reason ? [result.reason] : [];
+          recommended_actions = Array.isArray(result.actions) ? result.actions : 
+                              Array.isArray(result.recommendations) ? result.recommendations : 
+                              result.action ? [result.action] : [];
+          
+          // If no factors/actions provided by AI, generate them
+          if (contributing_factors.length === 0) {
+            contributing_factors = [generateChurnReason(mapped)];
+          }
+          if (recommended_actions.length === 0) {
+            recommended_actions = [generateRecommendedAction(mapped)];
+          }
         } else {
-          throw new Error(`Flask API error: ${response.status} ${response.statusText}`);
+          throw new Error(`AI Model error: ${response.status} ${response.statusText}`);
         }
         
       } catch (error) {
-        console.log('❌ Flask API failed:', error.message);
+        console.log('❌ AI Model failed:', error.message);
         console.log('🔄 Falling back to rules-based logic');
         usingFallback = true;
       }
     } else {
-      console.log('⚠️ No Flask API configured, using rules-based logic');
-      usingFallback = true;
+      console.log('⚠️ Using default AI model endpoint with rules-based fallback');
+      // Try the default endpoint without API key
+      try {
+        const payload = {
+          user_id: mapped.user_id,
+          plan: mapped.plan,
+          last_login_days_ago: calculateDaysSince(mapped.last_login),
+          avg_session_duration_minutes: mapped.avg_session_duration,
+          billing_status: mapped.billing_status,
+          monthly_revenue: mapped.monthly_revenue,
+          feature_usage_count: mapped.feature_usage_count,
+          support_tickets_count: mapped.support_tickets
+        };
+        
+        const response = await fetch('https://ai-model-rumc.onrender.com/predict', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+          },
+          body: JSON.stringify(payload),
+          signal: AbortSignal.timeout(15000)
+        });
+        
+        if (response.ok) {
+          const result = await response.json();
+          console.log('✅ Default AI Model success:', result);
+          
+          churnProbability = result.churn_probability || result.prediction || result.score || 0;
+          contributing_factors = Array.isArray(result.reasons) ? result.reasons : 
+                               Array.isArray(result.factors) ? result.factors : 
+                               result.reason ? [result.reason] : [];
+          recommended_actions = Array.isArray(result.actions) ? result.actions : 
+                              Array.isArray(result.recommendations) ? result.recommendations : 
+                              result.action ? [result.action] : [];
+        } else {
+          throw new Error(`Default AI Model error: ${response.status}`);
+        }
+      } catch (error) {
+        console.log('❌ Default AI Model also failed:', error.message);
+        usingFallback = true;
+      }
     }
     
     // Fallback to rules-based logic if AI model unavailable
     if (usingFallback) {
       churnProbability = calculateRulesBasedScore(mapped);
       contributing_factors = [generateChurnReason(mapped)];
-      recommended_actions = [generateRecommendedAction(mapped)];
+      
+      // Generate specific suggested actions based on risk factors
+      const suggestedActions = [];
+      const lastLoginDays = calculateDaysSince(mapped.last_login);
+      
+      if (lastLoginDays > 14) {
+        suggestedActions.push('Send reactivation email');
+      }
+      if (mapped.billing_status.toLowerCase().includes('failed') || mapped.billing_status.toLowerCase().includes('overdue')) {
+        suggestedActions.push('Check billing');
+      }
+      if (mapped.plan === 'Free' && mapped.monthly_revenue === 0) {
+        suggestedActions.push('Offer discount');
+      }
+      if (mapped.support_tickets > 3) {
+        suggestedActions.push('Priority customer success call');
+      }
+      if (suggestedActions.length === 0) {
+        suggestedActions.push('Monitor engagement closely');
+      }
+      
+      recommended_actions = suggestedActions;
       
       console.log('📊 Rules-based prediction:', {
         user_id: mapped.user_id,
         score: churnProbability,
-        factors: contributing_factors
+        factors: contributing_factors,
+        actions: recommended_actions
       });
     }
     

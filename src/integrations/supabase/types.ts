@@ -229,6 +229,65 @@ export type Database = {
         }
         Relationships: []
       }
+      churn_analysis_results: {
+        Row: {
+          avg_cltv: number | null
+          churn_rate: number | null
+          cohort_retention_data: Json | null
+          created_at: string
+          feature_importance: Json | null
+          high_risk_customers: number | null
+          id: string
+          low_risk_customers: number | null
+          medium_risk_customers: number | null
+          net_mrr_churn: number | null
+          top_churn_drivers: Json | null
+          total_customers: number
+          upload_id: string
+          user_id: string
+        }
+        Insert: {
+          avg_cltv?: number | null
+          churn_rate?: number | null
+          cohort_retention_data?: Json | null
+          created_at?: string
+          feature_importance?: Json | null
+          high_risk_customers?: number | null
+          id?: string
+          low_risk_customers?: number | null
+          medium_risk_customers?: number | null
+          net_mrr_churn?: number | null
+          top_churn_drivers?: Json | null
+          total_customers: number
+          upload_id: string
+          user_id: string
+        }
+        Update: {
+          avg_cltv?: number | null
+          churn_rate?: number | null
+          cohort_retention_data?: Json | null
+          created_at?: string
+          feature_importance?: Json | null
+          high_risk_customers?: number | null
+          id?: string
+          low_risk_customers?: number | null
+          medium_risk_customers?: number | null
+          net_mrr_churn?: number | null
+          top_churn_drivers?: Json | null
+          total_customers?: number
+          upload_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "churn_analysis_results_upload_id_fkey"
+            columns: ["upload_id"]
+            isOneToOne: false
+            referencedRelation: "csv_uploads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       churn_predictions: {
         Row: {
           churn_probability: number | null
@@ -530,6 +589,56 @@ export type Database = {
         }
         Relationships: []
       }
+      customer_churn_predictions: {
+        Row: {
+          analysis_id: string
+          churn_probability: number
+          contributing_factors: Json | null
+          customer_id: string
+          days_since_last_active: number | null
+          days_since_signup: number | null
+          id: string
+          monthly_revenue: number | null
+          recommended_actions: Json | null
+          risk_level: string
+          subscription_plan: string | null
+        }
+        Insert: {
+          analysis_id: string
+          churn_probability: number
+          contributing_factors?: Json | null
+          customer_id: string
+          days_since_last_active?: number | null
+          days_since_signup?: number | null
+          id?: string
+          monthly_revenue?: number | null
+          recommended_actions?: Json | null
+          risk_level: string
+          subscription_plan?: string | null
+        }
+        Update: {
+          analysis_id?: string
+          churn_probability?: number
+          contributing_factors?: Json | null
+          customer_id?: string
+          days_since_last_active?: number | null
+          days_since_signup?: number | null
+          id?: string
+          monthly_revenue?: number | null
+          recommended_actions?: Json | null
+          risk_level?: string
+          subscription_plan?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "customer_churn_predictions_analysis_id_fkey"
+            columns: ["analysis_id"]
+            isOneToOne: false
+            referencedRelation: "churn_analysis_results"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       customer_metrics: {
         Row: {
           avg_session_duration: unknown | null
@@ -592,6 +701,77 @@ export type Database = {
           user_id?: string | null
         }
         Relationships: []
+      }
+      digests: {
+        Row: {
+          action: string
+          content: string
+          created_at: string
+          id: string
+          topic: string
+          user_id: string
+        }
+        Insert: {
+          action: string
+          content: string
+          created_at?: string
+          id?: string
+          topic: string
+          user_id: string
+        }
+        Update: {
+          action?: string
+          content?: string
+          created_at?: string
+          id?: string
+          topic?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      digests_log: {
+        Row: {
+          created_at: string
+          delivery_method: string
+          delivery_status: string | null
+          digest_content: Json
+          digest_id: string | null
+          error_message: string | null
+          id: string
+          sent_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          delivery_method: string
+          delivery_status?: string | null
+          digest_content: Json
+          digest_id?: string | null
+          error_message?: string | null
+          id?: string
+          sent_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          delivery_method?: string
+          delivery_status?: string | null
+          digest_content?: Json
+          digest_id?: string | null
+          error_message?: string | null
+          id?: string
+          sent_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "digests_log_digest_id_fkey"
+            columns: ["digest_id"]
+            isOneToOne: false
+            referencedRelation: "digests"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       email_logs: {
         Row: {
@@ -1225,6 +1405,36 @@ export type Database = {
         }
         Relationships: []
       }
+      preferences: {
+        Row: {
+          created_at: string
+          delivery_format: string
+          frequency: string
+          id: string
+          preferred_topics: string[]
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          delivery_format: string
+          frequency: string
+          id?: string
+          preferred_topics?: string[]
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          delivery_format?: string
+          frequency?: string
+          id?: string
+          preferred_topics?: string[]
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -1272,6 +1482,56 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      reports: {
+        Row: {
+          ai_insights: string | null
+          analysis_id: string
+          completed_at: string | null
+          created_at: string
+          file_size: number | null
+          id: string
+          pdf_file_path: string
+          report_name: string
+          report_url: string | null
+          status: string
+          user_id: string
+        }
+        Insert: {
+          ai_insights?: string | null
+          analysis_id: string
+          completed_at?: string | null
+          created_at?: string
+          file_size?: number | null
+          id?: string
+          pdf_file_path: string
+          report_name: string
+          report_url?: string | null
+          status?: string
+          user_id: string
+        }
+        Update: {
+          ai_insights?: string | null
+          analysis_id?: string
+          completed_at?: string | null
+          created_at?: string
+          file_size?: number | null
+          id?: string
+          pdf_file_path?: string
+          report_name?: string
+          report_url?: string | null
+          status?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reports_analysis_id_fkey"
+            columns: ["analysis_id"]
+            isOneToOne: false
+            referencedRelation: "churn_analysis_results"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       retention_emails: {
         Row: {

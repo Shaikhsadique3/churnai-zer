@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Churnaizer Cancel Guard - Simple Integration</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            line-height: 1.6;
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f8f9fa;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 2px 20px rgba(0,0,0,0.1);
+        }
+        h1 { color: #2563eb; margin-bottom: 10px; }
+        h2 { color: #374151; margin-top: 30px; }
+        .demo-section {
+            background: #f8fafc;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+            border-left: 4px solid #2563eb;
+        }
+        .btn {
+            background: #2563eb;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            cursor: pointer;
+            margin: 8px 8px 8px 0;
+            font-size: 14px;
+            font-weight: 500;
+            text-decoration: none;
+            display: inline-block;
+        }
+        .btn:hover { background: #1d4ed8; }
+        .btn-danger {
+            background: #dc2626;
+        }
+        .btn-danger:hover { background: #b91c1c; }
+        .cancel-subscription, .cancel-plan, .delete-account {
+            background: #dc2626;
+            color: white;
+        }
+        code {
+            background: #f1f5f9;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: 'Monaco', 'Menlo', monospace;
+            font-size: 13px;
+        }
+        pre {
+            background: #1f2937;
+            color: #f9fafb;
+            padding: 20px;
+            border-radius: 8px;
+            overflow-x: auto;
+            font-size: 13px;
+            line-height: 1.5;
+        }
+        .status {
+            padding: 10px;
+            border-radius: 6px;
+            margin: 10px 0;
+            font-weight: 500;
+        }
+        .status.success {
+            background: #dcfce7;
+            color: #166534;
+            border: 1px solid #bbf7d0;
+        }
+        .status.error {
+            background: #fef2f2;
+            color: #991b1b;
+            border: 1px solid #fecaca;
+        }
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin: 20px 0;
+        }
+        @media (max-width: 640px) {
+            .grid { grid-template-columns: 1fr; }
+        }
+        .billing-form {
+            background: #fff;
+            border: 1px solid #e5e7eb;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🛡️ Churnaizer Cancel Guard</h1>
+        <p>Simple integration demo for cancel protection with automatic event detection.</p>
+        
+        <div class="status success" id="status">
+            ✅ Cancel Guard ready for testing
+        </div>
+
+        <h2>🚀 Quick Integration</h2>
+        <p>Add this single script to your website:</p>
+        
+        <pre><code>&lt;script&gt;
+// Optional: Configure before loading (or use init() method)
+window.ChurnaizerConfig = {
+    apiKey: 'YOUR_API_KEY',
+    selector: '.cancel-subscription, .delete-account, [data-cancel]',
+    debug: true
+};
+&lt;/script&gt;
+&lt;script src="https://cdn.churnaizer.com/cancel-guard.js"&gt;&lt;/script&gt;</code></pre>
+
+        <p>Or initialize programmatically:</p>
+        
+        <pre><code>&lt;script src="https://cdn.churnaizer.com/cancel-guard.js"&gt;&lt;/script&gt;
+&lt;script&gt;
+Churnaizer.init({
+    apiKey: 'YOUR_API_KEY',
+    selector: '.cancel-subscription, .delete-account'
+});
+
+// Set user data
+Churnaizer.setUser({
+    id: 'user_123',
+    mrr: 99,
+    plan: 'Pro',
+    tenure_days: 180
+});
+&lt;/script&gt;</code></pre>
+
+        <h2>🧪 Live Demo</h2>
+        
+        <div class="grid">
+            <div class="demo-section">
+                <h3>Protected Cancel Buttons</h3>
+                <p>These buttons are protected by the cancel guard:</p>
+                <button class="btn cancel-subscription">Cancel Subscription</button>
+                <button class="btn cancel-plan">Cancel Plan</button>
+                <a href="/cancel" class="btn delete-account">Delete Account</a>
+                <button class="btn btn-danger" data-cancel="true">Custom Cancel</button>
+            </div>
+            
+            <div class="demo-section">
+                <h3>Regular Buttons</h3>
+                <p>These buttons work normally:</p>
+                <button class="btn" onclick="showMessage('Normal button clicked')">Normal Button</button>
+                <button class="btn" onclick="showMessage('Save clicked')">Save Changes</button>
+                <a href="#" class="btn" onclick="showMessage('Link clicked')">Regular Link</a>
+            </div>
+        </div>
+
+        <div class="demo-section">
+            <h3>Realistic Billing Form</h3>
+            <div class="billing-form">
+                <h4>Manage Subscription</h4>
+                <p>Current Plan: <strong>Pro Plan - $99/month</strong></p>
+                <p>Next billing date: September 30, 2025</p>
+                
+                <button class="btn">Update Payment Method</button>
+                <button class="btn">Change Plan</button>
+                <button class="btn cancel-subscription">Cancel Subscription</button>
+            </div>
+        </div>
+
+        <h2>⚙️ API Methods</h2>
+        
+        <div class="demo-section">
+            <h3>Control Methods</h3>
+            <button class="btn" onclick="updateUser()">Update User Data</button>
+            <button class="btn" onclick="trackCustomEvent()">Track Custom Event</button>
+            <button class="btn" onclick="manualTrigger()">Manual Trigger</button>
+            <button class="btn" onclick="showConfig()">Show Config</button>
+        </div>
+
+        <h2>📋 Configuration Options</h2>
+        
+        <div class="demo-section">
+            <h3>Initialization Options</h3>
+            <pre><code>Churnaizer.init({
+    // Required
+    apiKey: 'your_api_key',
+    
+    // CSS selector(s) for cancel elements
+    selector: '.cancel-btn, [data-cancel], .delete-account',
+    
+    // Auto-attach to dynamic elements
+    autoTrack: true,
+    
+    // Debug mode
+    debug: false,
+    
+    // Fallback function if modal fails
+    fallback: function(event, element, error) {
+        console.log('Cancel guard failed, proceeding with action');
+        // Custom fallback logic
+    }
+});</code></pre>
+        </div>
+
+        <div class="demo-section">
+            <h3>Available Methods</h3>
+            <ul>
+                <li><code>Churnaizer.init(options)</code> - Initialize with configuration</li>
+                <li><code>Churnaizer.setUser(userData)</code> - Update user information</li>
+                <li><code>Churnaizer.setContext(context)</code> - Update context data</li>
+                <li><code>Churnaizer.track(eventType, properties)</code> - Track custom events</li>
+                <li><code>Churnaizer.trigger(userData, context)</code> - Manually show modal</li>
+                <li><code>Churnaizer.getConfig()</code> - Get current configuration</li>
+                <li><code>Churnaizer.isInitialized()</code> - Check initialization status</li>
+            </ul>
+        </div>
+
+        <h2>🎯 Selector Examples</h2>
+        
+        <div class="demo-section">
+            <h3>Common CSS Selectors</h3>
+            <pre><code>// Class-based selectors
+'.cancel-subscription, .delete-account, .unsubscribe'
+
+// Attribute-based selectors  
+'[data-cancel], [data-action="cancel"], [href*="cancel"]'
+
+// Combined selectors
+'button[class*="cancel"], a[href*="unsubscribe"], .btn-danger[data-cancel]'
+
+// Multiple selectors
+['.cancel-btn', '.delete-account', '[data-cancel="true"]']</code></pre>
+        </div>
+
+        <h2>🔧 Advanced Features</h2>
+        
+        <div class="demo-section">
+            <h3>Custom Fallback Handling</h3>
+            <pre><code>Churnaizer.init({
+    apiKey: 'your_key',
+    selector: '.cancel-btn',
+    fallback: function(event, element, error) {
+        // Log the error
+        console.error('Cancel guard failed:', error);
+        
+        // Show custom message
+        alert('Sorry, there was an issue. Please contact support.');
+        
+        // Or proceed with original action
+        if (element.href) {
+            window.location.href = element.href;
+        }
+    }
+});</code></pre>
+        </div>
+
+        <div class="demo-section">
+            <h3>Dynamic User Data</h3>
+            <pre><code>// Update user data based on current state
+Churnaizer.setUser({
+    id: getCurrentUserId(),
+    mrr: getCurrentMRR(),
+    plan: getCurrentPlan(),
+    tenure_days: getTenureDays(),
+    last_login_days: getLastLoginDays()
+});
+
+// Track custom properties
+Churnaizer.track('billing_page_viewed', {
+    page: 'billing_settings',
+    plan_type: 'pro',
+    payment_method: 'stripe'
+});</code></pre>
+        </div>
+
+        <div id="result-display" style="margin-top: 20px;"></div>
+    </div>
+
+    <!-- Load Churnaizer Cancel Guard -->
+    <script src="cancel-guard.js"></script>
+    
+    <script>
+        // Initialize with demo configuration
+        Churnaizer.init({
+            apiKey: 'cg_demo_key_12345', // Replace with your real API key
+            selector: '.cancel-subscription, .cancel-plan, .delete-account, [data-cancel]',
+            debug: true,
+            fallback: function(event, element, error) {
+                showMessage(`Cancel guard failed: ${error.message}. Proceeding with action.`, true);
+                // In a real implementation, you might proceed with the cancel action
+            }
+        });
+
+        // Set demo user data
+        Churnaizer.setUser({
+            id: 'demo_user_123',
+            mrr: 99,
+            plan: 'Pro',
+            tenure_days: 180,
+            last_login_days: 2
+        });
+
+        // Demo functions
+        function showMessage(message, isError = false) {
+            const display = document.getElementById('result-display');
+            display.innerHTML = `<div class="status ${isError ? 'error' : 'success'}">${message}</div>`;
+            setTimeout(() => display.innerHTML = '', 5000);
+        }
+
+        function updateUser() {
+            const randomMRR = Math.floor(Math.random() * 500) + 50;
+            const plans = ['Basic', 'Pro', 'Enterprise'];
+            const randomPlan = plans[Math.floor(Math.random() * plans.length)];
+            
+            Churnaizer.setUser({
+                id: 'demo_user_' + Date.now(),
+                mrr: randomMRR,
+                plan: randomPlan,
+                tenure_days: Math.floor(Math.random() * 365) + 30,
+                last_login_days: Math.floor(Math.random() * 30)
+            });
+            
+            showMessage(`User updated: ${randomPlan} plan, $${randomMRR} MRR`);
+        }
+
+        function trackCustomEvent() {
+            Churnaizer.track('demo_event', {
+                page: 'integration_demo',
+                timestamp: Date.now(),
+                user_action: 'custom_tracking_test'
+            });
+            showMessage('Custom event tracked successfully!');
+        }
+
+        function manualTrigger() {
+            Churnaizer.trigger({
+                id: 'manual_trigger_user',
+                mrr: 299,
+                plan: 'Enterprise',
+                tenure_days: 90,
+                last_login_days: 1
+            }, {
+                trigger_type: 'manual',
+                test_mode: true
+            });
+            showMessage('Manual trigger executed!');
+        }
+
+        function showConfig() {
+            const config = Churnaizer.getConfig();
+            showMessage(`Config: Initialized=${Churnaizer.isInitialized()}, Version=${Churnaizer.version}, Selector="${config.selector}"`);
+        }
+
+        // Update status based on initialization
+        setTimeout(() => {
+            const status = document.getElementById('status');
+            if (Churnaizer.isInitialized()) {
+                status.innerHTML = '✅ Cancel Guard initialized and ready';
+                status.className = 'status success';
+            } else {
+                status.innerHTML = '❌ Cancel Guard failed to initialize';
+                status.className = 'status error';
+            }
+        }, 500);
+    </script>
+</body>
+</html>

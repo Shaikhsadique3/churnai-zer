@@ -7,10 +7,15 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Plus, Edit2, Trash2, Save } from 'lucide-react';
+import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Plus, Edit2, Trash2, Save, Menu, Shield, BarChart3, Settings, User, LogOut } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
+import { useSecureLogout } from '@/hooks/useSecureLogout';
+import { Link, useNavigate } from 'react-router-dom';
 
 interface Offer {
   id?: string;
@@ -40,6 +45,8 @@ const OFFER_TYPES = [
 export default function CancelGuardOffers() {
   const { user } = useAuth();
   const { toast } = useToast();
+  const { secureLogout } = useSecureLogout();
+  const navigate = useNavigate();
   const [projects, setProjects] = useState<Project[]>([]);
   const [selectedProject, setSelectedProject] = useState<string>('');
   const [offers, setOffers] = useState<Offer[]>([]);
@@ -206,6 +213,32 @@ export default function CancelGuardOffers() {
     return colors[type as keyof typeof colors] || 'bg-gray-500';
   };
 
+  const NavigationMenu = () => (
+    <nav className="space-y-2">
+      <Link 
+        to="/cancel-guard" 
+        className="flex items-center space-x-3 px-3 py-2 rounded-md text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted"
+      >
+        <BarChart3 className="h-4 w-4" />
+        <span>Dashboard</span>
+      </Link>
+      <Link 
+        to="/offers" 
+        className="flex items-center space-x-3 px-3 py-2 rounded-md text-sm font-medium bg-primary text-primary-foreground"
+      >
+        <Shield className="h-4 w-4" />
+        <span>Offers</span>
+      </Link>
+      <Link 
+        to="/settings" 
+        className="flex items-center space-x-3 px-3 py-2 rounded-md text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted"
+      >
+        <Settings className="h-4 w-4" />
+        <span>Settings</span>
+      </Link>
+    </nav>
+  );
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -215,7 +248,76 @@ export default function CancelGuardOffers() {
   }
 
   return (
-    <div className="container mx-auto p-6 space-y-6">
+    <div className="min-h-screen bg-background">
+      {/* Top Header */}
+      <header className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+        <div className="flex h-16 items-center px-4">
+          <Sheet>
+            <SheetTrigger asChild>
+              <Button variant="ghost" size="icon" className="md:hidden">
+                <Menu className="h-5 w-5" />
+              </Button>
+            </SheetTrigger>
+            <SheetContent side="left" className="w-64">
+              <div className="flex items-center space-x-2 mb-6">
+                <Shield className="h-6 w-6 text-primary" />
+                <span className="text-lg font-semibold">Cancel Guard</span>
+              </div>
+              <NavigationMenu />
+            </SheetContent>
+          </Sheet>
+
+          <div className="flex items-center space-x-2 md:space-x-4">
+            <Shield className="h-6 w-6 text-primary" />
+            <span className="text-lg font-semibold">Cancel Guard</span>
+          </div>
+
+          <div className="ml-auto flex items-center space-x-4">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" className="relative h-8 w-8 rounded-full">
+                  <Avatar className="h-8 w-8">
+                    <AvatarFallback>
+                      {user?.email?.charAt(0).toUpperCase() || 'U'}
+                    </AvatarFallback>
+                  </Avatar>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent className="w-56" align="end">
+                <div className="flex items-center justify-start gap-2 p-2">
+                  <div className="flex flex-col space-y-1 leading-none">
+                    <p className="font-medium">{user?.email}</p>
+                  </div>
+                </div>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => navigate('/profile')}>
+                  <User className="mr-2 h-4 w-4" />
+                  Profile
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => secureLogout()}>
+                  <LogOut className="mr-2 h-4 w-4" />
+                  Log out
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+        </div>
+      </header>
+
+      <div className="flex">
+        {/* Sidebar - Hidden on mobile */}
+        <aside className="hidden md:flex md:w-64 md:flex-col md:fixed md:inset-y-0 md:pt-16">
+          <div className="flex-1 flex flex-col min-h-0 border-r bg-background">
+            <div className="flex-1 flex flex-col pt-5 pb-4 px-4">
+              <NavigationMenu />
+            </div>
+          </div>
+        </aside>
+
+        {/* Main content */}
+        <main className="md:pl-64 flex-1">
+          <div className="container mx-auto p-6 space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -343,6 +445,9 @@ export default function CancelGuardOffers() {
             </CardContent>
           </Card>
         )}
+      </div>
+          </div>
+        </main>
       </div>
     </div>
   );

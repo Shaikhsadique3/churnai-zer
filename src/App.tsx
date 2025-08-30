@@ -1,5 +1,4 @@
-
-import { BrowserRouter as Router, Routes, Route, Navigate, Outlet } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AuthProvider } from '@/contexts/AuthContext';
 import { Toaster } from '@/components/ui/sonner';
@@ -18,38 +17,14 @@ import NotAuthorized from '@/pages/NotAuthorized';
 import AdminLogin from '@/pages/AdminLogin';
 import AdminPanel from '@/pages/AdminPanel';
 import ProfilePage from '@/pages/ProfilePage';
-import DashboardOverview from '@/pages/dashboard/DashboardOverview';
-import { CSVUploadPage } from '@/pages/dashboard/CSVUploadPage';
-import { EmailAutomationPage } from '@/pages/dashboard/EmailAutomationPage';
-import { RecoveredUsersPage } from '@/pages/dashboard/RecoveredUsersPage';
-import UpgradePage from '@/pages/dashboard/UpgradePage';
-import { UsersPage } from '@/pages/UsersPage';
-import IntegrationPage from '@/pages/IntegrationPage';
-import { AnalyticsDashboard } from '@/pages/dashboard/AnalyticsDashboard';
-import { AutomationsPage } from '@/pages/dashboard/AutomationsPage';
-import { PlaybooksBuilderPage } from '@/pages/dashboard/PlaybooksBuilderPage';
-import AIEmailCampaignsPage from '@/pages/dashboard/AIEmailCampaignsPage';
-import { UserDetailPage } from '@/pages/dashboard/UserDetailPage';
-import { NotificationsPage } from '@/pages/dashboard/NotificationsPage';
-import FeatureGuide from '@/pages/dashboard/FeatureGuide';
-import DashboardDocumentation from '@/pages/dashboard/DashboardDocumentation';
-import { UploadedUsersPage } from '@/pages/dashboard/UploadedUsersPage';
-import OnboardingForm from '@/pages/dashboard/OnboardingForm';
-import FounderProfile from '@/pages/dashboard/FounderProfile';
-import { DashboardLayout } from '@/components/layout/DashboardLayout';
-import PrivateRoute from '@/components/auth/PrivateRoute';
 import CancelGuardDashboard from '@/pages/CancelGuardDashboard';
 import CancelGuardOffers from '@/pages/CancelGuardOffers';
 import CancelGuardSettings from '@/pages/CancelGuardSettings';
+import PrivateRoute from '@/components/auth/PrivateRoute';
 import PublicRoute from '@/components/auth/PublicRoute';
 import AdminRoute from '@/components/auth/AdminRoute';
 import BlogIndex from '@/pages/blog/BlogIndex';
 import BlogPost from '@/pages/blog/BlogPost';
-import AdminDashboard from '@/pages/admin/AdminDashboard';
-import AdminBlogs from '@/pages/admin/AdminBlogs';
-import AdminInbox from '@/pages/admin/AdminInbox';
-import AdminAnnouncements from '@/pages/admin/AdminAnnouncements';
-import AdminIntegrations from '@/pages/admin/AdminIntegrations';
 
 const queryClient = new QueryClient();
 
@@ -86,72 +61,46 @@ function App() {
                 <ResetPassword />
               </PublicRoute>
             } />
-            
-            {/* Protected dashboard routes */}
+
+            {/* Main Dashboard - Redirect to Cancel Guard */}
             <Route path="/dashboard" element={
               <PrivateRoute>
-                <DashboardLayout>
-                  <Outlet />
-                </DashboardLayout>
-              </PrivateRoute>
-            }>
-              <Route index element={<DashboardOverview />} />
-              <Route path="csv-upload" element={<CSVUploadPage />} />
-              <Route path="email-automation" element={<EmailAutomationPage />} />
-              <Route path="recovered-users" element={<RecoveredUsersPage />} />
-              <Route path="upgrade" element={<UpgradePage />} />
-              <Route path="analytics" element={<AnalyticsDashboard />} />
-              <Route path="automations" element={<AutomationsPage />} />
-              <Route path="playbooks" element={<PlaybooksBuilderPage />} />
-              <Route path="ai-email-campaigns" element={<AIEmailCampaignsPage />} />
-              <Route path="user/:userId" element={<UserDetailPage />} />
-              <Route path="notifications" element={<NotificationsPage />} />
-              <Route path="guide" element={<FeatureGuide />} />
-              <Route path="documentation" element={<DashboardDocumentation />} />
-              <Route path="uploaded-users" element={<UploadedUsersPage />} />
-            </Route>
-            
-            {/* Other protected routes */}
-            <Route path="/users" element={
-              <PrivateRoute>
-                <UsersPage />
+                <Navigate to="/cancel-guard" replace />
               </PrivateRoute>
             } />
-            <Route path="/integration" element={
+
+            {/* Cancel Guard Application Routes */}
+            <Route path="/cancel-guard" element={
               <PrivateRoute>
-                <IntegrationPage />
+                <CancelGuardDashboard />
               </PrivateRoute>
             } />
+            <Route path="/offers" element={
+              <PrivateRoute>
+                <CancelGuardOffers />
+              </PrivateRoute>
+            } />
+            <Route path="/settings" element={
+              <PrivateRoute>
+                <CancelGuardSettings />
+              </PrivateRoute>
+            } />
+
+            {/* User Profile */}
             <Route path="/profile" element={
               <PrivateRoute>
                 <ProfilePage />
               </PrivateRoute>
             } />
-            <Route path="/onboarding" element={
-              <PrivateRoute>
-                <OnboardingForm />
-              </PrivateRoute>
-            } />
-            <Route path="/founder-profile" element={
-              <PrivateRoute>
-                <FounderProfile />
-              </PrivateRoute>
-            } />
-            
+
             {/* Admin routes */}
-            <Route path="/admin/login" element={<AdminLogin />} />
-            <Route path="/admin" element={
+            <Route path="/admin-login" element={<AdminLogin />} />
+            <Route path="/admin/*" element={
               <AdminRoute>
                 <AdminPanel />
               </AdminRoute>
-            }>
-              <Route index element={<AdminDashboard />} />
-              <Route path="blogs" element={<AdminBlogs />} />
-              <Route path="inbox" element={<AdminInbox />} />
-              <Route path="announcements" element={<AdminAnnouncements />} />
-              <Route path="integrations" element={<AdminIntegrations />} />
-            </Route>
-            
+            } />
+
             {/* Error routes */}
             <Route path="/not-authorized" element={<NotAuthorized />} />
             <Route path="*" element={<NotFound />} />

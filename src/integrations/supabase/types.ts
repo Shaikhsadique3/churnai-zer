@@ -229,6 +229,256 @@ export type Database = {
         }
         Relationships: []
       }
+      cancel_guard_coupons: {
+        Row: {
+          code: string
+          created_at: string
+          current_uses: number | null
+          discount_type: string
+          discount_value: number
+          expires_at: string | null
+          id: string
+          is_active: boolean
+          max_uses: number | null
+          project_id: string
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          current_uses?: number | null
+          discount_type: string
+          discount_value: number
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean
+          max_uses?: number | null
+          project_id: string
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          current_uses?: number | null
+          discount_type?: string
+          discount_value?: number
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean
+          max_uses?: number | null
+          project_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_coupons_project"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "cancel_guard_projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      cancel_guard_decisions: {
+        Row: {
+          created_at: string
+          customer_id: string | null
+          decision: string
+          decision_data: Json | null
+          id: string
+          offer_shown: string | null
+          project_id: string
+          session_id: string
+        }
+        Insert: {
+          created_at?: string
+          customer_id?: string | null
+          decision: string
+          decision_data?: Json | null
+          id?: string
+          offer_shown?: string | null
+          project_id: string
+          session_id: string
+        }
+        Update: {
+          created_at?: string
+          customer_id?: string | null
+          decision?: string
+          decision_data?: Json | null
+          id?: string
+          offer_shown?: string | null
+          project_id?: string
+          session_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_decisions_project"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "cancel_guard_projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      cancel_guard_events: {
+        Row: {
+          created_at: string
+          customer_id: string | null
+          event_data: Json | null
+          event_type: string
+          id: string
+          project_id: string
+          session_id: string
+        }
+        Insert: {
+          created_at?: string
+          customer_id?: string | null
+          event_data?: Json | null
+          event_type: string
+          id?: string
+          project_id: string
+          session_id: string
+        }
+        Update: {
+          created_at?: string
+          customer_id?: string | null
+          event_data?: Json | null
+          event_type?: string
+          id?: string
+          project_id?: string
+          session_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_events_project"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "cancel_guard_projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      cancel_guard_offers: {
+        Row: {
+          config: Json
+          created_at: string
+          description: string
+          id: string
+          is_active: boolean
+          offer_type: string
+          priority: number
+          project_id: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          config?: Json
+          created_at?: string
+          description: string
+          id?: string
+          is_active?: boolean
+          offer_type: string
+          priority?: number
+          project_id: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          config?: Json
+          created_at?: string
+          description?: string
+          id?: string
+          is_active?: boolean
+          offer_type?: string
+          priority?: number
+          project_id?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_offers_project"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "cancel_guard_projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      cancel_guard_projects: {
+        Row: {
+          api_key_hash: string
+          created_at: string
+          domain: string
+          id: string
+          is_active: boolean
+          name: string
+          settings: Json
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          api_key_hash: string
+          created_at?: string
+          domain: string
+          id?: string
+          is_active?: boolean
+          name: string
+          settings?: Json
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          api_key_hash?: string
+          created_at?: string
+          domain?: string
+          id?: string
+          is_active?: boolean
+          name?: string
+          settings?: Json
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      cancel_guard_settings: {
+        Row: {
+          analytics_config: Json | null
+          created_at: string
+          domain_allowlist: string[] | null
+          id: string
+          modal_config: Json
+          project_id: string
+          updated_at: string
+          webhook_url: string | null
+        }
+        Insert: {
+          analytics_config?: Json | null
+          created_at?: string
+          domain_allowlist?: string[] | null
+          id?: string
+          modal_config?: Json
+          project_id: string
+          updated_at?: string
+          webhook_url?: string | null
+        }
+        Update: {
+          analytics_config?: Json | null
+          created_at?: string
+          domain_allowlist?: string[] | null
+          id?: string
+          modal_config?: Json
+          project_id?: string
+          updated_at?: string
+          webhook_url?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_settings_project"
+            columns: ["project_id"]
+            isOneToOne: true
+            referencedRelation: "cancel_guard_projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       churn_analysis_results: {
         Row: {
           avg_cltv: number | null

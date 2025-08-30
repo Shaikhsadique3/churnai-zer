@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
@@ -16,6 +17,8 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { useSecureLogout } from '@/hooks/useSecureLogout';
 import { Link, useNavigate } from 'react-router-dom';
+import { OfferConfiguration } from '@/components/dashboard/OfferConfiguration';
+import { OfferDryRun } from '@/components/dashboard/OfferDryRun';
 
 interface Offer {
   id?: string;
@@ -318,119 +321,17 @@ export default function CancelGuardOffers() {
         {/* Main content */}
         <main className="md:pl-64 flex-1">
           <div className="container mx-auto p-6 space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-foreground">Cancel Guard Offers</h1>
-          <p className="text-muted-foreground">Configure retention offers for your cancel flow</p>
-        </div>
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogTrigger asChild>
-            <Button onClick={() => setEditingOffer({ ...defaultOffer, project_id: selectedProject })}>
-              <Plus className="w-4 h-4 mr-2" />
-              New Offer
-            </Button>
-          </DialogTrigger>
-          <OfferDialog
-            offer={editingOffer}
-            onSave={handleSaveOffer}
-            onClose={() => {
-              setIsDialogOpen(false);
-              setEditingOffer(null);
-            }}
-          />
-        </Dialog>
-      </div>
-
-      {/* Project Selector */}
-      {projects.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Select Project</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <Select value={selectedProject} onValueChange={setSelectedProject}>
-              <SelectTrigger className="w-full">
-                <SelectValue placeholder="Select a project" />
-              </SelectTrigger>
-              <SelectContent>
-                {projects.map((project) => (
-                  <SelectItem key={project.id} value={project.id}>
-                    {project.name} ({project.domain})
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Offers List */}
-      <div className="grid gap-4">
-        {offers.map((offer) => (
-          <Card key={offer.id}>
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <Badge className={getOfferTypeColor(offer.offer_type)}>
-                    {offer.offer_type}
-                  </Badge>
-                  <CardTitle className="text-lg">{offer.title}</CardTitle>
-                  <Badge variant={offer.is_active ? "default" : "secondary"}>
-                    {offer.is_active ? "Active" : "Inactive"}
-                  </Badge>
-                </div>
-                <div className="flex gap-2">
-                  <Dialog>
-                    <DialogTrigger asChild>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => setEditingOffer(offer)}
-                      >
-                        <Edit2 className="w-4 h-4" />
-                      </Button>
-                    </DialogTrigger>
-                    <OfferDialog
-                      offer={editingOffer}
-                      onSave={handleSaveOffer}
-                      onClose={() => setEditingOffer(null)}
-                    />
-                  </Dialog>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => offer.id && handleDeleteOffer(offer.id)}
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </Button>
-                </div>
+            {/* Header */}
+            <div className="flex items-center justify-between">
+              <div>
+                <h1 className="text-3xl font-bold text-foreground">Offers Configuration</h1>
+                <p className="text-muted-foreground">Configure retention offers, rules, and preview recommendations</p>
               </div>
-              <CardDescription>{offer.description}</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-2 gap-4 text-sm">
-                <div>
-                  <Label className="text-muted-foreground">Priority</Label>
-                  <p>{offer.priority}</p>
-                </div>
-                <div>
-                  <Label className="text-muted-foreground">Configuration</Label>
-                  <p className="font-mono text-xs">{JSON.stringify(offer.config)}</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-        {offers.length === 0 && selectedProject && (
-          <Card>
-            <CardContent className="text-center py-12">
-              <p className="text-muted-foreground mb-4">No offers configured yet</p>
               <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
                 <DialogTrigger asChild>
                   <Button onClick={() => setEditingOffer({ ...defaultOffer, project_id: selectedProject })}>
                     <Plus className="w-4 h-4 mr-2" />
-                    Create Your First Offer
+                    New Offer
                   </Button>
                 </DialogTrigger>
                 <OfferDialog
@@ -442,10 +343,192 @@ export default function CancelGuardOffers() {
                   }}
                 />
               </Dialog>
-            </CardContent>
-          </Card>
-        )}
-      </div>
+            </div>
+
+            {/* Project Selector */}
+            {projects.length > 0 && (
+              <Card>
+                <CardHeader>
+                  <CardTitle>Select Project</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <Select value={selectedProject} onValueChange={setSelectedProject}>
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Select a project" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {projects.map((project) => (
+                        <SelectItem key={project.id} value={project.id}>
+                          {project.name} ({project.domain})
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Tabs for different sections */}
+            <Tabs defaultValue="offers" className="space-y-6">
+              <TabsList className="grid w-full grid-cols-3">
+                <TabsTrigger value="offers">Active Offers</TabsTrigger>
+                <TabsTrigger value="configuration">Configuration</TabsTrigger>
+                <TabsTrigger value="preview">Dry Run Preview</TabsTrigger>
+              </TabsList>
+
+              {/* Active Offers Tab */}
+              <TabsContent value="offers" className="space-y-4">
+                <div className="grid gap-4">
+                  {offers.map((offer) => (
+                    <Card key={offer.id}>
+                      <CardHeader>
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-3">
+                            <Badge className={getOfferTypeColor(offer.offer_type)}>
+                              {offer.offer_type}
+                            </Badge>
+                            <CardTitle className="text-lg">{offer.title}</CardTitle>
+                            <Badge variant={offer.is_active ? "default" : "secondary"}>
+                              {offer.is_active ? "Active" : "Inactive"}
+                            </Badge>
+                          </div>
+                          <div className="flex gap-2">
+                            <Dialog>
+                              <DialogTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => setEditingOffer(offer)}
+                                >
+                                  <Edit2 className="w-4 h-4" />
+                                </Button>
+                              </DialogTrigger>
+                              <OfferDialog
+                                offer={editingOffer}
+                                onSave={handleSaveOffer}
+                                onClose={() => setEditingOffer(null)}
+                              />
+                            </Dialog>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => offer.id && handleDeleteOffer(offer.id)}
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          </div>
+                        </div>
+                        <CardDescription>{offer.description}</CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="grid grid-cols-3 gap-4 text-sm">
+                          <div>
+                            <Label className="text-muted-foreground">Priority</Label>
+                            <p className="font-medium">{offer.priority}</p>
+                          </div>
+                          <div>
+                            <Label className="text-muted-foreground">Usage Caps</Label>
+                            <p className="text-xs">
+                              Daily: {offer.config?.daily_cap || 'Unlimited'} | 
+                              Monthly: {offer.config?.monthly_cap || 'Unlimited'}
+                            </p>
+                          </div>
+                          <div>
+                            <Label className="text-muted-foreground">Targeting Rules</Label>
+                            <p className="text-xs">
+                              {offer.config?.targeting_rules?.length || 0} rules configured
+                            </p>
+                          </div>
+                        </div>
+                        
+                        {/* Offer-specific details */}
+                        {offer.offer_type === 'discount' && offer.config?.discount_value && (
+                          <div className="mt-3 p-3 bg-green-50 rounded-lg border border-green-200">
+                            <div className="text-sm font-medium text-green-800">
+                              {offer.config.discount_value}
+                              {offer.config.discount_type === 'percentage' ? '% off' : '$ off'} 
+                              {offer.config.duration_months && ` for ${offer.config.duration_months} months`}
+                            </div>
+                          </div>
+                        )}
+                        
+                        {offer.offer_type === 'pause' && offer.config?.pause_duration && (
+                          <div className="mt-3 p-3 bg-blue-50 rounded-lg border border-blue-200">
+                            <div className="text-sm font-medium text-blue-800">
+                              {offer.config.pause_duration} day pause
+                              {offer.config.max_pauses && ` (max ${offer.config.max_pauses}/year)`}
+                            </div>
+                          </div>
+                        )}
+                      </CardContent>
+                    </Card>
+                  ))}
+                  
+                  {offers.length === 0 && selectedProject && (
+                    <Card>
+                      <CardContent className="text-center py-12">
+                        <p className="text-muted-foreground mb-4">No offers configured yet</p>
+                        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+                          <DialogTrigger asChild>
+                            <Button onClick={() => setEditingOffer({ ...defaultOffer, project_id: selectedProject })}>
+                              <Plus className="w-4 h-4 mr-2" />
+                              Create Your First Offer
+                            </Button>
+                          </DialogTrigger>
+                          <OfferDialog
+                            offer={editingOffer}
+                            onSave={handleSaveOffer}
+                            onClose={() => {
+                              setIsDialogOpen(false);
+                              setEditingOffer(null);
+                            }}
+                          />
+                        </Dialog>
+                      </CardContent>
+                    </Card>
+                  )}
+                </div>
+              </TabsContent>
+
+              {/* Configuration Tab */}
+              <TabsContent value="configuration">
+                {editingOffer ? (
+                  <OfferConfiguration
+                    offerType={editingOffer.offer_type}
+                    config={editingOffer.config}
+                    onConfigChange={(config) => 
+                      setEditingOffer(prev => prev ? { ...prev, config } : null)
+                    }
+                  />
+                ) : (
+                  <Card>
+                    <CardContent className="text-center py-12">
+                      <p className="text-muted-foreground mb-4">
+                        Select an offer to configure its settings, caps, and targeting rules
+                      </p>
+                      <Button 
+                        onClick={() => setEditingOffer({ ...defaultOffer, project_id: selectedProject })}
+                        variant="outline"
+                      >
+                        Create New Offer
+                      </Button>
+                    </CardContent>
+                  </Card>
+                )}
+              </TabsContent>
+
+              {/* Dry Run Preview Tab */}
+              <TabsContent value="preview">
+                <OfferDryRun
+                  offers={offers}
+                  onRunPreview={async (user) => {
+                    // This would integrate with your /decide endpoint
+                    console.log('Running preview for user:', user);
+                    return {} as any; // Mock for now
+                  }}
+                />
+              </TabsContent>
+            </Tabs>
           </div>
         </main>
       </div>

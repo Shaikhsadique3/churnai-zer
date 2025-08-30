@@ -560,6 +560,22 @@ serve(async (req) => {
       error: r.error
     }));
 
+    // Send email report to founder
+    console.log('📧 Sending email report to founder...');
+    try {
+      if (predictions && predictions.length > 0) {
+        const topRiskyUsers = predictions
+          .sort((a, b) => (b.churn_probability || 0) - (a.churn_probability || 0))
+          .slice(0, 5); // Top 5 risky users
+
+        await sendFounderEmailReport(supabase, user.id, analysisData.id, topRiskyUsers);
+        console.log('✅ Email report sent successfully');
+      }
+    } catch (emailError) {
+      console.error('❌ Failed to send email report:', emailError);
+      // Don't fail the whole process if email fails
+    }
+
     const response = {
       success: successCount > 0,
       total_rows: rows.length,
@@ -582,3 +598,128 @@ serve(async (req) => {
     );
   }
 });
+
+async function sendFounderEmailReport(supabase: any, userId: string, analysisId: string, topRiskyUsers: any[]) {
+  try {
+    // Get founder profile
+    const { data: profile, error: profileError } = await supabase
+      .from('founder_profile')
+      .select('*')
+      .eq('user_id', userId)
+      .single();
+
+    if (profileError) {
+      console.error('Profile fetch error:', profileError);
+      throw new Error('Could not fetch founder profile');
+    }
+
+    // Get auth user email
+    const { data: { user }, error: userError } = await supabase.auth.admin.getUserById(userId);
+    if (userError || !user?.email) {
+      console.error('User fetch error:', userError);
+      throw new Error('Could not fetch user email');
+    }
+
+    const founderEmail = user.email;
+    const companyName = profile?.company_name || 'Your Company';
+    
+    const highRiskCount = topRiskyUsers.filter(u => u.risk_level === 'high').length;
+    const subject = `⚠️ Cancel-Intent Alerts: ${highRiskCount} Users At Risk`;
+    
+    // Create email body
+    let emailBody = `
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+      <h2 style="color: #dc2626; border-bottom: 2px solid #dc2626; padding-bottom: 10px;">
+        🚨 Cancel-Intent Alert for ${companyName}
+      </h2>
+      
+      <p>Hi there,</p>
+      
+      <p>Our AI has detected <strong>${topRiskyUsers.length}</strong> customers at high risk of canceling. Here are the top 5 that need immediate attention:</p>
+      
+      <div style="background-color: #fef2f2; border: 1px solid #fecaca; border-radius: 8px; padding: 16px; margin: 20px 0;">
+    `;
+
+    topRiskyUsers.forEach((user, index) => {
+      const probability = (user.churn_probability * 100).toFixed(1);
+      const reasons = Array.isArray(user.contributing_factors) 
+        ? user.contributing_factors.slice(0, 2).join(', ')
+        : user.contributing_factors || 'Low engagement detected';
+      const actions = Array.isArray(user.recommended_actions)
+        ? user.recommended_actions.slice(0, 2).join(', ')
+        : user.recommended_actions || 'Send reactivation email';
+
+      emailBody += `
+        <div style="margin: 15px 0; padding: 12px; background-color: white; border-radius: 6px; border-left: 4px solid ${user.risk_level === 'high' ? '#dc2626' : user.risk_level === 'medium' ? '#f59e0b' : '#10b981'};">
+          <h4 style="margin: 0 0 8px 0; color: #374151;">
+            ${index + 1}. Customer ID: ${user.customer_id}
+          </h4>
+          <p style="margin: 4px 0; color: #6b7280;"><strong>Cancel Probability:</strong> ${probability}%</p>
+          <p style="margin: 4px 0; color: #6b7280;"><strong>Reason:</strong> ${reasons}</p>
+          <p style="margin: 4px 0; color: #6b7280;"><strong>Suggested Action:</strong> ${actions}</p>
+          <p style="margin: 4px 0; color: #6b7280;"><strong>Monthly Revenue:</strong> $${(user.monthly_revenue || 0).toFixed(2)}</p>
+        </div>
+      `;
+    });
+
+    emailBody += `
+      </div>
+      
+      <div style="background-color: #eff6ff; border: 1px solid #bfdbfe; border-radius: 8px; padding: 16px; margin: 20px 0;">
+        <h3 style="color: #1e40af; margin-top: 0;">💡 Quick Action Tips:</h3>
+        <ul style="color: #374151; line-height: 1.6;">
+          <li><strong>High Risk (70%+ probability):</strong> Reach out within 24 hours with personalized offers</li>
+          <li><strong>Medium Risk (40-70%):</strong> Send targeted retention campaigns this week</li>
+          <li><strong>Low Risk (&lt;40%):</strong> Monitor and include in general engagement flows</li>
+        </ul>
+      </div>
+      
+      <p style="margin: 20px 0;">
+        <a href="${Deno.env.get('SUPABASE_URL')?.replace('https://', 'https://').replace('.supabase.co', '')}.vercel.app/dashboard" 
+           style="background-color: #2563eb; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;">
+          View Full Dashboard →
+        </a>
+      </p>
+      
+      <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 30px 0;">
+      
+      <p style="color: #6b7280; font-size: 14px;">
+        This alert was generated automatically by Churnaizer AI. 
+        <br>Questions? Reply to this email or check your <a href="#">dashboard</a>.
+      </p>
+    </div>
+    `;
+
+    // Send email using Resend
+    const resendApiKey = Deno.env.get('RESEND_API_KEY');
+    if (!resendApiKey) {
+      throw new Error('RESEND_API_KEY not configured');
+    }
+
+    const emailResponse = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${resendApiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        from: 'Churnaizer Alerts <alerts@churnaizer.com>',
+        to: [founderEmail],
+        subject: subject,
+        html: emailBody,
+      }),
+    });
+
+    if (!emailResponse.ok) {
+      const errorText = await emailResponse.text();
+      throw new Error(`Resend API error: ${errorText}`);
+    }
+
+    const emailResult = await emailResponse.json();
+    console.log('📧 Email sent successfully:', emailResult);
+
+  } catch (error) {
+    console.error('Email sending error:', error);
+    throw error;
+  }
+}

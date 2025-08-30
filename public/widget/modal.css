@@ -1,0 +1,365 @@
+/* Churnaizer Cancel Guard Modal Styles */
+.churnaizer-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 999999;
+  padding: 16px;
+  box-sizing: border-box;
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.3s ease;
+}
+
+.churnaizer-modal-overlay.active {
+  opacity: 1;
+  visibility: visible;
+}
+
+.churnaizer-modal {
+  background: white;
+  border-radius: 16px;
+  max-width: 480px;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  position: relative;
+  transform: scale(0.9) translateY(20px);
+  transition: transform 0.3s ease;
+}
+
+.churnaizer-modal-overlay.active .churnaizer-modal {
+  transform: scale(1) translateY(0);
+}
+
+.churnaizer-modal-header {
+  padding: 24px 24px 16px;
+  border-bottom: 1px solid #f0f0f0;
+  position: relative;
+}
+
+.churnaizer-modal-close {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  background: none;
+  border: none;
+  font-size: 24px;
+  cursor: pointer;
+  color: #666;
+  padding: 8px;
+  line-height: 1;
+  border-radius: 8px;
+  transition: background-color 0.2s ease;
+}
+
+.churnaizer-modal-close:hover {
+  background-color: #f5f5f5;
+}
+
+.churnaizer-modal-title {
+  font-size: 24px;
+  font-weight: 600;
+  color: #1a1a1a;
+  margin: 0 0 8px 0;
+  line-height: 1.3;
+}
+
+.churnaizer-modal-subtitle {
+  font-size: 16px;
+  color: #666;
+  margin: 0;
+  line-height: 1.4;
+}
+
+.churnaizer-modal-content {
+  padding: 24px;
+}
+
+.churnaizer-offer {
+  border: 2px solid #e5e5e5;
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 16px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  position: relative;
+}
+
+.churnaizer-offer:hover {
+  border-color: #3b82f6;
+  background-color: #fafbff;
+}
+
+.churnaizer-offer.selected {
+  border-color: #3b82f6;
+  background-color: #fafbff;
+}
+
+.churnaizer-offer.selected::after {
+  content: '✓';
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  background: #3b82f6;
+  color: white;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: bold;
+}
+
+.churnaizer-offer-type {
+  display: inline-block;
+  background: #e7f3ff;
+  color: #1976d2;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  margin-bottom: 12px;
+}
+
+.churnaizer-offer-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: #1a1a1a;
+  margin: 0 0 8px 0;
+  line-height: 1.3;
+}
+
+.churnaizer-offer-copy {
+  font-size: 14px;
+  color: #666;
+  margin: 0 0 12px 0;
+  line-height: 1.5;
+}
+
+.churnaizer-offer-stats {
+  display: flex;
+  gap: 16px;
+  font-size: 12px;
+  color: #888;
+}
+
+.churnaizer-offer-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.churnaizer-offer-stat-label {
+  font-weight: 500;
+}
+
+.churnaizer-offer-stat-value {
+  font-weight: 600;
+  color: #1a1a1a;
+}
+
+.churnaizer-modal-footer {
+  padding: 16px 24px 24px;
+  border-top: 1px solid #f0f0f0;
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+}
+
+.churnaizer-btn {
+  padding: 12px 24px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: none;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+}
+
+.churnaizer-btn-secondary {
+  background: #f5f5f5;
+  color: #666;
+}
+
+.churnaizer-btn-secondary:hover {
+  background: #e5e5e5;
+}
+
+.churnaizer-btn-primary {
+  background: #3b82f6;
+  color: white;
+}
+
+.churnaizer-btn-primary:hover {
+  background: #2563eb;
+}
+
+.churnaizer-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.churnaizer-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px;
+}
+
+.churnaizer-spinner {
+  width: 32px;
+  height: 32px;
+  border: 3px solid #f0f0f0;
+  border-top: 3px solid #3b82f6;
+  border-radius: 50%;
+  animation: churnaizer-spin 1s linear infinite;
+}
+
+@keyframes churnaizer-spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.churnaizer-error {
+  text-align: center;
+  padding: 40px 24px;
+  color: #dc2626;
+}
+
+.churnaizer-success {
+  text-align: center;
+  padding: 40px 24px;
+}
+
+.churnaizer-success-icon {
+  width: 64px;
+  height: 64px;
+  background: #10b981;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 16px;
+  color: white;
+  font-size: 32px;
+}
+
+/* Mobile Responsive */
+@media (max-width: 640px) {
+  .churnaizer-modal-overlay {
+    padding: 8px;
+  }
+  
+  .churnaizer-modal {
+    border-radius: 12px;
+    max-height: 95vh;
+  }
+  
+  .churnaizer-modal-header {
+    padding: 20px 20px 12px;
+  }
+  
+  .churnaizer-modal-title {
+    font-size: 20px;
+    margin-right: 40px;
+  }
+  
+  .churnaizer-modal-content {
+    padding: 20px;
+  }
+  
+  .churnaizer-offer {
+    padding: 16px;
+  }
+  
+  .churnaizer-offer-title {
+    font-size: 16px;
+  }
+  
+  .churnaizer-modal-footer {
+    padding: 12px 20px 20px;
+    flex-direction: column;
+  }
+  
+  .churnaizer-btn {
+    width: 100%;
+  }
+  
+  .churnaizer-offer-stats {
+    flex-direction: column;
+    gap: 8px;
+  }
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+  .churnaizer-modal {
+    background: #1a1a1a;
+    color: white;
+  }
+  
+  .churnaizer-modal-header {
+    border-bottom-color: #333;
+  }
+  
+  .churnaizer-modal-title {
+    color: white;
+  }
+  
+  .churnaizer-modal-close {
+    color: #ccc;
+  }
+  
+  .churnaizer-modal-close:hover {
+    background-color: #333;
+  }
+  
+  .churnaizer-offer {
+    border-color: #333;
+    background: #1a1a1a;
+  }
+  
+  .churnaizer-offer:hover,
+  .churnaizer-offer.selected {
+    border-color: #3b82f6;
+    background-color: #1e2a3a;
+  }
+  
+  .churnaizer-offer-title {
+    color: white;
+  }
+  
+  .churnaizer-offer-stat-value {
+    color: white;
+  }
+  
+  .churnaizer-modal-footer {
+    border-top-color: #333;
+  }
+  
+  .churnaizer-btn-secondary {
+    background: #333;
+    color: #ccc;
+  }
+  
+  .churnaizer-btn-secondary:hover {
+    background: #444;
+  }
+}

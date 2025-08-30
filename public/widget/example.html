@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Churnaizer Cancel Guard - Integration Example</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            line-height: 1.6;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f8f9fa;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 2px 20px rgba(0,0,0,0.1);
+        }
+        h1 { color: #2563eb; margin-bottom: 10px; }
+        h2 { color: #374151; margin-top: 30px; }
+        .demo-section {
+            background: #f8fafc;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+            border-left: 4px solid #2563eb;
+        }
+        .btn {
+            background: #2563eb;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            cursor: pointer;
+            margin: 8px 8px 8px 0;
+            font-size: 14px;
+            font-weight: 500;
+        }
+        .btn:hover { background: #1d4ed8; }
+        .btn-danger {
+            background: #dc2626;
+        }
+        .btn-danger:hover { background: #b91c1c; }
+        code {
+            background: #f1f5f9;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: 'Monaco', 'Menlo', monospace;
+            font-size: 13px;
+        }
+        pre {
+            background: #1f2937;
+            color: #f9fafb;
+            padding: 20px;
+            border-radius: 8px;
+            overflow-x: auto;
+            font-size: 13px;
+            line-height: 1.5;
+        }
+        .status {
+            padding: 10px;
+            border-radius: 6px;
+            margin: 10px 0;
+            font-weight: 500;
+        }
+        .status.success {
+            background: #dcfce7;
+            color: #166534;
+            border: 1px solid #bbf7d0;
+        }
+        .status.error {
+            background: #fef2f2;
+            color: #991b1b;
+            border: 1px solid #fecaca;
+        }
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin: 20px 0;
+        }
+        @media (max-width: 640px) {
+            .grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🛡️ Churnaizer Cancel Guard</h1>
+        <p>Interactive demo and integration example for the Cancel Guard widget.</p>
+        
+        <div class="status success" id="status">
+            ✅ Cancel Guard loaded successfully
+        </div>
+
+        <h2>🚀 Quick Integration</h2>
+        <p>Add this script to your website to enable cancel guard protection:</p>
+        
+        <pre><code>&lt;script&gt;
+// Configure before loading
+window.ChurnaizerConfig = {
+    apiKey: 'YOUR_API_KEY',
+    user: {
+        id: 'user_123',
+        mrr: 99,
+        plan: 'Pro',
+        tenure_days: 180,
+        last_login_days: 2
+    },
+    autoTrigger: true,
+    interceptCancel: true,
+    debug: true
+};
+&lt;/script&gt;
+&lt;script src="https://cdn.churnaizer.com/widget/embed.js"&gt;&lt;/script&gt;</code></pre>
+
+        <h2>🧪 Interactive Demo</h2>
+        
+        <div class="grid">
+            <div class="demo-section">
+                <h3>Manual Trigger</h3>
+                <p>Show the cancel guard modal manually:</p>
+                <button class="btn" onclick="triggerModal()">Show Cancel Guard</button>
+                <button class="btn" onclick="triggerHighRiskUser()">High Risk User</button>
+            </div>
+            
+            <div class="demo-section">
+                <h3>Cancel Button Simulation</h3>
+                <p>These buttons simulate cancel actions:</p>
+                <button class="btn btn-danger cancel-subscription">Cancel Subscription</button>
+                <a href="#cancel" class="btn btn-danger">Cancel Account</a>
+            </div>
+        </div>
+
+        <div class="demo-section">
+            <h3>URL Auto-Trigger Test</h3>
+            <p>Navigate to these URLs to test auto-triggering:</p>
+            <button class="btn" onclick="simulateCancelUrl()">Simulate Cancel URL</button>
+            <button class="btn" onclick="window.history.pushState({}, '', '?action=cancel')">Add Cancel Parameter</button>
+            <button class="btn" onclick="window.history.pushState({}, '', window.location.pathname)">Reset URL</button>
+        </div>
+
+        <h2>⚙️ Configuration Options</h2>
+        
+        <div class="demo-section">
+            <h3>Current Configuration</h3>
+            <pre id="config-display">Loading...</pre>
+            
+            <h3>Controls</h3>
+            <button class="btn" onclick="toggleAutoTrigger()">Toggle Auto-Trigger</button>
+            <button class="btn" onclick="updateUserData()">Update User Data</button>
+            <button class="btn" onclick="showDebugInfo()">Show Debug Info</button>
+        </div>
+
+        <h2>📋 Integration Checklist</h2>
+        <ul>
+            <li>✅ Include the embed script in your HTML</li>
+            <li>✅ Configure your API key and user data</li>
+            <li>✅ Set up cancel detection (URL patterns or button selectors)</li>
+            <li>✅ Test the modal triggers correctly</li>
+            <li>✅ Verify events are logged in your dashboard</li>
+            <li>✅ Test responsive design on mobile devices</li>
+        </ul>
+
+        <h2>🔧 Advanced Examples</h2>
+        
+        <div class="demo-section">
+            <h3>Custom Context & User Segmentation</h3>
+            <button class="btn" onclick="triggerVIPUser()">VIP User Flow</button>
+            <button class="btn" onclick="triggerPriceSensitive()">Price Sensitive User</button>
+            <button class="btn" onclick="triggerLowUsage()">Low Usage User</button>
+        </div>
+
+        <div class="demo-section">
+            <h3>Dynamic User Updates</h3>
+            <p>Update user data without reloading:</p>
+            <button class="btn" onclick="updateToHighValue()">Upgrade to High Value</button>
+            <button class="btn" onclick="updateToChurnRisk()">Mark as Churn Risk</button>
+        </div>
+
+        <div id="result-display" style="margin-top: 20px;"></div>
+    </div>
+
+    <!-- Load Churnaizer Cancel Guard -->
+    <script>
+        // Configuration
+        window.ChurnaizerConfig = {
+            apiKey: 'cg_demo_key_12345', // Replace with your real API key
+            user: {
+                id: 'demo_user_123',
+                mrr: 99,
+                plan: 'Pro',
+                tenure_days: 180,
+                last_login_days: 2
+            },
+            context: {
+                intent: 'subscription_cancel',
+                page: 'demo'
+            },
+            autoTrigger: false, // Disabled for demo
+            interceptCancel: true,
+            checkInterval: 1000,
+            cancelSelectors: [
+                '.cancel-subscription',
+                'a[href*="cancel"]'
+            ],
+            debug: true
+        };
+    </script>
+    <script src="embed.js"></script>
+
+    <script>
+        // Demo Functions
+        function updateStatus() {
+            const status = document.getElementById('status');
+            if (window.ChurnaizerGuard) {
+                status.className = 'status success';
+                status.innerHTML = '✅ Cancel Guard loaded and ready';
+            } else {
+                status.className = 'status error';
+                status.innerHTML = '❌ Cancel Guard failed to load';
+            }
+        }
+
+        function updateConfigDisplay() {
+            const display = document.getElementById('config-display');
+            if (window.ChurnaizerGuard) {
+                display.textContent = JSON.stringify(window.ChurnaizerGuard.config, null, 2);
+            }
+        }
+
+        function showResult(message, isError = false) {
+            const display = document.getElementById('result-display');
+            display.innerHTML = `<div class="status ${isError ? 'error' : 'success'}">${message}</div>`;
+            setTimeout(() => display.innerHTML = '', 5000);
+        }
+
+        // Demo trigger functions
+        function triggerModal() {
+            if (window.ChurnaizerGuard) {
+                ChurnaizerGuard.trigger();
+                showResult('🚀 Cancel Guard modal triggered!');
+            } else {
+                showResult('❌ Cancel Guard not loaded', true);
+            }
+        }
+
+        function triggerHighRiskUser() {
+            const highRiskUser = {
+                id: 'high_risk_user_456',
+                mrr: 299,
+                plan: 'Enterprise',
+                tenure_days: 30,
+                last_login_days: 14
+            };
+            
+            if (window.ChurnaizerGuard) {
+                ChurnaizerGuard.trigger(highRiskUser, { intent: 'immediate_cancel' });
+                showResult('🚨 High risk user scenario triggered!');
+            }
+        }
+
+        function triggerVIPUser() {
+            const vipUser = {
+                id: 'vip_user_789',
+                mrr: 999,
+                plan: 'Enterprise Plus',
+                tenure_days: 365,
+                last_login_days: 1
+            };
+            
+            if (window.ChurnaizerGuard) {
+                ChurnaizerGuard.trigger(vipUser, { segment: 'vip', intent: 'price_concern' });
+                showResult('👑 VIP user flow triggered!');
+            }
+        }
+
+        function triggerPriceSensitive() {
+            const priceUser = {
+                id: 'price_user_321',
+                mrr: 29,
+                plan: 'Basic',
+                tenure_days: 90,
+                last_login_days: 3
+            };
+            
+            if (window.ChurnaizerGuard) {
+                ChurnaizerGuard.trigger(priceUser, { intent: 'price_concern' });
+                showResult('💰 Price sensitive user flow triggered!');
+            }
+        }
+
+        function triggerLowUsage() {
+            const lowUsageUser = {
+                id: 'low_usage_654',
+                mrr: 99,
+                plan: 'Pro',
+                tenure_days: 200,
+                last_login_days: 21
+            };
+            
+            if (window.ChurnaizerGuard) {
+                ChurnaizerGuard.trigger(lowUsageUser, { intent: 'low_engagement' });
+                showResult('📉 Low usage user flow triggered!');
+            }
+        }
+
+        function simulateCancelUrl() {
+            window.history.pushState({}, '', '/billing/cancel');
+            showResult('🔗 Navigated to cancel URL');
+        }
+
+        function toggleAutoTrigger() {
+            if (window.ChurnaizerGuard) {
+                const current = ChurnaizerGuard.config.autoTrigger;
+                ChurnaizerGuard.setAutoTrigger(!current);
+                showResult(`🔄 Auto-trigger ${!current ? 'enabled' : 'disabled'}`);
+                updateConfigDisplay();
+            }
+        }
+
+        function updateUserData() {
+            if (window.ChurnaizerGuard) {
+                const newUser = {
+                    id: 'updated_user_' + Date.now(),
+                    mrr: Math.floor(Math.random() * 500) + 50,
+                    plan: ['Basic', 'Pro', 'Enterprise'][Math.floor(Math.random() * 3)],
+                    tenure_days: Math.floor(Math.random() * 365) + 30,
+                    last_login_days: Math.floor(Math.random() * 30)
+                };
+                
+                ChurnaizerGuard.setUser(newUser);
+                showResult('👤 User data updated with random values');
+                updateConfigDisplay();
+            }
+        }
+
+        function updateToHighValue() {
+            if (window.ChurnaizerGuard) {
+                const highValueUser = {
+                    id: 'high_value_user',
+                    mrr: 500,
+                    plan: 'Enterprise',
+                    tenure_days: 400,
+                    last_login_days: 1
+                };
+                
+                ChurnaizerGuard.setUser(highValueUser);
+                showResult('💎 Updated to high-value user profile');
+                updateConfigDisplay();
+            }
+        }
+
+        function updateToChurnRisk() {
+            if (window.ChurnaizerGuard) {
+                const churnRiskUser = {
+                    id: 'churn_risk_user',
+                    mrr: 99,
+                    plan: 'Pro',
+                    tenure_days: 45,
+                    last_login_days: 30
+                };
+                
+                ChurnaizerGuard.setUser(churnRiskUser);
+                ChurnaizerGuard.setContext({ intent: 'immediate_cancel', risk_level: 'high' });
+                showResult('⚠️ Updated to churn risk profile');
+                updateConfigDisplay();
+            }
+        }
+
+        function showDebugInfo() {
+            if (window.__CHURNAIZER_GUARD_STATUS__) {
+                const info = window.__CHURNAIZER_GUARD_STATUS__;
+                const debugInfo = `
+                    Version: ${info.version}
+                    Loaded: ${info.loaded}
+                    Timestamp: ${new Date(info.timestamp).toLocaleString()}
+                    Modal Loaded: ${!!window.ChurnaizerModal}
+                `;
+                showResult(`🐛 Debug Info: ${debugInfo}`);
+            }
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            setTimeout(() => {
+                updateStatus();
+                updateConfigDisplay();
+            }, 500);
+        });
+
+        // Update displays when ChurnaizerGuard loads
+        if (window.ChurnaizerGuard) {
+            updateStatus();
+            updateConfigDisplay();
+        } else {
+            setTimeout(() => {
+                updateStatus();
+                updateConfigDisplay();
+            }, 1000);
+        }
+    </script>
+</body>
+</html>

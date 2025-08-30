@@ -4,6 +4,8 @@ import { AuthProvider } from '@/contexts/AuthContext';
 import { Toaster } from '@/components/ui/sonner';
 import Index from '@/pages/Index';
 import Auth from '@/pages/Auth';
+import CSVUploadPage from '@/pages/CSVUploadPage';
+import ChurnDashboard from '@/pages/dashboard/ChurnDashboard';
 import ForgotPassword from '@/pages/ForgotPassword';
 import ResetPassword from '@/pages/ResetPassword';
 import Documentation from '@/pages/Documentation';
@@ -58,14 +60,19 @@ function App() {
               </PublicRoute>
             } />
 
-            {/* Main Dashboard - Redirect to Cancel Guard */}
+            {/* Main Dashboard - CSV Upload & Churn Predictions */}
+            <Route path="/csv-upload" element={
+              <PrivateRoute>
+                <CSVUploadPage />
+              </PrivateRoute>
+            } />
             <Route path="/dashboard" element={
               <PrivateRoute>
-                <Navigate to="/cancel-guard" replace />
+                <ChurnDashboard />
               </PrivateRoute>
             } />
 
-            {/* Cancel Guard Application Routes */}
+            {/* Cancel Guard Application Routes (Legacy) */}
             <Route path="/cancel-guard" element={
               <PrivateRoute>
                 <CancelGuardDashboard />

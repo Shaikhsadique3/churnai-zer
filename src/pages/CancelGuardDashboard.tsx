@@ -17,6 +17,7 @@ import { DashboardMetrics } from '@/components/dashboard/DashboardMetrics';
 import { OfferPerformanceChart } from '@/components/dashboard/OfferPerformanceChart';
 import { SaveRateTrendChart } from '@/components/dashboard/SaveRateTrendChart';
 import { RecentInterceptsTable } from '@/components/dashboard/RecentInterceptsTable';
+import { ABTestingChart } from '@/components/dashboard/ABTestingChart';
 
 interface Project {
   id: string;
@@ -341,6 +342,9 @@ export default function CancelGuardDashboard() {
                 ]}
               />
             </div>
+
+            {/* A/B Testing Performance */}
+            <ABTestingChart />
 
             {/* Recent Intercepts Table */}
             <RecentInterceptsTable 

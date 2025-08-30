@@ -282,6 +282,7 @@ export type Database = {
           customer_id: string | null
           decision: string
           decision_data: Json | null
+          experiment_group: string | null
           id: string
           offer_shown: string | null
           project_id: string
@@ -292,6 +293,7 @@ export type Database = {
           customer_id?: string | null
           decision: string
           decision_data?: Json | null
+          experiment_group?: string | null
           id?: string
           offer_shown?: string | null
           project_id: string
@@ -302,6 +304,7 @@ export type Database = {
           customer_id?: string | null
           decision?: string
           decision_data?: Json | null
+          experiment_group?: string | null
           id?: string
           offer_shown?: string | null
           project_id?: string
@@ -323,6 +326,7 @@ export type Database = {
           customer_id: string | null
           event_data: Json | null
           event_type: string
+          experiment_group: string | null
           id: string
           project_id: string
           session_id: string
@@ -332,6 +336,7 @@ export type Database = {
           customer_id?: string | null
           event_data?: Json | null
           event_type: string
+          experiment_group?: string | null
           id?: string
           project_id: string
           session_id: string
@@ -341,6 +346,7 @@ export type Database = {
           customer_id?: string | null
           event_data?: Json | null
           event_type?: string
+          experiment_group?: string | null
           id?: string
           project_id?: string
           session_id?: string
@@ -354,6 +360,48 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      cancel_guard_experiments: {
+        Row: {
+          config_a: Json
+          config_b: Json
+          created_at: string
+          description: string | null
+          id: string
+          is_active: boolean
+          name: string
+          project_id: string
+          traffic_split_a: number
+          traffic_split_b: number
+          updated_at: string
+        }
+        Insert: {
+          config_a?: Json
+          config_b?: Json
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          name: string
+          project_id: string
+          traffic_split_a?: number
+          traffic_split_b?: number
+          updated_at?: string
+        }
+        Update: {
+          config_a?: Json
+          config_b?: Json
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          name?: string
+          project_id?: string
+          traffic_split_a?: number
+          traffic_split_b?: number
+          updated_at?: string
+        }
+        Relationships: []
       }
       cancel_guard_offers: {
         Row: {

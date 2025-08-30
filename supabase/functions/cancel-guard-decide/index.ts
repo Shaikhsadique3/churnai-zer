@@ -116,7 +116,18 @@ serve(async (req) => {
       );
     }
 
-    // Log the cancel attempt with enhanced user data
+    // Get active experiment for A/B testing
+    const { data: experiment } = await supabase
+      .from('cancel_guard_experiments')
+      .select('*')
+      .eq('project_id', project.id)
+      .eq('is_active', true)
+      .single();
+
+    // Assign experiment group (A/B testing with traffic split)
+    const experimentGroup = assignExperimentGroup(body.context.session_id, experiment);
+
+    // Log the cancel attempt with enhanced user data and experiment group
     await supabase
       .from('cancel_guard_events')
       .insert({
@@ -124,9 +135,12 @@ serve(async (req) => {
         session_id: body.context.session_id,
         customer_id: body.user.id,
         event_type: 'cancel_attempt',
+        experiment_group: experimentGroup,
         event_data: {
           user_profile: body.user,
           context: body.context,
+          experiment_config: experiment ? 
+            (experimentGroup === 'A' ? experiment.config_a : experiment.config_b) : null,
           timestamp: new Date().toISOString()
         }
       });
@@ -150,8 +164,14 @@ serve(async (req) => {
       );
     }
 
-    // Enhanced decision engine with rules-based analysis
-    const rankedOffers = await analyzeUserAndRankOffers(offers || [], body.user, body.context);
+    // Enhanced decision engine with rules-based analysis and A/B testing
+    const rankedOffers = await analyzeUserAndRankOffers(
+      offers || [], 
+      body.user, 
+      body.context, 
+      experiment, 
+      experimentGroup
+    );
 
     if (rankedOffers.length === 0) {
       return new Response(
@@ -159,6 +179,7 @@ serve(async (req) => {
           offers: [],
           message: 'No suitable offers found for user profile',
           session_id: body.context.session_id,
+          experiment_group: experimentGroup,
           analysis: await generateUserAnalysis(body.user, body.context)
         }),
         { 
@@ -168,7 +189,7 @@ serve(async (req) => {
       );
     }
 
-    // Log the top offer decision
+    // Log the top offer decision with experiment group
     const topOffer = rankedOffers[0];
     await supabase
       .from('cancel_guard_events')
@@ -177,11 +198,14 @@ serve(async (req) => {
         session_id: body.context.session_id,
         customer_id: body.user.id,
         event_type: 'offers_ranked',
+        experiment_group: experimentGroup,
         event_data: { 
           top_offer_id: topOffer.id, 
           top_offer_type: topOffer.type,
           total_offers_considered: rankedOffers.length,
-          user_segment: await determineUserSegment(body.user, body.context)
+          user_segment: await determineUserSegment(body.user, body.context),
+          experiment_config: experiment ? 
+            (experimentGroup === 'A' ? experiment.config_a : experiment.config_b) : null
         }
       });
 
@@ -190,9 +214,10 @@ serve(async (req) => {
         offers: rankedOffers.slice(0, 3), // Return top 3 offers
         primary_offer: topOffer,
         user_analysis: await generateUserAnalysis(body.user, body.context),
+        experiment_group: experimentGroup,
         session_id: body.context.session_id,
         timestamp: new Date().toISOString(),
-        decision_engine_version: "1.0"
+        decision_engine_version: "2.0"
       }),
       { 
         status: 200, 
@@ -212,19 +237,76 @@ serve(async (req) => {
   }
 });
 
-// Enhanced decision engine with rules-based analysis
-async function analyzeUserAndRankOffers(offers: any[], user: any, context: any): Promise<RankedOffer[]> {
+// A/B Testing: Assign experiment group based on session ID
+function assignExperimentGroup(sessionId: string, experiment: any): string {
+  if (!experiment) return 'control';
+  
+  // Use session ID to deterministically assign groups
+  const hash = sessionId.split('').reduce((a, b) => {
+    a = ((a << 5) - a) + b.charCodeAt(0);
+    return a & a;
+  }, 0);
+  
+  const percentage = Math.abs(hash) % 100;
+  
+  // Traffic split: experiment.traffic_split_a% to group A, rest to group B
+  return percentage < experiment.traffic_split_a ? 'A' : 'B';
+}
+
+// Get A/B test modifier for offer scoring
+function getABTestModifier(experiment: any, experimentGroup: string, offerType: string): any {
+  if (!experiment || experimentGroup === 'control') return null;
+  
+  const config = experimentGroup === 'A' ? experiment.config_a : experiment.config_b;
+  
+  // Different strategies for each experiment group
+  if (experimentGroup === 'A') {
+    // Group A: Conservative approach - prioritize discounts
+    return {
+      priorityMultiplier: offerType === 'discount' ? 1.2 : 0.9,
+      saveOddsMultiplier: 1.0
+    };
+  } else {
+    // Group B: Aggressive approach - prioritize concierge/high-touch
+    return {
+      priorityMultiplier: offerType === 'concierge' ? 1.3 : 
+                         offerType === 'pause' ? 1.1 : 0.95,
+      saveOddsMultiplier: 1.05
+    };
+  }
+}
+
+// Apply A/B test title variations
+function applyABTestTitleVariation(baseTitle: string, offerType: string): string {
+  const variations = {
+    discount: "🎯 LIMITED TIME: " + baseTitle,
+    concierge: "💎 EXCLUSIVE: " + baseTitle,
+    pause: "⏸️ FLEXIBLE: " + baseTitle,
+    downgrade: "💰 SMART CHOICE: " + baseTitle
+  };
+  
+  return variations[offerType] || "✨ " + baseTitle;
+}
+
+// Enhanced decision engine with rules-based analysis and A/B testing
+async function analyzeUserAndRankOffers(
+  offers: any[], 
+  user: any, 
+  context: any, 
+  experiment: any = null, 
+  experimentGroup: string = 'control'
+): Promise<RankedOffer[]> {
   const userSegment = await determineUserSegment(user, context);
   const rankedOffers: RankedOffer[] = [];
 
   for (const offer of offers) {
-    const score = calculateOfferScore(offer, user, context, userSegment);
+    const score = calculateOfferScore(offer, user, context, userSegment, experiment, experimentGroup);
     if (score.isApplicable) {
       rankedOffers.push({
         id: offer.id,
         type: offer.offer_type,
-        title: generateDynamicTitle(offer, user, userSegment),
-        copy: generateDynamicCopy(offer, user, userSegment),
+        title: generateDynamicTitle(offer, user, userSegment, experiment, experimentGroup),
+        copy: generateDynamicCopy(offer, user, userSegment, experiment, experimentGroup),
         expected_save_odds: score.saveOdds,
         projected_revenue_saved: score.projectedRevenue,
         guardrails: score.guardrails,
@@ -270,8 +352,15 @@ async function determineUserSegment(user: any, context: any): Promise<string> {
   return 'standard';
 }
 
-// Calculate offer score and applicability
-function calculateOfferScore(offer: any, user: any, context: any, segment: string): any {
+// Calculate offer score and applicability with A/B testing influence
+function calculateOfferScore(
+  offer: any, 
+  user: any, 
+  context: any, 
+  segment: string, 
+  experiment: any = null, 
+  experimentGroup: string = 'control'
+): any {
   let score = {
     isApplicable: false,
     saveOdds: 0,
@@ -284,6 +373,9 @@ function calculateOfferScore(offer: any, user: any, context: any, segment: strin
       cooldown_days: 0
     }
   };
+
+  // Apply A/B testing modifications to base scoring
+  const abModifier = getABTestModifier(experiment, experimentGroup, offer.offer_type);
 
   // Rules by segment and offer type
   switch (segment) {
@@ -306,9 +398,16 @@ function calculateOfferScore(offer: any, user: any, context: any, segment: strin
       score = applyStandardRules(offer, user, score);
   }
 
+  // Apply A/B test modifications
+  if (score.isApplicable && abModifier) {
+    score.priority *= abModifier.priorityMultiplier;
+    score.saveOdds *= abModifier.saveOddsMultiplier;
+  }
+
   return score;
 }
 
+// All rule functions remain the same
 // VIP Rules: Concierge first, then premium discounts
 function applyVIPRules(offer: any, user: any, score: any): any {
   switch (offer.offer_type) {
@@ -468,8 +567,14 @@ function applyStandardRules(offer: any, user: any, score: any): any {
   return score;
 }
 
-// Generate dynamic titles based on user segment
-function generateDynamicTitle(offer: any, user: any, segment: string): string {
+// Generate dynamic titles based on user segment and A/B test
+function generateDynamicTitle(
+  offer: any, 
+  user: any, 
+  segment: string, 
+  experiment: any = null, 
+  experimentGroup: string = 'control'
+): string {
   const templates = {
     vip: {
       concierge: "VIP Support: Let's Keep You Happy",
@@ -498,119 +603,77 @@ function generateDynamicTitle(offer: any, user: any, segment: string): string {
     }
   };
 
-  return templates[segment]?.[offer.offer_type] || offer.title;
+  // Apply A/B test title variations
+  if (experiment && experimentGroup === 'B') {
+    return applyABTestTitleVariation(
+      templates[segment]?.[offer.offer_type] || 'Special Offer for You',
+      offer.offer_type
+    );
+  }
+
+  return templates[segment]?.[offer.offer_type] || 'Special Offer for You';
 }
 
-// Generate dynamic copy based on user segment
-function generateDynamicCopy(offer: any, user: any, segment: string): string {
+// Generate dynamic copy based on user segment  
+function generateDynamicCopy(
+  offer: any, 
+  user: any, 
+  segment: string,
+  experiment: any = null, 
+  experimentGroup: string = 'control'
+): string {
   const templates = {
     vip: {
-      concierge: `As one of our most valued customers (${user.tenure_days} days with us), you deserve personalized attention. Let our success team help you maximize your ROI.`,
-      discount: `We value your ${user.tenure_days}-day relationship. Enjoy 50% off for the next 3 months while we address any concerns.`,
-      pause: "Take up to 6 months off whenever you need. Your data and settings will be waiting when you return."
+      concierge: `As a valued customer contributing $${user.mrr}/month, you deserve white-glove treatment. Let our customer success team personally ensure your experience exceeds expectations.`,
+      discount: `We value customers like you who invest $${user.mrr}/month in our platform. Here's an exclusive 50% discount to show our appreciation.`,
+      pause: "Take the time you need. Your VIP status and data will be waiting when you return."
     },
     price_sensitive: {
-      discount: "We understand budget matters. Get 50% off for 3 months - no strings attached.",
-      downgrade: `Keep the core features you need for just $${Math.round(user.mrr * 0.5)}/month. Upgrade anytime.`,
-      pause: "Pause your account and payments. Resume whenever you're ready - no penalties."
+      discount: "We understand budget constraints. Get 50% off your next 3 months and keep all your current features.",
+      downgrade: `Save money without losing core functionality. Our Basic plan at $${Math.round(user.mrr * 0.5)}/month includes everything you need.`,
+      pause: "Pause your subscription now and only pay when you're actively using the platform."
     },
     low_usage: {
-      pause: `Haven't logged in for ${user.last_login_days} days? Pause your account until you're ready to dive back in.`,
-      concierge: "Let our team show you features that could save you time and increase your engagement.",
-      discount: "Welcome back! Enjoy 40% off your next few months as you re-engage with our platform."
+      pause: `Haven't logged in for ${user.last_login_days} days? No problem. Pause your account and return when you're ready.`,
+      concierge: "Let our team help you discover features that could dramatically increase your engagement and ROI.",
+      discount: "Come back with 40% off and rediscover the value you're missing."
     },
     short_tenure: {
-      concierge: `${user.tenure_days} days in, let's make sure you're getting maximum value. Free 1-on-1 setup session.`,
-      feedback: "Help us understand what would make this perfect for you. Your input shapes our roadmap.",
-      discount: "New customer special: 60% off for 3 months while you explore everything we offer."
+      concierge: `Only ${user.tenure_days} days in? Let's make sure you get the full value from day one with personal onboarding.`,
+      feedback: "Your early feedback is invaluable. Help us improve your experience and get exclusive early access to new features.",
+      discount: "New customer exclusive: 60% off your next billing cycle while we perfect your experience."
     },
     downgrade_available: {
-      downgrade: `Keep the essentials you use most for $${Math.round(user.mrr * 0.6)}/month. Upgrade anytime with one click.`,
-      discount: "Stay on your current plan with 40% off for 6 months. Lock in this rate now.",
-      pause: "Pause your premium features but keep your data. Resume premium whenever you want."
+      downgrade: `Keep 80% of the features at $${Math.round(user.mrr * 0.6)}/month. Perfect for your current usage level.`,
+      discount: "Stay on your current plan with 40% off. Get premium features at a basic plan price.",
+      pause: "Keep your premium plan reserved while paused. Upgrade instantly when you return."
     }
   };
 
-  return templates[segment]?.[offer.offer_type] || offer.description;
+  return templates[segment]?.[offer.offer_type] || 'This offer is tailored specifically for your usage pattern and needs.';
 }
 
-// Generate user analysis summary
+// Generate user analysis for context
 async function generateUserAnalysis(user: any, context: any): Promise<any> {
   const segment = await determineUserSegment(user, context);
   
   return {
     segment,
-    risk_factors: analyzeRiskFactors(user, context),
-    retention_likelihood: calculateRetentionLikelihood(user, context, segment),
-    recommended_approach: getRecommendedApproach(segment),
-    key_insights: generateKeyInsights(user, context, segment)
+    risk_factors: [
+      user.mrr < 50 ? 'Low revenue impact' : null,
+      user.last_login_days > 7 ? 'Low recent engagement' : null,
+      user.tenure_days < 30 ? 'Short customer relationship' : null,
+      context.cancellation_reason?.includes('price') ? 'Price sensitivity' : null
+    ].filter(Boolean),
+    opportunities: [
+      user.mrr >= 500 ? 'High-value customer retention' : null,
+      user.tenure_days >= 90 ? 'Long-term relationship investment' : null,
+      segment === 'short_tenure' ? 'Early intervention opportunity' : null
+    ].filter(Boolean)
   };
 }
 
-function analyzeRiskFactors(user: any, context: any): string[] {
-  const factors = [];
-  
-  if (user.last_login_days > 30) factors.push('Extended absence from platform');
-  if (user.tenure_days < 14) factors.push('Very new customer - onboarding issues possible');
-  if (user.mrr < 50) factors.push('Low revenue customer - price sensitive');
-  if (context.cancellation_reason?.includes('competitor')) factors.push('Competitive pressure');
-  if (context.intent?.includes('immediate')) factors.push('Urgent cancellation intent');
-  
-  return factors;
-}
-
-function calculateRetentionLikelihood(user: any, context: any, segment: string): number {
-  let base = 50;
-  
-  // Positive factors
-  if (user.tenure_days > 90) base += 20;
-  if (user.mrr > 200) base += 15;
-  if (user.last_login_days < 7) base += 10;
-  
-  // Negative factors
-  if (user.last_login_days > 30) base -= 25;
-  if (user.tenure_days < 14) base -= 15;
-  if (context.intent?.includes('final')) base -= 20;
-  
-  return Math.max(10, Math.min(90, base));
-}
-
-function getRecommendedApproach(segment: string): string {
-  const approaches = {
-    vip: 'White-glove service with premium retention offers',
-    price_sensitive: 'Value-focused offers with clear cost savings',
-    low_usage: 'Re-engagement and pause options',
-    short_tenure: 'Onboarding support and feedback collection',
-    downgrade_available: 'Flexible plan options with easy upgrades',
-    standard: 'Balanced retention approach with multiple options'
-  };
-  
-  return approaches[segment] || approaches.standard;
-}
-
-function generateKeyInsights(user: any, context: any, segment: string): string[] {
-  const insights = [];
-  
-  if (segment === 'vip') {
-    insights.push('High-value customer - prioritize immediate response');
-    insights.push('Consider account manager assignment');
-  }
-  
-  if (user.last_login_days > 14) {
-    insights.push('Low engagement - may need product education');
-  }
-  
-  if (user.tenure_days < 30) {
-    insights.push('Early-stage customer - onboarding optimization opportunity');
-  }
-  
-  if (context.cancellation_reason) {
-    insights.push(`Specific concern: ${context.cancellation_reason}`);
-  }
-  
-  return insights;
-}
-
+// API key hashing function
 async function hashApiKey(apiKey: string): Promise<string> {
   const encoder = new TextEncoder();
   const data = encoder.encode(apiKey + 'churnaizer_salt_2024');

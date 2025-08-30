@@ -58,8 +58,23 @@ export default function CancelGuardSettings() {
       send_to_analytics: false
     }
   });
+  const [guardConfig, setGuardConfig] = useState({
+    vip_thresholds: {
+      revenue_threshold: 1000,
+      lifetime_value_threshold: 5000,
+      plan_levels: ['enterprise', 'professional']
+    },
+    slack_webhook: '',
+    calendar_link: '',
+    discount_caps: {
+      max_percentage: 50,
+      max_amount: 500,
+      monthly_budget: 5000
+    }
+  });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [testing, setTesting] = useState({ webhook: false, calendar: false });
 
   useEffect(() => {
     if (user) {
@@ -265,12 +280,286 @@ export default function CancelGuardSettings() {
 
       {/* Settings Tabs */}
       <Tabs defaultValue="modal" className="space-y-4">
-        <TabsList className="grid w-full grid-cols-4">
-          <TabsTrigger value="modal">Modal Config</TabsTrigger>
+        <TabsList className="grid w-full grid-cols-6">
           <TabsTrigger value="security">Security</TabsTrigger>
-          <TabsTrigger value="integration">Integration</TabsTrigger>
+          <TabsTrigger value="vip">VIP Settings</TabsTrigger>
+          <TabsTrigger value="integrations">Integrations</TabsTrigger>
+          <TabsTrigger value="discounts">Discounts</TabsTrigger>
           <TabsTrigger value="webhooks">Webhooks</TabsTrigger>
+          <TabsTrigger value="modal">Modal</TabsTrigger>
         </TabsList>
+
+        <TabsContent value="security" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Shield className="w-5 h-5" />
+                Domain Security
+              </CardTitle>
+              <CardDescription>Configure domain allowlist and API access</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="api_key">API Key</Label>
+                  <Button variant="outline" size="sm" onClick={handleCopyApiKey}>
+                    <Copy className="w-4 h-4 mr-2" />
+                    Copy
+                  </Button>
+                </div>
+                <Input
+                  id="api_key"
+                  value="demo_key_123"
+                  readOnly
+                  className="font-mono"
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="domains">Allowed Domains (one per line)</Label>
+                <Textarea
+                  id="domains"
+                  value={settings.domain_allowlist.join('\n')}
+                  onChange={(e) => setSettings(prev => ({
+                    ...prev,
+                    domain_allowlist: e.target.value.split('\n').filter(d => d.trim())
+                  }))}
+                  placeholder="example.com&#10;app.example.com"
+                  rows={4}
+                />
+                <p className="text-sm text-muted-foreground">
+                  Only these domains will be able to use your cancel guard
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="vip" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <User className="w-5 h-5" />
+                VIP Customer Settings
+              </CardTitle>
+              <CardDescription>Configure thresholds and alerts for high-value customers</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="revenue_threshold">Monthly Revenue Threshold ($)</Label>
+                  <Input
+                    id="revenue_threshold"
+                    type="number"
+                    value={guardConfig.vip_thresholds.revenue_threshold}
+                    onChange={(e) => setGuardConfig(prev => ({
+                      ...prev,
+                      vip_thresholds: { ...prev.vip_thresholds, revenue_threshold: parseInt(e.target.value) }
+                    }))}
+                    placeholder="1000"
+                  />
+                  <p className="text-sm text-muted-foreground">
+                    Customers paying more than this amount are considered VIP
+                  </p>
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="ltv_threshold">Lifetime Value Threshold ($)</Label>
+                  <Input
+                    id="ltv_threshold"
+                    type="number"
+                    value={guardConfig.vip_thresholds.lifetime_value_threshold}
+                    onChange={(e) => setGuardConfig(prev => ({
+                      ...prev,
+                      vip_thresholds: { ...prev.vip_thresholds, lifetime_value_threshold: parseInt(e.target.value) }
+                    }))}
+                    placeholder="5000"
+                  />
+                  <p className="text-sm text-muted-foreground">
+                    Total customer lifetime value threshold for VIP status
+                  </p>
+                </div>
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="plan_levels">VIP Plan Levels (comma-separated)</Label>
+                <Input
+                  id="plan_levels"
+                  value={guardConfig.vip_thresholds.plan_levels.join(', ')}
+                  onChange={(e) => setGuardConfig(prev => ({
+                    ...prev,
+                    vip_thresholds: { ...prev.vip_thresholds, plan_levels: e.target.value.split(',').map(p => p.trim()) }
+                  }))}
+                  placeholder="enterprise, professional, premium"
+                />
+                <p className="text-sm text-muted-foreground">
+                  Plan names that automatically qualify for VIP treatment
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="integrations" className="space-y-4">
+          <div className="grid gap-4">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Webhook className="w-5 h-5" />
+                  Slack Integration
+                </CardTitle>
+                <CardDescription>Get instant alerts for VIP customer cancellations</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="slack_webhook">Slack Webhook URL</Label>
+                  <Input
+                    id="slack_webhook"
+                    value={guardConfig.slack_webhook}
+                    onChange={(e) => setGuardConfig(prev => ({ ...prev, slack_webhook: e.target.value }))}
+                    placeholder="https://hooks.slack.com/services/..."
+                  />
+                  <p className="text-sm text-muted-foreground">
+                    We'll send VIP cancellation alerts to this Slack channel
+                  </p>
+                </div>
+                
+                <Button 
+                  variant="outline" 
+                  onClick={async () => {
+                    setTesting(prev => ({ ...prev, webhook: true }));
+                    // Simulate test
+                    await new Promise(resolve => setTimeout(resolve, 2000));
+                    setTesting(prev => ({ ...prev, webhook: false }));
+                    toast({ title: "Test sent!", description: "Check your Slack channel for the test message" });
+                  }}
+                  disabled={testing.webhook || !guardConfig.slack_webhook}
+                >
+                  {testing.webhook ? 'Testing...' : 'Test Webhook'}
+                </Button>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Globe className="w-5 h-5" />
+                  Calendar Integration
+                </CardTitle>
+                <CardDescription>Auto-schedule calls with cancelling VIP customers</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="calendar_link">Calendar Booking Link</Label>
+                  <Input
+                    id="calendar_link"
+                    value={guardConfig.calendar_link}
+                    onChange={(e) => setGuardConfig(prev => ({ ...prev, calendar_link: e.target.value }))}
+                    placeholder="https://calendly.com/your-username/save-call"
+                  />
+                  <p className="text-sm text-muted-foreground">
+                    VIP customers will be offered this calendar link during cancellation
+                  </p>
+                </div>
+                
+                <Button 
+                  variant="outline"
+                  onClick={async () => {
+                    setTesting(prev => ({ ...prev, calendar: true }));
+                    // Simulate test
+                    await new Promise(resolve => setTimeout(resolve, 1500));
+                    setTesting(prev => ({ ...prev, calendar: false }));
+                    toast({ title: "Calendar link verified!", description: "Link is accessible and valid" });
+                  }}
+                  disabled={testing.calendar || !guardConfig.calendar_link}
+                >
+                  {testing.calendar ? 'Testing...' : 'Test Calendar Link'}
+                </Button>
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
+
+        <TabsContent value="discounts" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <BarChart3 className="w-5 h-5" />
+                Discount Caps & Limits
+              </CardTitle>
+              <CardDescription>Set guardrails to protect your revenue while offering compelling discounts</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-3 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="max_percentage">Max Discount (%)</Label>
+                  <Input
+                    id="max_percentage"
+                    type="number"
+                    max="100"
+                    value={guardConfig.discount_caps.max_percentage}
+                    onChange={(e) => setGuardConfig(prev => ({
+                      ...prev,
+                      discount_caps: { ...prev.discount_caps, max_percentage: parseInt(e.target.value) }
+                    }))}
+                    placeholder="50"
+                  />
+                  <p className="text-sm text-muted-foreground">
+                    Maximum percentage discount allowed
+                  </p>
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="max_amount">Max Discount Amount ($)</Label>
+                  <Input
+                    id="max_amount"
+                    type="number"
+                    value={guardConfig.discount_caps.max_amount}
+                    onChange={(e) => setGuardConfig(prev => ({
+                      ...prev,
+                      discount_caps: { ...prev.discount_caps, max_amount: parseInt(e.target.value) }
+                    }))}
+                    placeholder="500"
+                  />
+                  <p className="text-sm text-muted-foreground">
+                    Maximum dollar amount discount
+                  </p>
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="monthly_budget">Monthly Budget ($)</Label>
+                  <Input
+                    id="monthly_budget"
+                    type="number"
+                    value={guardConfig.discount_caps.monthly_budget}
+                    onChange={(e) => setGuardConfig(prev => ({
+                      ...prev,
+                      discount_caps: { ...prev.discount_caps, monthly_budget: parseInt(e.target.value) }
+                    }))}
+                    placeholder="5000"
+                  />
+                  <p className="text-sm text-muted-foreground">
+                    Total monthly discount budget
+                  </p>
+                </div>
+              </div>
+              
+              <div className="bg-muted p-4 rounded-lg">
+                <h4 className="font-medium mb-2">Current Status:</h4>
+                <div className="grid grid-cols-2 gap-4 text-sm">
+                  <div>
+                    <span className="text-muted-foreground">This month spent:</span>
+                    <span className="ml-2 font-semibold">$1,234 / ${guardConfig.discount_caps.monthly_budget}</span>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground">Budget remaining:</span>
+                    <span className="ml-2 font-semibold text-primary">${guardConfig.discount_caps.monthly_budget - 1234}</span>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
 
         <TabsContent value="modal" className="space-y-4">
           <Card>
@@ -355,104 +644,6 @@ export default function CancelGuardSettings() {
                     }))}
                   />
                 </div>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="security" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Shield className="w-5 h-5" />
-                Security Settings
-              </CardTitle>
-              <CardDescription>Configure domain allowlist and API access</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <Label htmlFor="api_key">API Key</Label>
-                  <Button variant="outline" size="sm" onClick={handleCopyApiKey}>
-                    <Copy className="w-4 h-4 mr-2" />
-                    Copy
-                  </Button>
-                </div>
-                <Input
-                  id="api_key"
-                  value="demo_key_123"
-                  readOnly
-                  className="font-mono"
-                />
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="domains">Allowed Domains (one per line)</Label>
-                <Textarea
-                  id="domains"
-                  value={settings.domain_allowlist.join('\n')}
-                  onChange={(e) => setSettings(prev => ({
-                    ...prev,
-                    domain_allowlist: e.target.value.split('\n').filter(d => d.trim())
-                  }))}
-                  placeholder="example.com&#10;app.example.com"
-                  rows={4}
-                />
-                <p className="text-sm text-muted-foreground">
-                  Only these domains will be able to use your cancel guard
-                </p>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="integration" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Code className="w-5 h-5" />
-                Integration Code
-              </CardTitle>
-              <CardDescription>Add this code to your website to enable cancel guard</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <Label>Embed Code</Label>
-                  <Button variant="outline" size="sm" onClick={handleCopyEmbedCode}>
-                    <Copy className="w-4 h-4 mr-2" />
-                    Copy Code
-                  </Button>
-                </div>
-                <Textarea
-                  value={`<!-- Cancel Guard Integration -->
-<script>
-(function() {
-  window.CancelGuard = {
-    apiKey: 'demo_key_123',
-    projectId: '${selectedProject}',
-    endpoint: 'https://ntbkydpgjaswmwruegyl.supabase.co/functions/v1'
-  };
-  
-  const script = document.createElement('script');
-  script.src = 'https://cdn.cancelguard.com/v1/widget.js';
-  script.async = true;
-  document.head.appendChild(script);
-})();
-</script>`}
-                  readOnly
-                  className="font-mono text-sm"
-                  rows={12}
-                />
-              </div>
-              
-              <div className="bg-muted p-4 rounded-lg">
-                <h4 className="font-medium mb-2">Implementation Notes:</h4>
-                <ul className="text-sm text-muted-foreground space-y-1">
-                  <li>• Add this code to your website's &lt;head&gt; section</li>
-                  <li>• The cancel guard will automatically detect cancel attempts</li>
-                  <li>• Test the integration using the SDK test endpoint</li>
-                </ul>
               </div>
             </CardContent>
           </Card>

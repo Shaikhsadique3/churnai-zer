@@ -488,12 +488,32 @@ serve(async (req) => {
       );
     }
 
+    // First create the upload record
+    console.log('💾 Creating upload record...');
+    const { data: uploadData, error: uploadError } = await supabase
+      .from('csv_uploads')
+      .insert({
+        user_id: user.id,
+        filename: fileName,
+        rows_processed: 0,
+        rows_failed: 0,
+        status: 'processing'
+      })
+      .select()
+      .single();
+
+    if (uploadError) {
+      console.error('Upload record creation error:', uploadError);
+      throw new Error(`Failed to create upload record: ${uploadError.message}`);
+    }
+
     // Create analysis record
+    console.log('📊 Creating analysis record...');
     const { data: analysisData, error: analysisError } = await supabase
       .from('churn_analysis_results')
       .insert({
         user_id: user.id,
-        upload_id: crypto.randomUUID(),
+        upload_id: uploadData.id,
         total_customers: rows.length,
         churn_rate: 0, // Will be calculated after processing
         high_risk_customers: 0,
@@ -553,6 +573,20 @@ serve(async (req) => {
         avg_cltv: avgCltv
       })
       .eq('id', analysisData.id);
+
+    // Update upload record with final counts
+    const { error: uploadUpdateError } = await supabase
+      .from('csv_uploads')
+      .update({
+        rows_processed: successCount,
+        rows_failed: failedCount,
+        status: successCount > 0 ? 'completed' : 'failed'
+      })
+      .eq('id', uploadData.id);
+
+    if (uploadUpdateError) {
+      console.error('Upload update error:', uploadUpdateError);
+    }
 
     const errorDetails = results.filter(r => !r.success).map((r, index) => ({
       row: index + 1,

@@ -13,6 +13,10 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { useSecureLogout } from '@/hooks/useSecureLogout';
 import { Link, useNavigate } from 'react-router-dom';
+import { DashboardMetrics } from '@/components/dashboard/DashboardMetrics';
+import { OfferPerformanceChart } from '@/components/dashboard/OfferPerformanceChart';
+import { SaveRateTrendChart } from '@/components/dashboard/SaveRateTrendChart';
+import { RecentInterceptsTable } from '@/components/dashboard/RecentInterceptsTable';
 
 interface Project {
   id: string;
@@ -297,65 +301,100 @@ export default function CancelGuardDashboard() {
               </Card>
             )}
 
-            {/* Stats Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Total Offers</CardTitle>
-                  <Shield className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">{offers.length}</div>
-                  <p className="text-xs text-muted-foreground">
-                    {offers.filter(o => o.is_active).length} active
-                  </p>
-                </CardContent>
-              </Card>
+            {/* Revenue Dashboard Metrics */}
+            <DashboardMetrics 
+              metrics={{
+                revenueSavedToday: 12450,
+                saveRate: 73,
+                cancelsDiverted: 18,
+                vipAlerts: 3
+              }}
+              changes={{
+                revenueSavedToday: 15.2,
+                saveRate: 2.1,
+                cancelsDiverted: 22.5,
+                vipAlerts: -1
+              }}
+            />
+
+            {/* Charts Section */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <OfferPerformanceChart 
+                data={[
+                  { offer_type: 'Discount', success_count: 45, total_count: 62, success_rate: 72.6, revenue_saved: 8920 },
+                  { offer_type: 'Pause', success_count: 28, total_count: 35, success_rate: 80.0, revenue_saved: 5440 },
+                  { offer_type: 'Downgrade', success_count: 12, total_count: 18, success_rate: 66.7, revenue_saved: 2100 },
+                  { offer_type: 'Concierge', success_count: 8, total_count: 10, success_rate: 80.0, revenue_saved: 4800 },
+                  { offer_type: 'Feedback', success_count: 3, total_count: 8, success_rate: 37.5, revenue_saved: 690 }
+                ]}
+              />
               
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Recent Decisions</CardTitle>
-                  <BarChart3 className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">{decisions.length}</div>
-                  <p className="text-xs text-muted-foreground">
-                    {decisions.filter(d => d.decision === 'accepted').length} accepted
-                  </p>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Success Rate</CardTitle>
-                  <BarChart3 className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">
-                    {decisions.length > 0 
-                      ? Math.round((decisions.filter(d => d.decision === 'accepted').length / decisions.length) * 100)
-                      : 0
-                    }%
-                  </div>
-                  <p className="text-xs text-muted-foreground">
-                    From last 10 interactions
-                  </p>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Project Status</CardTitle>
-                  <Settings className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">Live</div>
-                  <p className="text-xs text-muted-foreground">
-                    Domain: {currentProject?.domain}
-                  </p>
-                </CardContent>
-              </Card>
+              <SaveRateTrendChart 
+                data={[
+                  { date: '2025-08-24', save_rate: 68.2, total_attempts: 22, successful_saves: 15 },
+                  { date: '2025-08-25', save_rate: 71.4, total_attempts: 28, successful_saves: 20 },
+                  { date: '2025-08-26', save_rate: 66.7, total_attempts: 24, successful_saves: 16 },
+                  { date: '2025-08-27', save_rate: 75.0, total_attempts: 32, successful_saves: 24 },
+                  { date: '2025-08-28', save_rate: 72.7, total_attempts: 33, successful_saves: 24 },
+                  { date: '2025-08-29', save_rate: 78.6, total_attempts: 28, successful_saves: 22 },
+                  { date: '2025-08-30', save_rate: 73.3, total_attempts: 30, successful_saves: 22 }
+                ]}
+              />
             </div>
+
+            {/* Recent Intercepts Table */}
+            <RecentInterceptsTable 
+              data={[
+                {
+                  id: '1',
+                  user_id: 'user_789abc',
+                  plan: 'Enterprise',
+                  offer_type: 'Concierge',
+                  outcome: 'success',
+                  revenue_saved: 2400,
+                  created_at: new Date().toISOString(),
+                  customer_segment: 'VIP'
+                },
+                {
+                  id: '2',
+                  user_id: 'user_456def',
+                  plan: 'Pro',
+                  offer_type: 'Discount',
+                  outcome: 'success',
+                  revenue_saved: 588,
+                  created_at: new Date(Date.now() - 3600000).toISOString(),
+                  customer_segment: 'High Value'
+                },
+                {
+                  id: '3',
+                  user_id: 'user_123ghi',
+                  plan: 'Basic',
+                  offer_type: 'Pause',
+                  outcome: 'failed',
+                  revenue_saved: 0,
+                  created_at: new Date(Date.now() - 7200000).toISOString(),
+                },
+                {
+                  id: '4',
+                  user_id: 'user_321jkl',
+                  plan: 'Pro',
+                  offer_type: 'Downgrade',
+                  outcome: 'pending',
+                  revenue_saved: 0,
+                  created_at: new Date(Date.now() - 10800000).toISOString(),
+                },
+                {
+                  id: '5',
+                  user_id: 'user_654mno',
+                  plan: 'Enterprise',
+                  offer_type: 'Feedback',
+                  outcome: 'success',
+                  revenue_saved: 1200,
+                  created_at: new Date(Date.now() - 14400000).toISOString(),
+                  customer_segment: 'VIP'
+                }
+              ]}
+            />
 
             {/* Recent Decisions */}
             <Card>

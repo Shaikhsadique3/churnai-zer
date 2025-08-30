@@ -23,8 +23,6 @@ import CancelGuardSettings from '@/pages/CancelGuardSettings';
 import PrivateRoute from '@/components/auth/PrivateRoute';
 import PublicRoute from '@/components/auth/PublicRoute';
 import AdminRoute from '@/components/auth/AdminRoute';
-import BlogIndex from '@/pages/blog/BlogIndex';
-import BlogPost from '@/pages/blog/BlogPost';
 
 const queryClient = new QueryClient();
 
@@ -42,8 +40,6 @@ function App() {
             <Route path="/terms" element={<Terms />} />
             <Route path="/privacy" element={<Privacy />} />
             <Route path="/refund-policy" element={<RefundPolicy />} />
-            <Route path="/blog" element={<BlogIndex />} />
-            <Route path="/blog/:slug" element={<BlogPost />} />
             
             {/* Auth routes - only accessible when not logged in */}
             <Route path="/auth" element={

@@ -9,7 +9,7 @@ import {
   Settings, 
   User, 
   Bell, 
-  Shield, 
+  Shield,  // Changed from Security to Shield
   Mail,
   Trash2,
   Save

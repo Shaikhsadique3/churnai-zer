@@ -5,7 +5,11 @@ import { Toaster } from '@/components/ui/sonner';
 import Index from '@/pages/Index';
 import Auth from '@/pages/Auth';
 import CSVUploadPage from '@/pages/CSVUploadPage';
-import ChurnDashboard from '@/pages/dashboard/ChurnDashboard';
+import DashboardOverview from '@/pages/dashboard/DashboardOverview';
+import AnalyticsPage from '@/pages/AnalyticsPage';
+import ReportsPage from '@/pages/ReportsPage';
+import NotificationsPage from '@/pages/NotificationsPage';
+import SettingsPage from '@/pages/SettingsPage';
 import ForgotPassword from '@/pages/ForgotPassword';
 import ResetPassword from '@/pages/ResetPassword';
 import Documentation from '@/pages/Documentation';
@@ -19,12 +23,10 @@ import NotAuthorized from '@/pages/NotAuthorized';
 import AdminLogin from '@/pages/AdminLogin';
 import AdminPanel from '@/pages/AdminPanel';
 import ProfilePage from '@/pages/ProfilePage';
-import CancelGuardDashboard from '@/pages/CancelGuardDashboard';
-import CancelGuardOffers from '@/pages/CancelGuardOffers';
-import CancelGuardSettings from '@/pages/CancelGuardSettings';
 import PrivateRoute from '@/components/auth/PrivateRoute';
 import PublicRoute from '@/components/auth/PublicRoute';
 import AdminRoute from '@/components/auth/AdminRoute';
+import { DashboardLayout } from '@/components/layout/DashboardLayout';
 
 const queryClient = new QueryClient();
 
@@ -36,6 +38,9 @@ function App() {
           <Routes>
             {/* Public routes */}
             <Route path="/" element={<Index />} />
+            
+            {/* Redirect authenticated users to dashboard */}
+            <Route path="/home" element={<Navigate to="/dashboard" replace />} />
             <Route path="/contact" element={<Contact />} />
             <Route path="/pricing" element={<Pricing />} />
             <Route path="/docs" element={<Documentation />} />
@@ -60,39 +65,56 @@ function App() {
               </PublicRoute>
             } />
 
-            {/* Main Dashboard - CSV Upload & Churn Predictions */}
-            <Route path="/csv-upload" element={
-              <PrivateRoute>
-                <CSVUploadPage />
-              </PrivateRoute>
-            } />
+            {/* Dashboard Routes - All protected with DashboardLayout */}
             <Route path="/dashboard" element={
               <PrivateRoute>
-                <ChurnDashboard />
+                <DashboardLayout>
+                  <DashboardOverview />
+                </DashboardLayout>
+              </PrivateRoute>
+            } />
+            <Route path="/analytics" element={
+              <PrivateRoute>
+                <DashboardLayout>
+                  <AnalyticsPage />
+                </DashboardLayout>
+              </PrivateRoute>
+            } />
+            <Route path="/csv-upload" element={
+              <PrivateRoute>
+                <DashboardLayout>
+                  <CSVUploadPage />
+                </DashboardLayout>
+              </PrivateRoute>
+            } />
+            <Route path="/reports" element={
+              <PrivateRoute>
+                <DashboardLayout>
+                  <ReportsPage />
+                </DashboardLayout>
+              </PrivateRoute>
+            } />
+            <Route path="/notifications" element={
+              <PrivateRoute>
+                <DashboardLayout>
+                  <NotificationsPage />
+                </DashboardLayout>
               </PrivateRoute>
             } />
 
-            {/* Cancel Guard Application Routes (Legacy) */}
-            <Route path="/cancel-guard" element={
+            {/* Profile & Settings */}
+            <Route path="/profile" element={
               <PrivateRoute>
-                <CancelGuardDashboard />
-              </PrivateRoute>
-            } />
-            <Route path="/offers" element={
-              <PrivateRoute>
-                <CancelGuardOffers />
+                <DashboardLayout>
+                  <ProfilePage />
+                </DashboardLayout>
               </PrivateRoute>
             } />
             <Route path="/settings" element={
               <PrivateRoute>
-                <CancelGuardSettings />
-              </PrivateRoute>
-            } />
-
-            {/* User Profile */}
-            <Route path="/profile" element={
-              <PrivateRoute>
-                <ProfilePage />
+                <DashboardLayout>
+                  <SettingsPage />
+                </DashboardLayout>
               </PrivateRoute>
             } />
 

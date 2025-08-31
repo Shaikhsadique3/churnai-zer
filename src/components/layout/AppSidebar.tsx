@@ -30,13 +30,10 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Logo } from "@/components/ui/logo";
 
-// Navigation items
+// Navigation items - Only working features
 const navigationItems = [
   { title: "Dashboard", url: "/dashboard", icon: TrendingUp },
-  { title: "Churn Analytics", url: "/analytics", icon: CheckCircle },
-  { title: "CSV Upload", url: "/csv-upload", icon: Upload },
-  { title: "Reports", url: "/reports", icon: Mail },
-  { title: "Notifications", url: "/notifications", icon: Users },
+  { title: "Cancel-Intent Predictor", url: "/csv-upload", icon: Upload },
 ];
 
 export function AppSidebar() {

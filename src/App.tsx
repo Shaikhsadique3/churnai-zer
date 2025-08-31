@@ -6,9 +6,6 @@ import Index from '@/pages/Index';
 import Auth from '@/pages/Auth';
 import CSVUploadPage from '@/pages/CSVUploadPage';
 import DashboardOverview from '@/pages/dashboard/DashboardOverview';
-import AnalyticsPage from '@/pages/AnalyticsPage';
-import ReportsPage from '@/pages/ReportsPage';
-import NotificationsPage from '@/pages/NotificationsPage';
 import SettingsPage from '@/pages/SettingsPage';
 import ForgotPassword from '@/pages/ForgotPassword';
 import ResetPassword from '@/pages/ResetPassword';
@@ -73,31 +70,10 @@ function App() {
                 </DashboardLayout>
               </PrivateRoute>
             } />
-            <Route path="/analytics" element={
-              <PrivateRoute>
-                <DashboardLayout>
-                  <AnalyticsPage />
-                </DashboardLayout>
-              </PrivateRoute>
-            } />
             <Route path="/csv-upload" element={
               <PrivateRoute>
                 <DashboardLayout>
                   <CSVUploadPage />
-                </DashboardLayout>
-              </PrivateRoute>
-            } />
-            <Route path="/reports" element={
-              <PrivateRoute>
-                <DashboardLayout>
-                  <ReportsPage />
-                </DashboardLayout>
-              </PrivateRoute>
-            } />
-            <Route path="/notifications" element={
-              <PrivateRoute>
-                <DashboardLayout>
-                  <NotificationsPage />
                 </DashboardLayout>
               </PrivateRoute>
             } />

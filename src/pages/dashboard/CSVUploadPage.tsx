@@ -42,7 +42,7 @@ export const CSVUploadPage = () => {
       const filePath = `csv_uploads/${session.user.id}/${Date.now()}.${fileExt}`;
 
       const { data, error } = await supabase.storage
-        .from('churn_files')
+        .from('csv-uploads')
         .upload(filePath, file, {
           cacheControl: '3600',
           upsert: false
@@ -50,8 +50,8 @@ export const CSVUploadPage = () => {
 
       if (error) throw error;
 
-      // Call function to process the CSV file
-      const { error: processError } = await supabase.functions.invoke('process-csv', {
+      // Call function to process the CSV file with churn prediction
+      const { error: processError } = await supabase.functions.invoke('churn-csv-handler', {
         body: {
           filePath: filePath,
           userId: session.user.id
@@ -61,7 +61,7 @@ export const CSVUploadPage = () => {
       if (processError) {
         console.error("Error processing CSV:", processError);
         // Optionally delete the uploaded file if processing fails
-        await supabase.storage.from('churn_files').remove([filePath]);
+        await supabase.storage.from('csv-uploads').remove([filePath]);
         throw processError;
       }
 
@@ -70,9 +70,11 @@ export const CSVUploadPage = () => {
     onSuccess: () => {
       toast({
         title: "Upload Successful",
-        description: "CSV file uploaded and processing started.",
+        description: "CSV file uploaded and churn prediction analysis started.",
       });
       queryClient.invalidateQueries({ queryKey: ['csv-history'] });
+      queryClient.invalidateQueries({ queryKey: ['user-predictions'] });
+      queryClient.invalidateQueries({ queryKey: ['user-stats'] });
       setCsvFile(null);
     },
     onError: (error: any) => {
@@ -204,8 +206,8 @@ export const CSVUploadPage = () => {
 
   return (
     <PageLayout 
-      title="CSV Upload" 
-      description="Upload and manage your customer data files"
+      title="Cancel-Intent Predictor" 
+      description="Upload customer data to predict cancel intent using ML"
       icon={<Upload className="h-8 w-8 text-primary" />}
     >
       <CSVUploader />

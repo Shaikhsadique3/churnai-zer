@@ -1,10 +1,10 @@
-// @deno-types="https://deno.land/std@0.168.0/http/server.ts"
-import { serve } from 'https://deno.land/std@0.177.0/http/server.ts';
+// @deno-t    const parsed = parseFloat(cleaned);pes="https://deno.land/std@0.168.0/http/server.ts"
+import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.50.2';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apike    const parsed = parseFloat(cleaned);, content-type',
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
 };
 
@@ -32,7 +32,8 @@ interface Prediction {
 function parseNumericValue(value: unknown): number {
   if (typeof value === 'number') return value;
   if (typeof value === 'string') {
-    const cleaned = value.replace(/[$,\s]/g, '');
+const cleaned = String(value).replace(/[^0-9.-]/g, '');
+
     const parsed = parseFloat(cleaned);
     return isNaN(parsed) ? 0 : parsed;
   }
@@ -383,7 +384,7 @@ async function processCsvRow(row: CSVRow, analysisId: string, userId: string): P
 
     const { error: saveError } = await supabase
       .from('user_data')
-      .insert({
+      .upsert({
         owner_id: ownerUserId,
         user_id: mapped.user_id,
         churn_score: churnProbability,
@@ -397,7 +398,20 @@ async function processCsvRow(row: CSVRow, analysisId: string, userId: string): P
         understanding_score: 85, // Default understanding score
         days_until_mature: 30,
         source: 'ai_model'
-      });
+      }, { onConflict: 'user_id, owner_id' });
+
+    if (saveError) {
+      console.error('Error saving user data:', saveError);
+      return { success: false, user_id: mapped.user_id, error: saveError.message };
+    }
+
+    return { success: true, user_id: mapped.user_id };
+  } catch (error: any) {
+    console.error('Error processing CSV row:', error);
+    return { success: false, error: error.message };
+
+        source: 'ai_model'
+      }, { onConflict: 'user_id, owner_id' });
 
     if (saveError) {
       console.error('Database save error:', saveError);

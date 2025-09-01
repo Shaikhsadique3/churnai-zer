@@ -29,6 +29,7 @@ export const PredictionsTable: React.FC<PredictionsTableProps> = ({ onUploadClic
   const { data: predictions = [], isLoading } = useQuery({
     queryKey: ['user-predictions'],
     queryFn: async () => {
+      console.log("Fetching user predictions...");
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) throw new Error("Not logged in");
 
@@ -49,12 +50,12 @@ export const PredictionsTable: React.FC<PredictionsTableProps> = ({ onUploadClic
       const { data, error } = await query;
 
       if (error) {
-        console.log("Error response received:", error);
+        console.error("Error fetching user predictions:", error);
         logApiFailure('/rest/v1/user_data', 'GET', Date.now() - startTime);
         throw error;
       }
       
-      console.log("Response received:", {
+      console.log("User predictions fetched successfully:", {
         count: data?.length || 0,
         sample: data?.slice(0, 2) || [],
         timestamp: new Date().toISOString()

@@ -49,6 +49,7 @@ export const CSVUploadPage = () => {
       const fileExt = file.name.split('.').pop();
       const filePath = `csv_uploads/${session.user.id}/${Date.now()}.${fileExt}`;
 
+      console.log("Attempting to upload file:", file.name, "to path:", filePath);
       const { data, error } = await supabase.storage
         .from('csv-uploads')
         .upload(filePath, file, {
@@ -56,9 +57,14 @@ export const CSVUploadPage = () => {
           upsert: false
         });
 
-      if (error) throw error;
+      if (error) {
+        console.error("Error uploading file to storage:", error);
+        throw error;
+      }
+      console.log("File uploaded to storage successfully:", data);
 
       // Call function to process the CSV file with churn prediction
+      console.log("Invoking churn-csv-handler function with fileName:", filePath, "and userId:", session.user.id);
       const { error: processError } = await supabase.functions.invoke('churn-csv-handler', {
         body: {
           fileName: filePath,
@@ -76,6 +82,7 @@ export const CSVUploadPage = () => {
       return data;
     },
     onSuccess: () => {
+      console.log("CSV upload and processing successful.");
       toast({
         title: "Upload Successful",
         description: "CSV file uploaded and AI analysis completed! Check your dashboard for insights.",
@@ -87,7 +94,8 @@ export const CSVUploadPage = () => {
       queryClient.invalidateQueries({ queryKey: ['churn-clusters'] });
       setCsvFile(null);
     },
-    onError: (error: any) => {
+    onError: (error: Error | { message: string }) => {
+      console.error("CSV upload or processing failed:", error.message);
       toast({
         title: "Upload Failed",
         description: error.message,

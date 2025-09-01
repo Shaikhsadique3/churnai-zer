@@ -2,6 +2,7 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { LogOut, Bell, Menu } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useAuth } from '@/contexts/AuthContext';
 import { SidebarTrigger } from '@/components/ui/sidebar';
@@ -10,9 +11,10 @@ import { useIsMobile } from '@/hooks/use-mobile';
 interface DashboardHeaderProps {
   userEmail: string;
   onLogout: () => void;
+  isDemoData: boolean;
 }
 
-const DashboardHeader: React.FC<DashboardHeaderProps> = ({ userEmail, onLogout }) => {
+export const DashboardHeader: React.FC<DashboardHeaderProps> = ({ userEmail, onLogout, isDemoData }) => {
   const { user } = useAuth();
   const isMobile = useIsMobile();
 
@@ -25,6 +27,11 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({ userEmail, onLogout }
           
           <div className="flex items-center space-x-2">
             <h2 className="text-lg font-semibold text-foreground">Dashboard</h2>
+            {isDemoData ? (
+              <Badge variant="destructive" className="ml-2">Demo Data</Badge>
+            ) : (
+              <Badge variant="success" className="ml-2">Live Data</Badge>
+            )}
           </div>
         </div>
 
@@ -60,6 +67,12 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({ userEmail, onLogout }
             onClick={onLogout}
             className="text-muted-foreground hover:text-foreground"
           >
+
+
+// Add a success variant to the Badge component if it doesn't exist
+// This assumes you have a `ui/badge.tsx` file where you can add new variants.
+// Example addition to `cva` in `ui/badge.tsx`:
+// success: "border-transparent bg-green-500 text-white hover:bg-green-500/80"
             <LogOut className="h-4 w-4" />
           </Button>
         </div>
@@ -67,5 +80,3 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({ userEmail, onLogout }
     </header>
   );
 };
-
-export default DashboardHeader;

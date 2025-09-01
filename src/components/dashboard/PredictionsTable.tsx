@@ -6,6 +6,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { AlertTriangle, CheckCircle, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 interface UserPrediction {
   id: string;
@@ -20,9 +21,10 @@ interface UserPrediction {
 
 interface PredictionsTableProps {
   onUploadClick: () => void;
+  isDemoData: boolean;
 }
 
-export const PredictionsTable: React.FC<PredictionsTableProps> = ({ onUploadClick }) => {
+export const PredictionsTable: React.FC<PredictionsTableProps> = ({ onUploadClick, isDemoData }) => {
   const { data: predictions = [], isLoading } = useQuery({
     queryKey: ['user-predictions'],
     queryFn: async () => {
@@ -75,13 +77,13 @@ export const PredictionsTable: React.FC<PredictionsTableProps> = ({ onUploadClic
         <CardHeader>
           <CardTitle>Cancel-Intent Predictions</CardTitle>
           <CardDescription>Loading predictions...</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="flex items-center justify-center py-8">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-          </div>
-        </CardContent>
-      </Card>
+      </CardHeader>
+      <CardContent>
+        <div className="flex items-center justify-center py-8">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+        </div>
+      </CardContent>
+    </Card>
     );
   }
 
@@ -114,6 +116,17 @@ export const PredictionsTable: React.FC<PredictionsTableProps> = ({ onUploadClic
           <Users className="h-5 w-5" />
           Cancel-Intent Predictions ({predictions.length})
         </CardTitle>
+        {isDemoData ? (
+          <Alert className="mt-2 bg-yellow-50 border-yellow-200 text-yellow-800">
+            <AlertTriangle className="h-4 w-4" />
+            <AlertDescription>⚠️ Currently showing Demo Insights</AlertDescription>
+          </Alert>
+        ) : (
+          <Alert className="mt-2 bg-green-50 border-green-200 text-green-800">
+            <CheckCircle className="h-4 w-4" />
+            <AlertDescription>✅ Showing Live Insights</AlertDescription>
+          </Alert>
+        )}
         <CardDescription>
           Real-time ML predictions showing customer cancel risk
         </CardDescription>

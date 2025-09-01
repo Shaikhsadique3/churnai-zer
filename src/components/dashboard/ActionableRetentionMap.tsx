@@ -3,7 +3,8 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { TrendingUp, TrendingDown, Shield, AlertTriangle, BarChart3 } from "lucide-react";
+import { TrendingUp, TrendingDown, Shield, AlertTriangle, BarChart3, CheckCircle } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 interface RetentionFeature {
   feature_name: string;
@@ -19,7 +20,11 @@ interface ChurnCluster {
   user_count: number;
 }
 
-export const ActionableRetentionMap: React.FC = () => {
+interface ActionableRetentionMapProps {
+  isDemoData: boolean;
+}
+
+export const ActionableRetentionMap: React.FC<ActionableRetentionMapProps> = ({ isDemoData }) => {
   const { data: retentionData = [], isLoading: loadingRetention } = useQuery({
     queryKey: ['retention-analytics'],
     queryFn: async () => {
@@ -63,6 +68,17 @@ export const ActionableRetentionMap: React.FC = () => {
     return (
       <div className="space-y-4">
         <h2 className="text-2xl font-bold text-foreground">Actionable Retention Map</h2>
+        {isDemoData ? (
+          <Alert className="mt-2 bg-yellow-50 border-yellow-200 text-yellow-800">
+            <AlertTriangle className="h-4 w-4" />
+            <AlertDescription>⚠️ Currently showing Demo Insights</AlertDescription>
+          </Alert>
+        ) : (
+          <Alert className="mt-2 bg-green-50 border-green-200 text-green-800">
+            <CheckCircle className="h-4 w-4" />
+            <AlertDescription>✅ Showing Live Insights</AlertDescription>
+          </Alert>
+        )}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {[1, 2, 3].map((i) => (
             <Card key={i}>
@@ -83,6 +99,17 @@ export const ActionableRetentionMap: React.FC = () => {
     return (
       <div className="space-y-4">
         <h2 className="text-2xl font-bold text-foreground">Actionable Retention Map</h2>
+        {isDemoData ? (
+          <Alert className="mt-2 bg-yellow-50 border-yellow-200 text-yellow-800">
+            <AlertTriangle className="h-4 w-4" />
+            <AlertDescription>⚠️ Currently showing Demo Insights</AlertDescription>
+          </Alert>
+        ) : (
+          <Alert className="mt-2 bg-green-50 border-green-200 text-green-800">
+            <CheckCircle className="h-4 w-4" />
+            <AlertDescription>✅ Showing Live Insights</AlertDescription>
+          </Alert>
+        )}
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -113,6 +140,17 @@ export const ActionableRetentionMap: React.FC = () => {
   return (
     <div className="space-y-6">
       <h2 className="text-2xl font-bold text-foreground">Actionable Retention Map</h2>
+      {isDemoData ? (
+        <Alert className="mt-2 bg-yellow-50 border-yellow-200 text-yellow-800">
+          <AlertTriangle className="h-4 w-4" />
+          <AlertDescription>⚠️ Currently showing Demo Insights</AlertDescription>
+        </Alert>
+      ) : (
+        <Alert className="mt-2 bg-green-50 border-green-200 text-green-800">
+          <CheckCircle className="h-4 w-4" />
+          <AlertDescription>✅ Showing Live Insights</AlertDescription>
+        </Alert>
+      )}
       
       {/* Top 3 Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">

@@ -7,6 +7,7 @@ import { useState } from 'react';
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { useQuery } from '@tanstack/react-query';
 import { DynamicHead } from "@/components/common/DynamicHead";
 
 interface UploadResult {
@@ -25,6 +26,21 @@ const CSVUploadPage = () => {
   const [previewData, setPreviewData] = useState<string[][]>([]);
   const { toast } = useToast();
   const { user } = useAuth();
+
+  const { data: profile, isLoading: loadingProfile } = useQuery({
+    queryKey: ['userProfile', user?.id],
+    queryFn: async () => {
+      if (!user) return null;
+      const { data, error } = await supabase
+        .from('founder_profile')
+        .select('onboarding_completed')
+        .eq('user_id', user.id)
+        .single();
+      if (error && error.code !== 'PGRST116') throw error;
+      return data;
+    },
+    enabled: !!user,
+  });
 
   const requiredColumns = [
     'user_id',
@@ -72,10 +88,45 @@ const CSVUploadPage = () => {
   };
 
   const handleUpload = async () => {
-    if (!file || !user) return;
+    if (!file || !user || loadingProfile) return;
+
+    const isFirstTimeOnboarding = profile && !profile.onboarding_completed;
+
+    // If it's not first-time onboarding, prevent demo data upload
+    if (!isFirstTimeOnboarding) {
+      const headers = requiredColumns.join(',');
+      const sampleDataContent = [
+        'user_123,Pro,2024-01-15,25,Active,99.00,15,2',
+        'user_456,Free,2023-12-20,8,Overdue,0.00,3,0',
+        'user_789,Enterprise,2024-01-20,45,Active,299.00,25,1'
+      ];
+      const fullSampleCSVContent = [headers, ...sampleDataContent].join('\n');
+
+      const fileContent = await file.text();
+
+      if (fileContent.trim() === fullSampleCSVContent.trim()) {
+        toast({
+          title: "Demo Data Restricted",
+          description: "Demo data upload is only allowed during initial onboarding. Please upload your own customer data.",
+          variant: "destructive"
+        });
+        setUploading(false);
+        return;
+      }
+    }
 
     setUploading(true);
     try {
+      const headers = requiredColumns.join(',');
+      const sampleDataContent = [
+        'user_123,Pro,2024-01-15,25,Active,99.00,15,2',
+        'user_456,Free,2023-12-20,8,Overdue,0.00,3,0',
+        'user_789,Enterprise,2024-01-20,45,Active,299.00,25,1'
+      ];
+      // Original demo data check (only applies if not in first-time onboarding and demo data is restricted)
+      // This block is now inside the `if (!isFirstTimeOnboarding)` block above
+      // and will only execute if the user is NOT in first-time onboarding.
+
       // Upload file to Supabase Storage
       const fileName = `${user.id}/${Date.now()}_${file.name}`;
       const { error: uploadError } = await supabase.storage
@@ -86,9 +137,9 @@ const CSVUploadPage = () => {
 
       // Process CSV via edge function
       const { data, error } = await supabase.functions.invoke('churn-csv-handler', {
-        body: { 
+        body: {
           fileName,
-          userId: user.id 
+          userId: user.id
         }
       });
 

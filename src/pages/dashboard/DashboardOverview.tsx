@@ -10,6 +10,7 @@ import {
   Target
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from '@/contexts/AuthContext';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { PredictionsTable } from "@/components/dashboard/PredictionsTable";
@@ -17,6 +18,25 @@ import { ActionableRetentionMap } from "@/components/dashboard/ActionableRetenti
 
 export default function DashboardOverview() {
   const navigate = useNavigate();
+
+  const { user } = useAuth();
+
+  const { data: profile, isLoading: loadingProfile } = useQuery({
+    queryKey: ['userProfile', user?.id],
+    queryFn: async () => {
+      if (!user) return null;
+      const { data, error } = await supabase
+        .from('founder_profile')
+        .select('onboarding_completed')
+        .eq('user_id', user.id)
+        .single();
+      if (error && error.code !== 'PGRST116') throw error;
+      return data;
+    },
+    enabled: !!user,
+  });
+
+  const isDemoData = !profile?.onboarding_completed && !loadingProfile;
 
   // Fetch real user data statistics
   const { data: userStats } = useQuery({
@@ -176,10 +196,10 @@ export default function DashboardOverview() {
       </Card>
 
       {/* Actionable Retention Map */}
-      <ActionableRetentionMap />
+      <ActionableRetentionMap isDemoData={isDemoData} /* TODO: Connect to actual API flag */ />
 
       {/* Predictions Table */}
-      <PredictionsTable onUploadClick={() => navigate("/csv-upload")} />
+      <PredictionsTable onUploadClick={() => navigate("/csv-upload")} isDemoData={isDemoData} /* TODO: Connect to actual API flag */ />
     </div>
   );
 }

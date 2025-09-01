@@ -1,6 +1,7 @@
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { AppSidebar } from "./AppSidebar";
 import { TopNavbar } from "./TopNavbar";
+import { DebugWidget } from "@/components/debug/DebugWidget";
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
@@ -19,6 +20,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
             </div>
           </main>
         </div>
+        <DebugWidget />
       </div>
     </SidebarProvider>
   );

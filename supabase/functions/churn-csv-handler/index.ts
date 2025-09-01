@@ -1,4 +1,5 @@
-import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
+// @deno-types="https://deno.land/std@0.168.0/http/server.ts"
+import { serve } from 'https://deno.land/std@0.177.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.50.2';
 
 const corsHeaders = {
@@ -20,7 +21,15 @@ interface CSVRow {
   cancellation_reason?: string;
 }
 
-function parseNumericValue(value: any): number {
+interface Prediction {
+  user_id: string;
+  churn_score: number;
+  risk_level: 'high' | 'medium' | 'low';
+  monthly_revenue: number;
+  prediction_id: string;
+}
+
+function parseNumericValue(value: unknown): number {
   if (typeof value === 'number') return value;
   if (typeof value === 'string') {
     const cleaned = value.replace(/[$,\s]/g, '');
@@ -37,32 +46,32 @@ function normalizePlan(plan: string): 'Free' | 'Pro' | 'Enterprise' {
   return 'Free';
 }
 
-function generateChurnReason(data: any): string {
-  const reasons = [];
+function generateChurnReason(data: Record<string, unknown>): string {
+  const reasons: string[] = [];
   
-  const lastLoginDays = calculateDaysSince(data.last_login);
+  const lastLoginDays = calculateDaysSince(data.last_login as string);
   
   if (lastLoginDays > 14) {
     reasons.push(`Inactive for ${lastLoginDays} days`);
   }
   
-  if (data.avg_session_duration < 5) {
+  if ((data.avg_session_duration as number) < 5) {
     reasons.push('Very low session engagement');
   }
   
-  if (data.support_tickets > 3) {
+  if ((data.support_tickets as number) > 3) {
     reasons.push('High support ticket volume indicates frustration');
   }
   
-  if (data.plan === 'Free' && data.monthly_revenue === 0) {
+  if ((data.plan as string) === 'Free' && (data.monthly_revenue as number) === 0) {
     reasons.push('Free plan user with no revenue conversion');
   }
   
-  if (data.billing_status.toLowerCase().includes('failed') || data.billing_status.toLowerCase().includes('overdue')) {
+  if ((data.billing_status as string).toLowerCase().includes('failed') || (data.billing_status as string).toLowerCase().includes('overdue')) {
     reasons.push('Payment/billing issues detected');
   }
   
-  if (data.feature_usage_count < 5) {
+  if ((data.feature_usage_count as number) < 5) {
     reasons.push('Low feature adoption and usage');
   }
   
@@ -84,32 +93,32 @@ function calculateDaysSince(dateString: string): number {
   }
 }
 
-function generateRecommendedAction(data: any): string {
-  const actions = [];
+function generateRecommendedAction(data: Record<string, unknown>): string {
+  const actions: string[] = [];
   
-  const lastLoginDays = calculateDaysSince(data.last_login);
+  const lastLoginDays = calculateDaysSince(data.last_login as string);
   
   if (lastLoginDays > 14) {
     actions.push('Send immediate re-engagement email campaign');
   }
   
-  if (data.avg_session_duration < 5) {
+  if ((data.avg_session_duration as number) < 5) {
     actions.push('Improve user onboarding and feature discovery');
   }
   
-  if (data.support_tickets > 3) {
+  if ((data.support_tickets as number) > 3) {
     actions.push('Prioritize customer success outreach and issue resolution');
   }
   
-  if (data.plan === 'Free' && data.monthly_revenue === 0) {
+  if ((data.plan as string) === 'Free' && (data.monthly_revenue as number) === 0) {
     actions.push('Offer upgrade incentives with personalized demo');
   }
   
-  if (data.billing_status.toLowerCase().includes('failed')) {
+  if ((data.billing_status as string).toLowerCase().includes('failed')) {
     actions.push('Resolve payment issues immediately and offer payment assistance');
   }
   
-  if (data.feature_usage_count < 5) {
+  if ((data.feature_usage_count as number) < 5) {
     actions.push('Provide feature training and usage guidance');
   }
   
@@ -120,10 +129,10 @@ function generateRecommendedAction(data: any): string {
   return actions.join('; ');
 }
 
-function calculateRulesBasedScore(data: any): number {
+function calculateRulesBasedScore(data: Record<string, unknown>): number {
   let score = 0.1; // Base 10% risk
   
-  const lastLoginDays = calculateDaysSince(data.last_login);
+  const lastLoginDays = calculateDaysSince(data.last_login as string);
   
   // Inactive >14 days → +30% risk
   if (lastLoginDays > 14) {
@@ -132,25 +141,25 @@ function calculateRulesBasedScore(data: any): number {
   
   // Downgrade plan → +25% risk (would need previous plan data)
   // For now, assume Free plan users who should be Pro
-  if (data.plan === 'Free' && data.monthly_revenue === 0 && data.feature_usage_count > 10) {
+  if ((data.plan as string) === 'Free' && (data.monthly_revenue as number) === 0 && (data.feature_usage_count as number) > 10) {
     score += 0.25;
   }
   
   // Failed payment → +40% risk
-  if (data.billing_status.toLowerCase().includes('failed') || data.billing_status.toLowerCase().includes('overdue')) {
+  if ((data.billing_status as string).toLowerCase().includes('failed') || (data.billing_status as string).toLowerCase().includes('overdue')) {
     score += 0.4;
   }
   
   // Low engagement indicators
-  if (data.avg_session_duration < 5) {
+  if ((data.avg_session_duration as number) < 5) {
     score += 0.15;
   }
   
-  if (data.feature_usage_count < 3) {
+  if ((data.feature_usage_count as number) < 3) {
     score += 0.2;
   }
   
-  if (data.support_tickets > 3) {
+  if ((data.support_tickets as number) > 3) {
     score += 0.15;
   }
   
@@ -204,6 +213,9 @@ async function processCsvRow(row: CSVRow, analysisId: string, userId: string): P
           support_tickets_count: mapped.support_tickets
         };
         
+        // Log the request payload being sent to the AI model
+        console.log('🔍 AI Model Request:', JSON.stringify(payload));
+        
         // Use your specific AI model endpoint
         const aiModelUrl = churnApiUrl || 'https://ai-model-rumc.onrender.com';
         const response = await fetch(`${aiModelUrl}/predict`, {
@@ -216,9 +228,15 @@ async function processCsvRow(row: CSVRow, analysisId: string, userId: string): P
           signal: AbortSignal.timeout(15000) // 15 second timeout for external API
         });
         
+        console.log(`🌐 AI Model Response Status: ${response.status} ${response.statusText}`);
+        
         if (response.ok) {
           const result = await response.json();
           console.log('✅ AI Model success:', result);
+          console.log('📊 AI Model Prediction Details:', JSON.stringify({
+            user_id: mapped.user_id,
+            prediction_result: result
+          }));
           
           // Parse response from your AI model
           churnProbability = result.churn_probability || result.prediction || result.score || 0;
@@ -228,6 +246,14 @@ async function processCsvRow(row: CSVRow, analysisId: string, userId: string): P
           recommended_actions = Array.isArray(result.actions) ? result.actions : 
                               Array.isArray(result.recommendations) ? result.recommendations : 
                               result.action ? [result.action] : [];
+          
+          // Log the processed prediction data
+          console.log('🔄 Processed Prediction:', JSON.stringify({
+            user_id: mapped.user_id,
+            churn_probability: churnProbability,
+            contributing_factors: contributing_factors,
+            recommended_actions: recommended_actions
+          }));
           
           // If no factors/actions provided by AI, generate them
           if (contributing_factors.length === 0) {
@@ -240,7 +266,7 @@ async function processCsvRow(row: CSVRow, analysisId: string, userId: string): P
           throw new Error(`AI Model error: ${response.status} ${response.statusText}`);
         }
         
-      } catch (error) {
+      } catch (error: any) {
         console.log('❌ AI Model failed:', error.message);
         console.log('🔄 Falling back to rules-based logic');
         usingFallback = true;
@@ -260,6 +286,9 @@ async function processCsvRow(row: CSVRow, analysisId: string, userId: string): P
           support_tickets_count: mapped.support_tickets
         };
         
+        // Log the request payload being sent to the default AI model
+        console.log('🔍 Default AI Model Request:', JSON.stringify(payload));
+        
         const response = await fetch('https://ai-model-rumc.onrender.com/predict', {
           method: 'POST',
           headers: {
@@ -270,9 +299,15 @@ async function processCsvRow(row: CSVRow, analysisId: string, userId: string): P
           signal: AbortSignal.timeout(15000)
         });
         
+        console.log(`🌐 Default AI Model Response Status: ${response.status} ${response.statusText}`);
+        
         if (response.ok) {
           const result = await response.json();
           console.log('✅ Default AI Model success:', result);
+          console.log('📊 Default AI Model Prediction Details:', JSON.stringify({
+            user_id: mapped.user_id,
+            prediction_result: result
+          }));
           
           churnProbability = result.churn_probability || result.prediction || result.score || 0;
           contributing_factors = Array.isArray(result.reasons) ? result.reasons : 
@@ -281,11 +316,19 @@ async function processCsvRow(row: CSVRow, analysisId: string, userId: string): P
           recommended_actions = Array.isArray(result.actions) ? result.actions : 
                               Array.isArray(result.recommendations) ? result.recommendations : 
                               result.action ? [result.action] : [];
+          
+          // Log the processed prediction data
+          console.log('🔄 Processed Default Prediction:', JSON.stringify({
+            user_id: mapped.user_id,
+            churn_probability: churnProbability,
+            contributing_factors: contributing_factors,
+            recommended_actions: recommended_actions
+          }));
         } else {
           throw new Error(`Default AI Model error: ${response.status}`);
         }
-      } catch (error) {
-        console.log('❌ Default AI Model also failed:', error.message);
+      } catch (error: any) {
+        console.log('❌ Default AI Model also failed:', (error as Error).message);
         usingFallback = true;
       }
     }
@@ -336,7 +379,7 @@ async function processCsvRow(row: CSVRow, analysisId: string, userId: string): P
     const supabase = createClient(supabaseUrl, supabaseKey);
     
     // Get the global user ID from the handler
-    const ownerUserId = (globalThis as any).__user_id__;
+    const ownerUserId = (globalThis as unknown as { __user_id__?: string }).__user_id__ || userId;
 
     const { error: saveError } = await supabase
       .from('user_data')
@@ -363,7 +406,7 @@ async function processCsvRow(row: CSVRow, analysisId: string, userId: string): P
 
     return { success: true, user_id: mapped.user_id };
 
-  } catch (error) {
+  } catch (error: any) {
     console.error('Row processing error:', error);
     return { success: false, error: error.message };
   }
@@ -393,12 +436,12 @@ async function parseCSVFromStorage(fileName: string): Promise<CSVRow[]> {
     throw new Error('CSV file must have at least a header and one data row');
   }
   
-  const headers = lines[0].split(',').map(h => h.trim().replace(/"/g, ''));
+  const headers = lines[0].split(',').map((h: string) => h.trim().replace(/"/g, ''));
   console.log('📋 CSV headers:', headers);
   
   const requiredColumns = ['user_id', 'plan', 'last_login', 'avg_session_duration', 'billing_status', 'monthly_revenue', 'feature_usage_count', 'support_tickets'];
   const optionalColumns = ['feature_adopted', 'cancellation_reason'];
-  const missingColumns = requiredColumns.filter(col => !headers.some(h => h.toLowerCase() === col.toLowerCase()));
+  const missingColumns = requiredColumns.filter(col => !headers.some((h: string) => h.toLowerCase() === col.toLowerCase()));
   
   if (missingColumns.length > 0) {
     throw new Error(`Missing required columns: ${missingColumns.join(', ')}`);
@@ -409,15 +452,15 @@ async function parseCSVFromStorage(fileName: string): Promise<CSVRow[]> {
   const rows: CSVRow[] = [];
   
   for (let i = 1; i < lines.length; i++) {
-    const values = lines[i].split(',').map(v => v.trim().replace(/"/g, ''));
+    const values = lines[i].split(',').map((v: string) => v.trim().replace(/"/g, ''));
     
     if (values.length !== headers.length) {
       console.warn(`Row ${i + 1} has ${values.length} values but expected ${headers.length}, skipping`);
       continue;
     }
     
-    const row: any = {};
-    headers.forEach((header, index) => {
+    const row: Record<string, string> = {};
+    headers.forEach((header: string, index: number) => {
       const normalizedHeader = header.toLowerCase();
       row[normalizedHeader] = values[index];
     });
@@ -440,7 +483,7 @@ async function parseCSVFromStorage(fileName: string): Promise<CSVRow[]> {
   return rows;
 }
 
-serve(async (req) => {
+serve(async (req: Request) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
@@ -477,9 +520,11 @@ serve(async (req) => {
     }
 
     // Set user ID in global context for processCsvRow function
-    (globalThis as any).__user_id__ = user.id;
+    (globalThis as unknown as { __user_id__: string }).__user_id__ = user.id;
 
     const body = await req.json();
+    console.log('📥 Incoming request body:', JSON.stringify(body));
+    
     const { fileName, userId: requestUserId } = body;
 
     if (!fileName) {
@@ -566,7 +611,7 @@ serve(async (req) => {
     let totalChurnProb = 0;
 
     if (predictions) {
-      predictions.forEach(p => {
+      predictions.forEach((p: Prediction) => {
         if (p.risk_level === 'high') highRisk++;
         else if (p.risk_level === 'medium') mediumRisk++;
         else lowRisk++;
@@ -605,7 +650,7 @@ serve(async (req) => {
       console.error('Upload update error:', uploadUpdateError);
     }
 
-    const errorDetails = results.filter(r => !r.success).map((r, index) => ({
+    const errorDetails = results.filter((r: { success: boolean; user_id?: string; error?: string }) => !r.success).map((r: { success: boolean; user_id?: string; error?: string }, index: number) => ({
       row: index + 1,
       user_id: r.user_id || 'unknown',
       error: r.error
@@ -616,7 +661,7 @@ serve(async (req) => {
     try {
       if (predictions && predictions.length > 0) {
         const topRiskyUsers = predictions
-          .sort((a, b) => (b.churn_score || 0) - (a.churn_score || 0))
+          .sort((a: Record<string, unknown>, b: Record<string, unknown>) => (Number(b.churn_score || 0) - Number(a.churn_score || 0)))
           .slice(0, 5); // Top 5 risky users
 
         await sendFounderEmailReport(supabase, user.id, analysisData.id, topRiskyUsers);
@@ -641,7 +686,7 @@ serve(async (req) => {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     });
 
-  } catch (error) {
+  } catch (error: any) {
     console.error('Handler error:', error);
     return new Response(
       JSON.stringify({ error: error.message || 'Internal server error' }),
@@ -650,7 +695,7 @@ serve(async (req) => {
   }
 });
 
-async function sendFounderEmailReport(supabase: any, userId: string, analysisId: string, topRiskyUsers: any[]) {
+async function sendFounderEmailReport(supabase: ReturnType<typeof createClient>, userId: string, analysisId: string, topRiskyUsers: Array<Record<string, unknown>>) {
   try {
     // Get founder profile
     const { data: profile, error: profileError } = await supabase
@@ -692,7 +737,7 @@ async function sendFounderEmailReport(supabase: any, userId: string, analysisId:
     `;
 
     topRiskyUsers.forEach((user, index) => {
-      const probability = (user.churn_probability * 100).toFixed(1);
+      const probability = (Number(user.churn_probability || 0) * 100).toFixed(1);
       const reasons = Array.isArray(user.contributing_factors) 
         ? user.contributing_factors.slice(0, 2).join(', ')
         : user.contributing_factors || 'Low engagement detected';
@@ -708,7 +753,7 @@ async function sendFounderEmailReport(supabase: any, userId: string, analysisId:
           <p style="margin: 4px 0; color: #6b7280;"><strong>Cancel Probability:</strong> ${probability}%</p>
           <p style="margin: 4px 0; color: #6b7280;"><strong>Reason:</strong> ${reasons}</p>
           <p style="margin: 4px 0; color: #6b7280;"><strong>Suggested Action:</strong> ${actions}</p>
-          <p style="margin: 4px 0; color: #6b7280;"><strong>Monthly Revenue:</strong> $${(user.monthly_revenue || 0).toFixed(2)}</p>
+          <p style="margin: 4px 0; color: #6b7280;"><strong>Monthly Revenue:</strong> $${Number(user.monthly_revenue || 0).toFixed(2)}</p>
         </div>
       `;
     });
@@ -769,17 +814,17 @@ async function sendFounderEmailReport(supabase: any, userId: string, analysisId:
     const emailResult = await emailResponse.json();
     console.log('📧 Email sent successfully:', emailResult);
 
-  } catch (error) {
+  } catch (error: any) {
     console.error('Email sending error:', error);
     throw error;
   }
 }
 
-async function processRetentionAnalytics(supabase: any, userId: string, uploadId: string, rows: CSVRow[]) {
+async function processRetentionAnalytics(supabase: ReturnType<typeof createClient>, userId: string, uploadId: string, rows: CSVRow[]) {
   try {
     // Check if we have the required optional columns
-    const hasFeatureData = rows.some(row => row.feature_adopted);
-    const hasChurnReasons = rows.some(row => row.cancellation_reason);
+    const hasFeatureData = rows.some((row: CSVRow) => row.feature_adopted);
+    const hasChurnReasons = rows.some((row: CSVRow) => row.cancellation_reason);
     
     console.log('Analytics data availability:', { hasFeatureData, hasChurnReasons });
 
@@ -825,7 +870,7 @@ async function processRetentionAnalytics(supabase: any, userId: string, uploadId
       console.log(`✅ Saved ${churnClusters.length} churn cluster records`);
     }
 
-  } catch (error) {
+  } catch (error: any) {
     console.error('Retention analytics processing error:', error);
     // Don't fail the whole upload if analytics fail
   }
@@ -858,7 +903,7 @@ async function analyzeFeatureRetention(rows: CSVRow[]) {
   }
   
   // Calculate retention percentages and sort by retention
-  const results = Array.from(featureAnalysis.entries()).map(([feature, data]) => ({
+  const results = Array.from(featureAnalysis.entries()).map(([feature, data]: [string, { total_users: number; active_users: number; total_revenue: number }]) => ({
     name: feature,
     retention_percentage: data.total_users > 0 ? (data.active_users / data.total_users) * 100 : 0,
     revenue_contribution: data.total_revenue,
@@ -914,21 +959,21 @@ async function analyzeChurnReasons(rows: CSVRow[]) {
   }
   
   const totalReasons = reasons.length;
-  const results = Array.from(clusters.entries()).map(([name, data]) => ({
+  const results = Array.from(clusters.entries()).map(([name, data]: [string, { count: number; examples: string[] }]) => ({
     name,
     examples: data.examples.slice(0, 3), // Top 3 examples
     percentage: (data.count / totalReasons) * 100,
     user_count: data.count
-  })).sort((a, b) => b.percentage - a.percentage);
+  })).sort((a: { percentage: number }, b: { percentage: number }) => b.percentage - a.percentage);
   
   return results;
 }
 
-function addToCluster(clusters: Map<string, any>, clusterName: string, reason: string) {
+function addToCluster(clusters: Map<string, { count: number; examples: string[] }>, clusterName: string, reason: string) {
   if (!clusters.has(clusterName)) {
     clusters.set(clusterName, { count: 0, examples: [] });
   }
-  const cluster = clusters.get(clusterName);
+  const cluster = clusters.get(clusterName)!;
   cluster.count++;
   if (cluster.examples.length < 5) {
     cluster.examples.push(reason);

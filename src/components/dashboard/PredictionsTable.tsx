@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { AlertTriangle, CheckCircle, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { logApiSuccess, logApiFailure } from "@/utils/apiLogger";
 
 interface UserPrediction {
   id: string;
@@ -31,14 +32,36 @@ export const PredictionsTable: React.FC<PredictionsTableProps> = ({ onUploadClic
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) throw new Error("Not logged in");
 
-      const { data, error } = await supabase
+      const query = supabase
         .from('user_data')
         .select('id, user_id, churn_score, risk_level, churn_reason, action_recommended, monthly_revenue, created_at')
         .eq('owner_id', session.user.id)
         .order('created_at', { ascending: false })
         .limit(100);
+      
+      console.log("Request sent:", {
+        table: 'user_data',
+        owner_id: session.user.id,
+        endpoint: '/rest/v1/user_data'
+      });
 
-      if (error) throw error;
+      const startTime = Date.now();
+      const { data, error } = await query;
+
+      if (error) {
+        console.log("Error response received:", error);
+        logApiFailure('/rest/v1/user_data', 'GET', Date.now() - startTime);
+        throw error;
+      }
+      
+      console.log("Response received:", {
+        count: data?.length || 0,
+        sample: data?.slice(0, 2) || [],
+        timestamp: new Date().toISOString()
+      });
+      
+      logApiSuccess('/rest/v1/user_data', 'GET', Date.now() - startTime);
+      
       return data as UserPrediction[];
     },
   });

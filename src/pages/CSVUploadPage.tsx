@@ -9,6 +9,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useQuery } from '@tanstack/react-query';
 import { DynamicHead } from "@/components/common/DynamicHead";
+import { logApiSuccess, logApiFailure } from "@/utils/apiLogger";
 
 interface UploadResult {
   success: boolean;
@@ -136,14 +137,25 @@ const CSVUploadPage = () => {
       if (uploadError) throw uploadError;
 
       // Process CSV via edge function
+      const payload = {
+        fileName,
+        userId: user.id
+      };
+      console.log("Request sent:", payload);
+      
+      const startTime = Date.now();
       const { data, error } = await supabase.functions.invoke('churn-csv-handler', {
-        body: {
-          fileName,
-          userId: user.id
-        }
+        body: payload
       });
 
-      if (error) throw error;
+      if (error) {
+        console.log("Response error:", error);
+        logApiFailure('churn-csv-handler', 'POST', Date.now() - startTime);
+        throw error;
+      }
+      
+      console.log("Response received:", data);
+      logApiSuccess('churn-csv-handler', 'POST', Date.now() - startTime);
 
       setUploadResult(data);
       

@@ -54,7 +54,7 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({ userEmail, onL
               <p className="text-sm font-medium text-foreground">
                 {user?.user_metadata?.full_name || userEmail.split('@')[0]}
               </p>
-              <p className="text-xs text-muted-foreground truncate max-w-[150px]">
+              <p className="text-xs text-muted-foreground truncate max-w-[180px] md:max-w-[200px]">
                 {userEmail}
               </p>
             </div>

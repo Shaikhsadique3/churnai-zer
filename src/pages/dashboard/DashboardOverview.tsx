@@ -136,7 +136,7 @@ export default function DashboardOverview() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         {stats.map((stat, index) => (
           <Card key={index} className="border-border">
-            <CardContent className="p-6">
+            <CardContent className="p-4 sm:p-6">
               <div className="flex items-center justify-between">
                 <div className="space-y-2">
                   <p className="text-sm font-medium text-muted-foreground">
@@ -145,11 +145,11 @@ export default function DashboardOverview() {
                   <p className="text-2xl font-bold text-foreground">
                     {stat.value}
                   </p>
-                   {stat.change && (
+                   {stat.change && stat.trend !== 'neutral' && (
                     <div className="flex items-center text-sm">
                       <TrendingUp className="h-3 w-3 text-green-600 mr-1" />
-                      <span className="text-green-600 font-medium">{stat.change}</span>
-                      <span className="text-muted-foreground ml-1">vs last month</span>
+                      <span className="text-green-600 font-medium text-wrap">{stat.change}</span>
+                      <span className="text-muted-foreground ml-1 text-wrap">vs last month</span>
                     </div>
                   )}
                 </div>

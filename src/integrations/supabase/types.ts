@@ -619,6 +619,39 @@ export type Database = {
         }
         Relationships: []
       }
+      churn_reason_clusters: {
+        Row: {
+          cluster_name: string
+          created_at: string
+          id: string
+          percentage: number
+          reason_examples: string[] | null
+          upload_id: string | null
+          user_count: number
+          user_id: string
+        }
+        Insert: {
+          cluster_name: string
+          created_at?: string
+          id?: string
+          percentage?: number
+          reason_examples?: string[] | null
+          upload_id?: string | null
+          user_count?: number
+          user_id: string
+        }
+        Update: {
+          cluster_name?: string
+          created_at?: string
+          id?: string
+          percentage?: number
+          reason_examples?: string[] | null
+          upload_id?: string | null
+          user_count?: number
+          user_id?: string
+        }
+        Relationships: []
+      }
       churn_trigger_logs: {
         Row: {
           action_taken: string
@@ -1830,6 +1863,39 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      retention_analytics: {
+        Row: {
+          created_at: string
+          feature_name: string
+          id: string
+          retention_percentage: number
+          revenue_contribution: number
+          upload_id: string | null
+          user_count: number
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          feature_name: string
+          id?: string
+          retention_percentage?: number
+          revenue_contribution?: number
+          upload_id?: string | null
+          user_count?: number
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          feature_name?: string
+          id?: string
+          retention_percentage?: number
+          revenue_contribution?: number
+          upload_id?: string | null
+          user_count?: number
+          user_id?: string
+        }
+        Relationships: []
       }
       retention_emails: {
         Row: {

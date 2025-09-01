@@ -13,6 +13,7 @@ import { useNavigate } from "react-router-dom";
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { PredictionsTable } from "@/components/dashboard/PredictionsTable";
+import { ActionableRetentionMap } from "@/components/dashboard/ActionableRetentionMap";
 
 export default function DashboardOverview() {
   const navigate = useNavigate();
@@ -173,6 +174,9 @@ export default function DashboardOverview() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Actionable Retention Map */}
+      <ActionableRetentionMap />
 
       {/* Predictions Table */}
       <PredictionsTable onUploadClick={() => navigate("/csv-upload")} />

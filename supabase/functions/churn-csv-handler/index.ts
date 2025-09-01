@@ -16,6 +16,8 @@ interface CSVRow {
   monthly_revenue: number;
   feature_usage_count: number;
   support_tickets: number;
+  feature_adopted?: string;
+  cancellation_reason?: string;
 }
 
 function parseNumericValue(value: any): number {
@@ -395,11 +397,14 @@ async function parseCSVFromStorage(fileName: string): Promise<CSVRow[]> {
   console.log('📋 CSV headers:', headers);
   
   const requiredColumns = ['user_id', 'plan', 'last_login', 'avg_session_duration', 'billing_status', 'monthly_revenue', 'feature_usage_count', 'support_tickets'];
+  const optionalColumns = ['feature_adopted', 'cancellation_reason'];
   const missingColumns = requiredColumns.filter(col => !headers.some(h => h.toLowerCase() === col.toLowerCase()));
   
   if (missingColumns.length > 0) {
     throw new Error(`Missing required columns: ${missingColumns.join(', ')}`);
   }
+  
+  console.log('Optional columns found:', optionalColumns.filter(col => headers.some(h => h.toLowerCase() === col.toLowerCase())));
   
   const rows: CSVRow[] = [];
   
@@ -425,7 +430,9 @@ async function parseCSVFromStorage(fileName: string): Promise<CSVRow[]> {
       billing_status: row.billing_status || 'Active',
       monthly_revenue: parseFloat(row.monthly_revenue) || 0,
       feature_usage_count: parseInt(row.feature_usage_count) || 0,
-      support_tickets: parseInt(row.support_tickets) || 0
+      support_tickets: parseInt(row.support_tickets) || 0,
+      feature_adopted: row.feature_adopted || undefined,
+      cancellation_reason: row.cancellation_reason || undefined
     });
   }
   
@@ -543,6 +550,10 @@ serve(async (req) => {
 
     const successCount = results.filter(r => r.success).length;
     const failedCount = results.filter(r => !r.success).length;
+
+    // Process retention analytics if optional fields are present
+    console.log('🔍 Processing retention analytics...');
+    await processRetentionAnalytics(supabase, user.id, uploadData.id, rows);
 
     // Calculate summary statistics
     const { data: predictions } = await supabase
@@ -761,5 +772,165 @@ async function sendFounderEmailReport(supabase: any, userId: string, analysisId:
   } catch (error) {
     console.error('Email sending error:', error);
     throw error;
+  }
+}
+
+async function processRetentionAnalytics(supabase: any, userId: string, uploadId: string, rows: CSVRow[]) {
+  try {
+    // Check if we have the required optional columns
+    const hasFeatureData = rows.some(row => row.feature_adopted);
+    const hasChurnReasons = rows.some(row => row.cancellation_reason);
+    
+    console.log('Analytics data availability:', { hasFeatureData, hasChurnReasons });
+
+    // Process Feature-Retention Fit
+    if (hasFeatureData) {
+      console.log('📊 Processing feature-retention analytics...');
+      const featureAnalytics = await analyzeFeatureRetention(rows);
+      
+      // Save feature analytics
+      for (const feature of featureAnalytics) {
+        await supabase
+          .from('retention_analytics')
+          .insert({
+            user_id: userId,
+            upload_id: uploadId,
+            feature_name: feature.name,
+            retention_percentage: feature.retention_percentage,
+            revenue_contribution: feature.revenue_contribution,
+            user_count: feature.user_count
+          });
+      }
+      console.log(`✅ Saved ${featureAnalytics.length} feature retention records`);
+    }
+
+    // Process Churn Reason Clusters
+    if (hasChurnReasons) {
+      console.log('📊 Processing churn reason clusters...');
+      const churnClusters = await analyzeChurnReasons(rows);
+      
+      // Save churn clusters
+      for (const cluster of churnClusters) {
+        await supabase
+          .from('churn_reason_clusters')
+          .insert({
+            user_id: userId,
+            upload_id: uploadId,
+            cluster_name: cluster.name,
+            reason_examples: cluster.examples,
+            percentage: cluster.percentage,
+            user_count: cluster.user_count
+          });
+      }
+      console.log(`✅ Saved ${churnClusters.length} churn cluster records`);
+    }
+
+  } catch (error) {
+    console.error('Retention analytics processing error:', error);
+    // Don't fail the whole upload if analytics fail
+  }
+}
+
+async function analyzeFeatureRetention(rows: CSVRow[]) {
+  const featureAnalysis = new Map();
+  
+  // Group users by feature adoption
+  for (const row of rows) {
+    if (!row.feature_adopted) continue;
+    
+    const features = row.feature_adopted.split(',').map(f => f.trim());
+    const isActive = calculateDaysSince(row.last_login) <= 30; // Active if logged in within 30 days
+    
+    for (const feature of features) {
+      if (!featureAnalysis.has(feature)) {
+        featureAnalysis.set(feature, {
+          total_users: 0,
+          active_users: 0,
+          total_revenue: 0
+        });
+      }
+      
+      const analysis = featureAnalysis.get(feature);
+      analysis.total_users++;
+      if (isActive) analysis.active_users++;
+      analysis.total_revenue += row.monthly_revenue || 0;
+    }
+  }
+  
+  // Calculate retention percentages and sort by retention
+  const results = Array.from(featureAnalysis.entries()).map(([feature, data]) => ({
+    name: feature,
+    retention_percentage: data.total_users > 0 ? (data.active_users / data.total_users) * 100 : 0,
+    revenue_contribution: data.total_revenue,
+    user_count: data.total_users
+  })).sort((a, b) => b.retention_percentage - a.retention_percentage);
+  
+  return results;
+}
+
+async function analyzeChurnReasons(rows: CSVRow[]) {
+  const reasons = rows
+    .filter(row => row.cancellation_reason)
+    .map(row => row.cancellation_reason!.toLowerCase());
+    
+  if (reasons.length === 0) return [];
+  
+  // Simple keyword-based clustering
+  const clusters = new Map();
+  
+  for (const reason of reasons) {
+    let clustered = false;
+    
+    // Pricing cluster
+    if (reason.includes('price') || reason.includes('cost') || reason.includes('expensive') || reason.includes('budget')) {
+      addToCluster(clusters, 'Pricing Issues', reason);
+      clustered = true;
+    }
+    // Feature cluster
+    else if (reason.includes('feature') || reason.includes('missing') || reason.includes('need') || reason.includes('functionality')) {
+      addToCluster(clusters, 'Missing Features', reason);
+      clustered = true;
+    }
+    // Support/UX cluster
+    else if (reason.includes('support') || reason.includes('help') || reason.includes('difficult') || reason.includes('complex') || reason.includes('confusing')) {
+      addToCluster(clusters, 'UX/Support Issues', reason);
+      clustered = true;
+    }
+    // Competition cluster
+    else if (reason.includes('competitor') || reason.includes('alternative') || reason.includes('switch') || reason.includes('found')) {
+      addToCluster(clusters, 'Competition', reason);
+      clustered = true;
+    }
+    // Usage cluster
+    else if (reason.includes("don't use") || reason.includes('not using') || reason.includes('no longer') || reason.includes('not needed')) {
+      addToCluster(clusters, 'Low Usage', reason);
+      clustered = true;
+    }
+    
+    // Default cluster for uncategorized
+    if (!clustered) {
+      addToCluster(clusters, 'Other Reasons', reason);
+    }
+  }
+  
+  const totalReasons = reasons.length;
+  const results = Array.from(clusters.entries()).map(([name, data]) => ({
+    name,
+    examples: data.examples.slice(0, 3), // Top 3 examples
+    percentage: (data.count / totalReasons) * 100,
+    user_count: data.count
+  })).sort((a, b) => b.percentage - a.percentage);
+  
+  return results;
+}
+
+function addToCluster(clusters: Map<string, any>, clusterName: string, reason: string) {
+  if (!clusters.has(clusterName)) {
+    clusters.set(clusterName, { count: 0, examples: [] });
+  }
+  const cluster = clusters.get(clusterName);
+  cluster.count++;
+  if (cluster.examples.length < 5) {
+    cluster.examples.push(reason);
   }
 }

@@ -58,10 +58,11 @@ export const ChurnaSDKProvider = ({ children, apiKey }: ChurnaSDKProviderProps) 
     };
 
     console.log('🔁 Churnaizer: Auto-tracking authenticated user:', user.email);
+    console.log('Churnaizer: Auto-track payload:', userData, 'API Key:', apiKey);
     
     window.Churnaizer.track(userData, apiKey, (result: any, error: any) => {
       if (error) {
-        console.error('❌ Auto-track failed:', error);
+        console.error('❌ Auto-track failed:', error, 'Payload:', userData);
         return;
       }
       console.log('✅ Churn prediction for user:', user.email, '- Risk Level:', result?.risk_level, '- Score:', result?.churn_score);
@@ -86,7 +87,14 @@ export const trackChurnPrediction = (userData: any, apiKey: string, callback?: (
     return;
   }
 
-  window.Churnaizer.track(userData, apiKey, callback);
+  console.log('Churnaizer: Manual track payload:', userData, 'API Key:', apiKey);
+  window.Churnaizer.track(userData, apiKey, (result: any, error: any) => {
+    if (error) {
+      console.error('❌ Manual track failed:', error, 'Payload:', userData);
+    }
+    if (callback) callback(result, error);
+  });
+};
 };
 
 // Global type declaration

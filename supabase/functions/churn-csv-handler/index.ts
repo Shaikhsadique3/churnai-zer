@@ -8,6 +8,267 @@ const corsHeaders = {
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
 };
 
+serve(async (req: Request) => {
+  if (req.method === 'OPTIONS') {
+    return new Response('ok', { headers: corsHeaders });
+  }
+
+  const authHeader = req.headers.get('Authorization');
+  const supabaseClient = createClient(
+    Deno.env.get('SUPABASE_URL') ?? '',
+    Deno.env.get('SUPABASE_ANON_KEY') ?? '',
+    {
+      global: {
+        headers: { Authorization: authHeader },
+      },
+    }
+  );
+
+  const { data: { user } } = await supabaseClient.auth.getUser();
+
+  if (!user) {
+    return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      status: 401,
+    });
+  }
+
+  try {
+    const { recordId } = await req.json();
+
+    if (!recordId) {
+      return new Response(JSON.stringify({ error: 'Missing recordId' }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 400,
+      });
+    }
+
+    const { data: uploadRecord, error: uploadError } = await supabaseClient
+      .from('uploads')
+      .select('*')
+      .eq('id', recordId)
+      .single();
+
+    if (uploadError || !uploadRecord) {
+      console.error('Error fetching upload record:', uploadError);
+      return new Response(JSON.stringify({ error: 'Upload record not found' }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 404,
+      });
+    }
+
+    const { data: analysisRecord, error: analysisError } = await supabaseClient
+      .from('analysis_records')
+      .insert({
+        upload_id: recordId,
+        user_id: user.id,
+        status: 'processing',
+      })
+      .select()
+      .single();
+
+    if (analysisError || !analysisRecord) {
+      console.error('Error creating analysis record:', analysisError);
+      return new Response(JSON.stringify({ error: 'Failed to create analysis record' }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 500,
+      });
+    }
+
+    const churnApiUrl = Deno.env.get('AI_MODEL_URL');
+    const churnApiKey = Deno.env.get('AI_MODEL_API_KEY');
+
+    let churnProbability = 0;
+    let contributing_factors: string[] = [];
+    let recommended_actions: string[] = [];
+    let usingFallback = false;
+
+    if (churnApiUrl && churnApiKey) {
+      try {
+        const payload = {
+          user_id: uploadRecord.user_id,
+          plan: uploadRecord.plan,
+          last_login_days_ago: uploadRecord.last_login_days_ago,
+          avg_session_duration_minutes: uploadRecord.avg_session_duration,
+          billing_status: uploadRecord.billing_status,
+          monthly_revenue: uploadRecord.monthly_revenue,
+          feature_usage_count: uploadRecord.feature_usage_count,
+          support_tickets_count: uploadRecord.support_tickets,
+        };
+
+        console.log('🔍 AI Model Request:', JSON.stringify(payload));
+
+        const response = await fetch(churnApiUrl, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${churnApiKey}`,
+            'Accept': 'application/json',
+          },
+          body: JSON.stringify(payload),
+          signal: AbortSignal.timeout(15000),
+        });
+
+        console.log(`🌐 AI Model Response Status: ${response.status} ${response.statusText}`);
+
+        if (response.ok) {
+          const result = await response.json();
+          console.log('✅ AI Model success:', result);
+          console.log('📊 AI Model Prediction Details:', JSON.stringify({
+            user_id: uploadRecord.user_id,
+            prediction_result: result,
+          }));
+
+          churnProbability = result.churn_probability || result.prediction || result.score || 0;
+          contributing_factors = Array.isArray(result.reasons) ? result.reasons :
+            Array.isArray(result.factors) ? result.factors :
+              result.reason ? [result.reason] : [];
+          recommended_actions = Array.isArray(result.actions) ? result.actions :
+            Array.isArray(result.recommendations) ? result.recommendations :
+              result.action ? [result.action] : [];
+
+          console.log('🔄 Processed Prediction:', JSON.stringify({
+            user_id: uploadRecord.user_id,
+            churn_probability: churnProbability,
+            contributing_factors: contributing_factors,
+            recommended_actions: recommended_actions,
+          }));
+        } else if (!response.ok) {
+          throw new Error(`AI Model error: ${response.status} ${response.statusText}`);
+        }
+      } catch (error: any) {
+        console.log('❌ AI Model failed:', error.message);
+        console.log('🔄 Falling back to rules-based logic');
+        usingFallback = true;
+      }
+    } else {
+      console.log('⚠️ Using default AI model endpoint with rules-based fallback');
+      try {
+        const payload = {
+          user_id: uploadRecord.user_id,
+          plan: uploadRecord.plan,
+          last_login_days_ago: uploadRecord.last_login_days_ago,
+          avg_session_duration_minutes: uploadRecord.avg_session_duration,
+          billing_status: uploadRecord.billing_status,
+          monthly_revenue: uploadRecord.monthly_revenue,
+          feature_usage_count: uploadRecord.feature_usage_count,
+          support_tickets_count: uploadRecord.support_tickets,
+        };
+
+        console.log('🔍 Default AI Model Request:', JSON.stringify(payload));
+
+        const response = await fetch('https://ai-model-rumc.onrender.com/predict', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+          },
+          body: JSON.stringify(payload),
+          signal: AbortSignal.timeout(15000),
+        });
+
+        console.log(`🌐 Default AI Model Response Status: ${response.status} ${response.statusText}`);
+
+        if (response.ok) {
+          const result = await response.json();
+          console.log('✅ Default AI Model success:', result);
+          console.log('📊 Default AI Model Prediction Details:', JSON.stringify({
+            user_id: uploadRecord.user_id,
+            prediction_result: result,
+          }));
+
+          churnProbability = result.churn_probability || result.prediction || result.score || 0;
+          contributing_factors = Array.isArray(result.reasons) ? result.reasons :
+            Array.isArray(result.factors) ? result.factors :
+              result.reason ? [result.reason] : [];
+          recommended_actions = Array.isArray(result.actions) ? result.actions :
+            Array.isArray(result.recommendations) ? result.recommendations :
+              result.action ? [result.action] : [];
+
+          console.log('🔄 Processed Default Prediction:', JSON.stringify({
+            user_id: uploadRecord.user_id,
+            churn_probability: churnProbability,
+            contributing_factors: contributing_factors,
+            recommended_actions: recommended_actions,
+          }));
+        } else {
+          throw new Error(`Default AI Model error: ${response.status}`);
+        }
+      } catch (error: any) {
+        console.log('❌ Default AI Model also failed:', (error as Error).message);
+        usingFallback = true;
+      }
+    }
+
+    if (usingFallback) {
+      // Rules-based fallback logic
+      console.log('⚙️ Applying rules-based fallback logic...');
+      const { data: rules, error: rulesError } = await supabaseClient
+        .from('churn_rules')
+        .select('*')
+        .order('priority', { ascending: true });
+
+      if (rulesError) {
+        console.error('Error fetching churn rules:', rulesError);
+        throw new Error('Failed to fetch churn rules');
+      }
+
+      let matchedRule = null;
+      for (const rule of rules) {
+        let conditionMet = true;
+        if (rule.condition_type === 'plan' && uploadRecord.plan !== rule.condition_value) {
+          conditionMet = false;
+        }
+        if (rule.condition_type === 'monthly_revenue' && uploadRecord.monthly_revenue < parseFloat(rule.condition_value)) {
+          conditionMet = false;
+        }
+        // Add more conditions as needed
+
+        if (conditionMet) {
+          matchedRule = rule;
+          break;
+        }
+      }
+
+      if (matchedRule) {
+        churnProbability = matchedRule.predicted_churn_probability;
+        contributing_factors = matchedRule.contributing_factors || [];
+        recommended_actions = matchedRule.recommended_actions || [];
+        console.log('✅ Rules-based prediction applied:', { churnProbability, contributing_factors, recommended_actions });
+      } else {
+        console.log('⚠️ No rules matched, setting default churn probability to 0.5');
+        churnProbability = 0.5; // Default if no rules match
+      }
+    }
+
+    const { error: updateAnalysisError } = await supabaseClient
+      .from('analysis_records')
+      .update({
+        status: 'completed',
+        churn_probability: churnProbability,
+        contributing_factors: contributing_factors,
+        recommended_actions: recommended_actions,
+      })
+      .eq('id', analysisRecord.id);
+
+    if (updateAnalysisError) {
+      console.error('Error updating analysis record:', updateAnalysisError);
+      throw new Error('Failed to update analysis record');
+    }
+
+    return new Response(JSON.stringify({ churnProbability, contributing_factors, recommended_actions }), {
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      status: 200,
+    });
+  } catch (error) {
+    console.error('Function error:', error.message);
+    return new Response(JSON.stringify({ error: error.message || 'Internal server error' }), {
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      status: 500,
+    });
+  }
+});
+
 
             prediction_result: result
           }));

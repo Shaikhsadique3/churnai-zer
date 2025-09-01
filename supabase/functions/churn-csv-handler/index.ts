@@ -332,20 +332,26 @@ async function processCsvRow(row: CSVRow, analysisId: string, userId: string): P
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseKey);
+    
+    // Get the global user ID from the handler
+    const ownerUserId = (globalThis as any).__user_id__;
 
     const { error: saveError } = await supabase
-      .from('customer_churn_predictions')
+      .from('user_data')
       .insert({
-        analysis_id: analysisId,
-        customer_id: mapped.user_id,
-        churn_probability: churnProbability,
+        owner_id: ownerUserId,
+        user_id: mapped.user_id,
+        churn_score: churnProbability,
         risk_level: risk_level,
-        contributing_factors: contributing_factors,
-        recommended_actions: recommended_actions,
+        churn_reason: Array.isArray(contributing_factors) ? contributing_factors.join('; ') : contributing_factors,
+        action_recommended: Array.isArray(recommended_actions) ? recommended_actions.join('; ') : recommended_actions,
         monthly_revenue: mapped.monthly_revenue,
-        subscription_plan: mapped.plan,
-        days_since_signup: 30, // Default value
-        days_since_last_active: calculateDaysSince(mapped.last_login)
+        plan: mapped.plan,
+        last_login: new Date(mapped.last_login),
+        usage: mapped.feature_usage_count,
+        understanding_score: 85, // Default understanding score
+        days_until_mature: 30,
+        source: 'ai_model'
       });
 
     if (saveError) {
@@ -540,9 +546,9 @@ serve(async (req) => {
 
     // Calculate summary statistics
     const { data: predictions } = await supabase
-      .from('customer_churn_predictions')
-      .select('churn_probability, risk_level, monthly_revenue')
-      .eq('analysis_id', analysisData.id);
+      .from('user_data')
+      .select('churn_score, risk_level, monthly_revenue')
+      .eq('owner_id', user.id);
 
     let highRisk = 0, mediumRisk = 0, lowRisk = 0;
     let totalRevenue = 0;
@@ -555,7 +561,7 @@ serve(async (req) => {
         else lowRisk++;
         
         totalRevenue += p.monthly_revenue || 0;
-        totalChurnProb += p.churn_probability || 0;
+        totalChurnProb += p.churn_score || 0;
       });
     }
 
@@ -599,7 +605,7 @@ serve(async (req) => {
     try {
       if (predictions && predictions.length > 0) {
         const topRiskyUsers = predictions
-          .sort((a, b) => (b.churn_probability || 0) - (a.churn_probability || 0))
+          .sort((a, b) => (b.churn_score || 0) - (a.churn_score || 0))
           .slice(0, 5); // Top 5 risky users
 
         await sendFounderEmailReport(supabase, user.id, analysisData.id, topRiskyUsers);

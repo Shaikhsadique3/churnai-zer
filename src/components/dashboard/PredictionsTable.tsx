@@ -13,6 +13,8 @@ interface UserPrediction {
   churn_score: number;
   risk_level: 'low' | 'medium' | 'high';
   churn_reason: string;
+  action_recommended: string;
+  monthly_revenue: number;
   created_at: string;
 }
 
@@ -29,7 +31,7 @@ export const PredictionsTable: React.FC<PredictionsTableProps> = ({ onUploadClic
 
       const { data, error } = await supabase
         .from('user_data')
-        .select('id, user_id, churn_score, risk_level, churn_reason, created_at')
+        .select('id, user_id, churn_score, risk_level, churn_reason, action_recommended, monthly_revenue, created_at')
         .eq('owner_id', session.user.id)
         .order('created_at', { ascending: false })
         .limit(100);
@@ -123,7 +125,8 @@ export const PredictionsTable: React.FC<PredictionsTableProps> = ({ onUploadClic
               <TableRow>
                 <TableHead>User ID</TableHead>
                 <TableHead>Risk Level</TableHead>
-                <TableHead>Reason</TableHead>
+                <TableHead>Monthly Revenue</TableHead>
+                <TableHead>Recommended Action</TableHead>
                 <TableHead>Predicted</TableHead>
               </TableRow>
             </TableHeader>
@@ -139,9 +142,12 @@ export const PredictionsTable: React.FC<PredictionsTableProps> = ({ onUploadClic
                   <TableCell>
                     {getRiskBadge(prediction.risk_level, prediction.churn_score)}
                   </TableCell>
+                  <TableCell className="font-medium">
+                    ${(prediction.monthly_revenue || 0).toLocaleString()}
+                  </TableCell>
                   <TableCell className="max-w-md">
                     <span className="text-sm text-muted-foreground">
-                      {prediction.churn_reason || 'Risk assessment based on user behavior analysis'}
+                      {prediction.action_recommended || prediction.churn_reason || 'Monitor engagement closely'}
                     </span>
                   </TableCell>
                   <TableCell className="text-sm text-muted-foreground">

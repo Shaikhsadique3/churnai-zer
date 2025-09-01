@@ -26,7 +26,7 @@ export default function DashboardOverview() {
 
       const { data, error } = await supabase
         .from('user_data')
-        .select('risk_level')
+        .select('risk_level, monthly_revenue, churn_score')
         .eq('owner_id', session.user.id);
 
       if (error) throw error;
@@ -35,14 +35,24 @@ export default function DashboardOverview() {
       const highRisk = data.filter(u => u.risk_level === 'high').length;
       const mediumRisk = data.filter(u => u.risk_level === 'medium').length;
       const lowRisk = data.filter(u => u.risk_level === 'low').length;
+      
+      // Calculate revenue at risk (high risk users monthly revenue)
+      const revenueAtRisk = data
+        .filter(u => u.risk_level === 'high')
+        .reduce((sum, u) => sum + (u.monthly_revenue || 0), 0);
 
-      return { total, highRisk, mediumRisk, lowRisk };
+      // Calculate average churn score
+      const avgChurnScore = data.length > 0 
+        ? data.reduce((sum, u) => sum + (u.churn_score || 0), 0) / data.length 
+        : 0;
+
+      return { total, highRisk, mediumRisk, lowRisk, revenueAtRisk, avgChurnScore };
     },
   });
 
   const stats = [
     {
-      title: "Uploaded Users",
+      title: "Total Users Analyzed",
       value: userStats?.total?.toString() || "0",
       change: "",
       trend: "neutral",
@@ -50,28 +60,28 @@ export default function DashboardOverview() {
       color: "text-blue-600"
     },
     {
-      title: "High Risk",
+      title: "High Cancel Risk",
       value: userStats?.highRisk?.toString() || "0",
-      change: "",
-      trend: "neutral", 
+      change: userStats?.total ? `${Math.round((userStats.highRisk / userStats.total) * 100)}%` : "",
+      trend: "up", 
       icon: AlertTriangle,
       color: "text-red-600"
     },
     {
-      title: "Medium Risk",
-      value: userStats?.mediumRisk?.toString() || "0",
-      change: "",
+      title: "Revenue at Risk",
+      value: userStats?.revenueAtRisk ? `$${userStats.revenueAtRisk.toLocaleString()}` : "$0",
+      change: "Monthly revenue from high-risk users",
       trend: "neutral",
-      icon: CheckCircle,
-      color: "text-orange-600"
+      icon: TrendingUp,
+      color: "text-red-600"
     },
     {
-      title: "Low Risk",
-      value: userStats?.lowRisk?.toString() || "0",
-      change: "",
+      title: "Avg Churn Score",
+      value: userStats?.avgChurnScore ? `${Math.round(userStats.avgChurnScore * 100)}%` : "0%",
+      change: "Across all analyzed users",
       trend: "neutral",
-      icon: CheckCircle,
-      color: "text-green-600"
+      icon: Target,
+      color: "text-orange-600"
     }
   ];
 

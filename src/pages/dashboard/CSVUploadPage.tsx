@@ -53,7 +53,7 @@ export const CSVUploadPage = () => {
       // Call function to process the CSV file with churn prediction
       const { error: processError } = await supabase.functions.invoke('churn-csv-handler', {
         body: {
-          filePath: filePath,
+          fileName: filePath,
           userId: session.user.id
         }
       });

@@ -67,12 +67,6 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({ userEmail, onL
             onClick={onLogout}
             className="text-muted-foreground hover:text-foreground"
           >
-
-
-// Add a success variant to the Badge component if it doesn't exist
-// This assumes you have a `ui/badge.tsx` file where you can add new variants.
-// Example addition to `cva` in `ui/badge.tsx`:
-// success: "border-transparent bg-green-500 text-white hover:bg-green-500/80"
             <LogOut className="h-4 w-4" />
           </Button>
         </div>

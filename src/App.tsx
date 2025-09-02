@@ -3,6 +3,8 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AuthProvider } from '@/contexts/AuthContext';
 import { Toaster } from '@/components/ui/sonner';
 import Index from '@/pages/Index';
+import FeatureAdoptionDashboard from '@/pages/FeatureAdoptionDashboard';
+import UploadCSV from '@/pages/UploadCSV';
 import Auth from '@/pages/Auth';
 import CSVUploadPage from '@/pages/CSVUploadPage';
 import DashboardOverview from '@/pages/dashboard/DashboardOverview';
@@ -34,7 +36,7 @@ function App() {
         <Router>
           <Routes>
             {/* Public routes */}
-            <Route path="/" element={<Index />} />
+            <Route path="/" element={<FeatureAdoptionDashboard />} />
             
             {/* Redirect authenticated users to dashboard */}
             <Route path="/home" element={<Navigate to="/dashboard" replace />} />
@@ -70,11 +72,9 @@ function App() {
                 </DashboardLayout>
               </PrivateRoute>
             } />
-            <Route path="/csv-upload" element={
+            <Route path="/upload" element={
               <PrivateRoute>
-                <DashboardLayout>
-                  <CSVUploadPage />
-                </DashboardLayout>
+                <UploadCSV />
               </PrivateRoute>
             } />
 

@@ -1203,6 +1203,39 @@ export type Database = {
         }
         Relationships: []
       }
+      feature_events: {
+        Row: {
+          created_at: string
+          event_date: string
+          feature_name: string
+          id: string
+          metadata: Json | null
+          owner_id: string
+          plan: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          event_date: string
+          feature_name: string
+          id?: string
+          metadata?: Json | null
+          owner_id: string
+          plan?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          event_date?: string
+          feature_name?: string
+          id?: string
+          metadata?: Json | null
+          owner_id?: string
+          plan?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       founder_profile: {
         Row: {
           biggest_retention_challenge: string | null
@@ -1769,18 +1802,21 @@ export type Database = {
       profiles: {
         Row: {
           avatar_url: string | null
+          company_name: string | null
           full_name: string | null
           id: string
           updated_at: string | null
         }
         Insert: {
           avatar_url?: string | null
+          company_name?: string | null
           full_name?: string | null
           id: string
           updated_at?: string | null
         }
         Update: {
           avatar_url?: string | null
+          company_name?: string | null
           full_name?: string | null
           id?: string
           updated_at?: string | null

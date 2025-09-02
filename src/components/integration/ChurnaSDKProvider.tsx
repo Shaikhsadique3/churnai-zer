@@ -95,7 +95,6 @@ export const trackChurnPrediction = (userData: any, apiKey: string, callback?: (
     if (callback) callback(result, error);
   });
 };
-};
 
 // Global type declaration
 declare global {

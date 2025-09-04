@@ -1,13 +1,13 @@
 
 import { 
   Users, 
+  Code,
   Upload,
   Mail,
   CheckCircle,
   TrendingUp,
-  LogOut,
-  Settings,
-  UserCircle
+  UserCircle,
+  LogOut
 } from "lucide-react";
 import { NavLink, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
@@ -30,10 +30,15 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Logo } from "@/components/ui/logo";
 
-// Navigation items - Only working features
+// Navigation items
 const navigationItems = [
-  { title: "Dashboard", url: "/dashboard", icon: TrendingUp },
-  { title: "Cancel-Intent Predictor", url: "/csv-upload", icon: Upload },
+  { title: "Analytics Hub", url: "/dashboard", icon: TrendingUp },
+  { title: "Website Integration", url: "/integration", icon: Code },
+  { title: "User Predictions", url: "/users", icon: Users },
+  { title: "CSV Upload", url: "/dashboard/csv-upload", icon: Upload },
+  { title: "Email Automation", url: "/dashboard/email-automation", icon: Mail },
+  { title: "Churn Recovery", url: "/dashboard/recovered-users", icon: CheckCircle },
+  { title: "Profile", url: "/profile", icon: UserCircle },
 ];
 
 export function AppSidebar() {
@@ -112,39 +117,39 @@ export function AppSidebar() {
       </SidebarContent>
 
       <SidebarFooter className="border-t border-sidebar-border px-4 py-4">
-        <SidebarMenu className="space-y-1">
-          <SidebarMenuItem>
-            <SidebarMenuButton asChild className="rounded-lg h-10">
-              <NavLink 
-                to="/profile" 
-                className={`flex items-center w-full transition-colors duration-200 px-3 py-2 ${
-                  isActive("/profile")
-                    ? "bg-sidebar-accent text-sidebar-accent-foreground font-medium" 
-                    : "text-sidebar-foreground hover:bg-sidebar-accent/60 hover:text-sidebar-accent-foreground"
-                }`}
-              >
-                <div className="flex items-center w-full">
-                  <UserCircle className={`h-5 w-5 shrink-0 ${(!open && !isMobile) ? "" : "mr-3"}`} />
-                  {(open || isMobile) && <span className="font-medium text-sm truncate">Profile / Settings</span>}
-                </div>
-              </NavLink>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-          <SidebarMenuItem>
-            <SidebarMenuButton asChild className="rounded-lg h-10">
-              <button 
-                onClick={handleSignOut}
-                disabled={isLoggingOut}
-                className="flex items-center w-full transition-colors duration-200 px-3 py-2 text-sidebar-foreground hover:bg-destructive hover:text-destructive-foreground"
-              >
-                <div className="flex items-center w-full">
-                  <LogOut className={`h-4 w-4 shrink-0 ${isLoggingOut ? 'animate-spin' : ''} ${(!open && !isMobile) ? "" : "mr-3"}`} />
-                  {(open || isMobile) && <span className="font-medium text-sm truncate">{isLoggingOut ? 'Signing out...' : 'Logout'}</span>}
-                </div>
-              </button>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-        </SidebarMenu>
+        {user && (
+          <div className={`flex items-center ${(!open && !isMobile) ? "justify-center" : "space-x-3 mb-3"}`}>
+            <Avatar className="h-8 w-8 shrink-0">
+              <AvatarImage src={user.user_metadata?.avatar_url} />
+              <AvatarFallback className="bg-primary text-primary-foreground text-sm font-medium">
+                {user.email?.charAt(0).toUpperCase()}
+              </AvatarFallback>
+            </Avatar>
+            {(open || isMobile) && (
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium text-sidebar-primary truncate">
+                  {user.user_metadata?.full_name || user.email?.split('@')[0]}
+                </p>
+                <p className="text-xs text-sidebar-foreground/70 truncate">
+                  {user.email}
+                </p>
+              </div>
+            )}
+          </div>
+        )}
+        
+        {(open || isMobile) && (
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            onClick={handleSignOut}
+            disabled={isLoggingOut}
+            className="w-full text-sm text-sidebar-foreground hover:bg-destructive hover:text-destructive-foreground h-10 transition-all duration-200"
+          >
+            <LogOut className={`h-4 w-4 mr-2 ${isLoggingOut ? 'animate-spin' : ''}`} />
+            {isLoggingOut ? 'Signing out...' : 'Sign Out'}
+          </Button>
+        )}
       </SidebarFooter>
     </Sidebar>
   );

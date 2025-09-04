@@ -2,25 +2,17 @@
 import React, { useState, useCallback } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { Button } from "@/components/ui/button";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { format } from 'date-fns';
 import { PageLayout } from '@/components/layout/PageLayout';
-import { 
-  Upload, 
-  FileSpreadsheet, 
-  AlertCircle, 
-  CheckCircle, 
-  TrendingUp, 
-  Target,
-  Download,
-  Info
-} from 'lucide-react';
+import { Upload } from 'lucide-react';
 
 export const CSVUploadPage = () => {
   const { toast } = useToast();
@@ -49,25 +41,19 @@ export const CSVUploadPage = () => {
       const fileExt = file.name.split('.').pop();
       const filePath = `csv_uploads/${session.user.id}/${Date.now()}.${fileExt}`;
 
-      console.log("Attempting to upload file:", file.name, "to path:", filePath);
       const { data, error } = await supabase.storage
-        .from('csv-uploads')
+        .from('churn_files')
         .upload(filePath, file, {
           cacheControl: '3600',
           upsert: false
         });
 
-      if (error) {
-        console.error("Error uploading file to storage:", error);
-        throw error;
-      }
-      console.log("File uploaded to storage successfully:", data);
+      if (error) throw error;
 
-      // Call function to process the CSV file with churn prediction
-      console.log("Invoking churn-csv-handler function with fileName:", filePath, "and userId:", session.user.id);
-      const { error: processError } = await supabase.functions.invoke('churn-csv-handler', {
+      // Call function to process the CSV file
+      const { error: processError } = await supabase.functions.invoke('process-csv', {
         body: {
-          fileName: filePath,
+          filePath: filePath,
           userId: session.user.id
         }
       });
@@ -75,27 +61,21 @@ export const CSVUploadPage = () => {
       if (processError) {
         console.error("Error processing CSV:", processError);
         // Optionally delete the uploaded file if processing fails
-        await supabase.storage.from('csv-uploads').remove([filePath]);
+        await supabase.storage.from('churn_files').remove([filePath]);
         throw processError;
       }
 
       return data;
     },
     onSuccess: () => {
-      console.log("CSV upload and processing successful.");
       toast({
         title: "Upload Successful",
-        description: "CSV file uploaded and AI analysis completed! Check your dashboard for insights.",
+        description: "CSV file uploaded and processing started.",
       });
       queryClient.invalidateQueries({ queryKey: ['csv-history'] });
-      queryClient.invalidateQueries({ queryKey: ['user-predictions'] });
-      queryClient.invalidateQueries({ queryKey: ['user-stats'] });
-      queryClient.invalidateQueries({ queryKey: ['retention-analytics'] });
-      queryClient.invalidateQueries({ queryKey: ['churn-clusters'] });
       setCsvFile(null);
     },
-    onError: (error: Error | { message: string }) => {
-      console.error("CSV upload or processing failed:", error.message);
+    onError: (error: any) => {
       toast({
         title: "Upload Failed",
         description: error.message,
@@ -107,217 +87,46 @@ export const CSVUploadPage = () => {
     },
   });
 
-  const downloadTemplate = () => {
-    const requiredHeaders = [
-      'user_id',
-      'plan', 
-      'last_login',
-      'avg_session_duration',
-      'billing_status',
-      'monthly_revenue',
-      'feature_usage_count',
-      'support_tickets'
-    ];
-    
-    const optionalHeaders = [
-      'feature_adopted',
-      'cancellation_reason'
-    ];
-    
-    const allHeaders = [...requiredHeaders, ...optionalHeaders];
-    
-    const sampleRows = [
-      [
-        'user_001',
-        'Pro',
-        '2025-01-15',
-        '25.5',
-        'Active',
-        '99.00',
-        '12',
-        '1',
-        'dashboard,analytics,reports',
-        ''
-      ],
-      [
-        'user_002',
-        'Free',
-        '2024-12-20',
-        '5.2',
-        'Active',
-        '0',
-        '3',
-        '0',
-        'dashboard',
-        ''
-      ],
-      [
-        'user_003',
-        'Enterprise',
-        '2025-01-10',
-        '45.8',
-        'Failed',
-        '299.00',
-        '28',
-        '3',
-        'dashboard,analytics,reports,api,integrations',
-        'Too expensive for our current budget'
-      ]
-    ];
-    
-    const csvContent = [
-      allHeaders.join(','),
-      ...sampleRows.map(row => row.join(','))
-    ].join('\n');
-    
-    const blob = new Blob([csvContent], { type: 'text/csv' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = 'churnaizer-template.csv';
-    link.click();
-    URL.revokeObjectURL(url);
-  };
-
   const CSVUploader = () => (
-    <div className="space-y-6">
-      {/* Enhanced Header */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Target className="h-6 w-6 text-primary" />
-            AI-Powered Cancel-Intent Predictor
-          </CardTitle>
-          <CardDescription>
-            Upload customer data to get ML-powered churn predictions, retention insights, and actionable recommendations
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="flex items-center gap-3 p-3 bg-blue-50 rounded-lg">
-              <TrendingUp className="h-5 w-5 text-blue-600" />
-              <div>
-                <div className="font-medium text-blue-900">Churn Prediction</div>
-                <div className="text-sm text-blue-700">AI-powered risk scoring</div>
+    <Card>
+      <CardContent className="pt-6">
+        <div {...getRootProps()} className="relative border-2 border-dashed rounded-md p-6 flex flex-col items-center justify-center hover:border-primary transition-colors">
+          <input {...getInputProps()} />
+          {
+            isDragActive ?
+              <p className="text-center">Drop the files here ...</p> :
+              <div className="text-center">
+                <p className="text-muted-foreground">
+                  Drag 'n' drop some files here, or click to select files
+                </p>
+                <p className="text-sm text-muted-foreground mt-2">
+                  Only *.csv and *.txt files will be accepted
+                </p>
               </div>
+          }
+          {csvFile && (
+            <div className="absolute top-2 right-2">
+              <Badge variant="secondary">{csvFile.name}</Badge>
             </div>
-            <div className="flex items-center gap-3 p-3 bg-green-50 rounded-lg">
-              <CheckCircle className="h-5 w-5 text-green-600" />
-              <div>
-                <div className="font-medium text-green-900">Feature Analytics</div>
-                <div className="text-sm text-green-700">Retention impact analysis</div>
-              </div>
-            </div>
-            <div className="flex items-center gap-3 p-3 bg-orange-50 rounded-lg">
-              <AlertCircle className="h-5 w-5 text-orange-600" />
-              <div>
-                <div className="font-medium text-orange-900">Churn Clustering</div>
-                <div className="text-sm text-orange-700">Reason categorization</div>
-              </div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* CSV Fields Guide */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Info className="h-5 w-5" />
-            CSV Format Guide
-          </CardTitle>
-          <CardDescription>Required and optional fields for maximum insights</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <Alert>
-            <AlertCircle className="h-4 w-4" />
-            <AlertDescription>
-              <strong>Required fields:</strong> user_id, plan, last_login, avg_session_duration, billing_status, monthly_revenue, feature_usage_count, support_tickets
-            </AlertDescription>
-          </Alert>
-          
-          <Alert>
-            <Info className="h-4 w-4" />
-            <AlertDescription>
-              <strong>Optional fields for enhanced analytics:</strong>
-              <br />• <strong>feature_adopted</strong> - Comma-separated list (e.g., "dashboard,reports,api") for Feature-Retention Fit analysis
-              <br />• <strong>cancellation_reason</strong> - Free text for churn reason clustering and insights
-            </AlertDescription>
-          </Alert>
-
-          <div className="flex gap-2">
-            <Button onClick={downloadTemplate} variant="outline" size="sm">
-              <Download className="h-4 w-4 mr-2" />
-              Download Template
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* File Upload */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Upload Your Customer Data</CardTitle>
-          <CardDescription>Drag and drop or click to select your CSV file</CardDescription>
-        </CardHeader>
-        <CardContent className="pt-6">
-          <div {...getRootProps()} className="relative border-2 border-dashed rounded-lg p-8 flex flex-col items-center justify-center hover:border-primary transition-colors min-h-[200px]">
-            <input {...getInputProps()} />
-            <FileSpreadsheet className="h-12 w-12 text-muted-foreground mb-4" />
-            {
-              isDragActive ?
-                <p className="text-center text-lg">Drop the files here ...</p> :
-                <div className="text-center">
-                  <p className="text-lg font-medium text-foreground mb-2">
-                    Drop your CSV file here, or click to browse
-                  </p>
-                  <p className="text-sm text-muted-foreground">
-                    Supports .csv and .txt files up to 10MB
-                  </p>
-                </div>
+          )}
+        </div>
+        <div className="mt-4">
+          <Button onClick={() => {
+            if (csvFile) {
+              uploadCSVMutation.mutate(csvFile);
+            } else {
+              toast({
+                title: "No File Selected",
+                description: "Please select a CSV file to upload.",
+                variant: "destructive",
+              });
             }
-            {csvFile && (
-              <div className="absolute top-4 right-4">
-                <Badge variant="secondary" className="bg-green-100 text-green-800">
-                  <CheckCircle className="h-3 w-3 mr-1" />
-                  {csvFile.name}
-                </Badge>
-              </div>
-            )}
-          </div>
-          <div className="mt-6">
-            <Button 
-              onClick={() => {
-                if (csvFile) {
-                  uploadCSVMutation.mutate(csvFile);
-                } else {
-                  toast({
-                    title: "No File Selected",
-                    description: "Please select a CSV file to upload.",
-                    variant: "destructive",
-                  });
-                }
-              }} 
-              disabled={uploading} 
-              className="w-full"
-              size="lg"
-            >
-              {uploading ? (
-                <>
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                  Processing AI Analysis...
-                </>
-              ) : (
-                <>
-                  <Upload className="h-4 w-4 mr-2" />
-                  Upload & Analyze with AI
-                </>
-              )}
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
-    </div>
+          }} disabled={uploading} className="w-full">
+            {uploading ? "Uploading..." : "Upload CSV"}
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
   );
 
   interface CSVRecord {
@@ -351,7 +160,6 @@ export const CSVUploadPage = () => {
     <Card>
       <CardHeader>
         <CardTitle>Upload History</CardTitle>
-        <CardDescription>Track your CSV uploads and processing status</CardDescription>
       </CardHeader>
       <CardContent>
         <Table>
@@ -367,41 +175,24 @@ export const CSVUploadPage = () => {
           <TableBody>
             {isLoading ? (
               <TableRow>
-                <TableCell colSpan={5} className="text-center py-8">
-                  <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary mx-auto"></div>
-                  <p className="mt-2 text-muted-foreground">Loading history...</p>
-                </TableCell>
+                <TableCell colSpan={5} className="text-center py-4">Loading...</TableCell>
               </TableRow>
             ) : csvHistory.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={5} className="text-center py-8">
-                  <FileSpreadsheet className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
-                  <p className="text-muted-foreground">No uploads yet. Upload your first CSV to get started!</p>
-                </TableCell>
+                <TableCell colSpan={5} className="text-center py-4">No CSV upload history found.</TableCell>
               </TableRow>
             ) : (
               csvHistory.map((record) => (
                 <TableRow key={record.id}>
-                  <TableCell className="font-medium">{record.filename}</TableCell>
+                  <TableCell>{record.filename}</TableCell>
                   <TableCell>{format(new Date(record.created_at), 'MMM d, yyyy h:mm a')}</TableCell>
                   <TableCell>
-                    <Badge variant={
-                      record.status === 'completed' ? 'default' : 
-                      record.status === 'processing' ? 'secondary' : 
-                      'destructive'
-                    }>
-                      {record.status === 'completed' && <CheckCircle className="h-3 w-3 mr-1" />}
+                    <Badge variant={record.status === 'completed' ? 'default' : record.status === 'processing' ? 'secondary' : 'destructive'}>
                       {record.status}
                     </Badge>
                   </TableCell>
-                  <TableCell>
-                    <span className="font-medium text-green-600">{record.rows_processed || 0}</span>
-                  </TableCell>
-                  <TableCell>
-                    <span className={`font-medium ${(record.rows_failed || 0) > 0 ? 'text-red-600' : 'text-muted-foreground'}`}>
-                      {record.rows_failed || 0}
-                    </span>
-                  </TableCell>
+                  <TableCell>{record.rows_processed || 0}</TableCell>
+                  <TableCell>{record.rows_failed || 0}</TableCell>
                 </TableRow>
               ))
             )}
@@ -413,9 +204,9 @@ export const CSVUploadPage = () => {
 
   return (
     <PageLayout 
-      title="Cancel-Intent Predictor" 
-      description="Upload customer data to predict cancel intent using AI and get actionable retention insights"
-      icon={<Target className="h-8 w-8 text-primary" />}
+      title="CSV Upload" 
+      description="Upload and manage your customer data files"
+      icon={<Upload className="h-8 w-8 text-primary" />}
     >
       <CSVUploader />
       <CSVHistoryTable />

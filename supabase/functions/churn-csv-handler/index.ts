@@ -1,4 +1,3 @@
-// @deno-t    const parsed = parseFloat(cleaned);pes="https://deno.land/std@0.168.0/http/server.ts"
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.50.2';
 
@@ -8,620 +7,402 @@ const corsHeaders = {
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
 };
 
-serve(async (req: Request) => {
-  if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders });
+interface CSVRow {
+  customer_name: string;
+  customer_email: string;
+  signup_date: string;
+  last_active_date: string;
+  plan: string;
+  billing_status: string;
+  monthly_revenue: number;
+  support_tickets_opened: number;
+  email_opens_last30days: number;
+  number_of_logins_last30days: number;
+}
+
+function parseNumericValue(value: any): number {
+  if (typeof value === 'number') return value;
+  if (typeof value === 'string') {
+    const cleaned = value.replace(/[$,\s]/g, '');
+    const parsed = parseFloat(cleaned);
+    return isNaN(parsed) ? 0 : parsed;
   }
+  return 0;
+}
 
-  const authHeader = req.headers.get('Authorization');
-  const supabaseClient = createClient(
-    Deno.env.get('SUPABASE_URL') ?? '',
-    Deno.env.get('SUPABASE_ANON_KEY') ?? '',
-    {
-      global: {
-        headers: { Authorization: authHeader },
-      },
-    }
-  );
+function normalizePlan(plan: string): 'Free' | 'Pro' | 'Enterprise' {
+  const normalized = plan.toLowerCase().trim();
+  if (normalized.includes('pro') || normalized.includes('premium')) return 'Pro';
+  if (normalized.includes('enterprise') || normalized.includes('business')) return 'Enterprise';
+  return 'Free';
+}
 
-  const { data: { user } } = await supabaseClient.auth.getUser();
-
-  if (!user) {
-    return new Response(JSON.stringify({ error: 'Unauthorized' }), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      status: 401,
-    });
+function generateChurnReason(data: any): string {
+  const reasons = [];
+  
+  if (data.logins_last30 < 3) {
+    reasons.push('Very low login activity (under 3 times)');
+  } else if (data.logins_last30 < 8) {
+    reasons.push('Below average engagement');
   }
+  
+  if (data.email_opens < 2) {
+    reasons.push('Poor email engagement');
+  }
+  
+  if (data.support_tickets > 3) {
+    reasons.push('High support ticket volume indicates frustration');
+  }
+  
+  if (data.plan === 'Free' && data.monthly_revenue === 0) {
+    reasons.push('Free plan user with no revenue conversion');
+  }
+  
+  if (data.billing_status.toLowerCase().includes('inactive') || data.billing_status.toLowerCase().includes('failed')) {
+    reasons.push('Billing/payment issues detected');
+  }
+  
+  if (reasons.length === 0) {
+    return 'User showing healthy engagement patterns';
+  }
+  
+  return reasons.join('; ');
+}
 
+function generateRecommendedAction(data: any): string {
+  const actions = [];
+  
+  if (data.logins_last30 < 3) {
+    actions.push('Send re-engagement email campaign');
+  }
+  
+  if (data.email_opens < 2) {
+    actions.push('Improve email subject lines and content');
+  }
+  
+  if (data.support_tickets > 3) {
+    actions.push('Prioritize customer success outreach');
+  }
+  
+  if (data.plan === 'Free' && data.monthly_revenue === 0) {
+    actions.push('Offer upgrade incentives and onboarding');
+  }
+  
+  if (data.billing_status.toLowerCase().includes('inactive')) {
+    actions.push('Resolve billing issues immediately');
+  }
+  
+  if (actions.length === 0) {
+    return 'Continue standard engagement strategy';
+  }
+  
+  return actions.join('; ');
+}
+
+function calculateUnderstandingScore(data: any): number {
+  let score = 85; // Base score
+  
+  // Reduce score for concerning behaviors
+  if (data.logins_last30 < 3) score -= 20;
+  else if (data.logins_last30 < 8) score -= 10;
+  
+  if (data.email_opens < 2) score -= 15;
+  
+  if (data.support_tickets > 3) score -= 10;
+  
+  if (data.plan === 'Free' && data.monthly_revenue === 0) score -= 5;
+  
+  if (data.billing_status.toLowerCase().includes('inactive')) score -= 15;
+  
+  // Ensure score stays within bounds
+  return Math.max(Math.min(score, 100), 30);
+}
+
+async function processCsvRow(row: CSVRow): Promise<{ success: boolean; user_id?: string; error?: string }> {
   try {
-    const { recordId } = await req.json();
-
-    if (!recordId) {
-      return new Response(JSON.stringify({ error: 'Missing recordId' }), {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 400,
-      });
+    // Validate required fields
+    if (!row.customer_email || !row.customer_name) {
+      return { success: false, error: 'Missing customer_email or customer_name' };
     }
 
-    const { data: uploadRecord, error: uploadError } = await supabaseClient
-      .from('uploads')
-      .select('*')
-      .eq('id', recordId)
-      .single();
+    // Transform and validate data
+    const mapped = {
+      customer_name: String(row.customer_name).trim(),
+      customer_email: String(row.customer_email).trim(),
+      monthly_revenue: parseNumericValue(row.monthly_revenue),
+      support_tickets: parseInt(String(row.support_tickets_opened)) || 0,
+      logins_last30: parseInt(String(row.number_of_logins_last30days)) || 0,
+      email_opens: parseInt(String(row.email_opens_last30days)) || 0,
+      plan: normalizePlan(row.plan),
+      billing_status: String(row.billing_status).trim(),
+      signup_date: row.signup_date,
+      last_active_date: row.last_active_date,
+    };
 
-    if (uploadError || !uploadRecord) {
-      console.error('Error fetching upload record:', uploadError);
-      return new Response(JSON.stringify({ error: 'Upload record not found' }), {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 404,
-      });
-    }
-
-    const { data: analysisRecord, error: analysisError } = await supabaseClient
-      .from('analysis_records')
-      .insert({
-        upload_id: recordId,
-        user_id: user.id,
-        status: 'processing',
-      })
-      .select()
-      .single();
-
-    if (analysisError || !analysisRecord) {
-      console.error('Error creating analysis record:', analysisError);
-      return new Response(JSON.stringify({ error: 'Failed to create analysis record' }), {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 500,
-      });
-    }
-
-    const churnApiUrl = Deno.env.get('AI_MODEL_URL');
-    const churnApiKey = Deno.env.get('AI_MODEL_API_KEY');
-
-    let churnProbability = 0;
-    let contributing_factors: string[] = [];
-    let recommended_actions: string[] = [];
-    let usingFallback = false;
+    // Call AI model for churn prediction
+    const churnApiUrl = Deno.env.get('CHURN_API_URL');
+    const churnApiKey = Deno.env.get('CHURN_API_KEY');
+    
+    console.log('🔍 Debug - Environment variables:', {
+      hasChurnApiUrl: !!churnApiUrl,
+      hasChurnApiKey: !!churnApiKey,
+      churnApiUrl: churnApiUrl || 'NOT SET'
+    });
+    
+    // Calculate dynamic churn probability based on actual data
+    let baseScore = 0.2;
+    
+    // Increase score based on risk factors
+    if (mapped.logins_last30 < 5) baseScore += 0.3;
+    if (mapped.email_opens < 3) baseScore += 0.2;
+    if (mapped.support_tickets > 2) baseScore += 0.2;
+    if (mapped.plan === 'Free' && mapped.monthly_revenue === 0) baseScore += 0.15;
+    if (mapped.billing_status.toLowerCase().includes('inactive')) baseScore += 0.25;
+    
+    // Cap at 0.95
+    baseScore = Math.min(baseScore, 0.95);
+    
+    // Generate dynamic insights based on user behavior
+    const dynamicReason = generateChurnReason(mapped);
+    const recommendedAction = generateRecommendedAction(mapped);
+    const understandingScore = calculateUnderstandingScore(mapped);
+    
+    let prediction = {
+      churn_probability: baseScore,
+      reason: dynamicReason,
+      understanding_score: understandingScore,
+      message: recommendedAction
+    };
 
     if (churnApiUrl && churnApiKey) {
       try {
         const payload = {
-          user_id: uploadRecord.user_id,
-          plan: uploadRecord.plan,
-          last_login_days_ago: uploadRecord.last_login_days_ago,
-          avg_session_duration_minutes: uploadRecord.avg_session_duration,
-          billing_status: uploadRecord.billing_status,
-          monthly_revenue: uploadRecord.monthly_revenue,
-          feature_usage_count: uploadRecord.feature_usage_count,
-          support_tickets_count: uploadRecord.support_tickets,
-        };
-
-        console.log('🔍 AI Model Request:', JSON.stringify(payload));
-
-        const response = await fetch(churnApiUrl, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${churnApiKey}`,
-            'Accept': 'application/json',
-          },
-          body: JSON.stringify(payload),
-          signal: AbortSignal.timeout(15000),
-        });
-
-        console.log(`🌐 AI Model Response Status: ${response.status} ${response.statusText}`);
-
-        if (response.ok) {
-          const result = await response.json();
-          console.log('✅ AI Model success:', result);
-          console.log('📊 AI Model Prediction Details:', JSON.stringify({
-            user_id: uploadRecord.user_id,
-            prediction_result: result,
-          }));
-
-          churnProbability = result.churn_probability || result.prediction || result.score || 0;
-          contributing_factors = Array.isArray(result.reasons) ? result.reasons :
-            Array.isArray(result.factors) ? result.factors :
-              result.reason ? [result.reason] : [];
-          recommended_actions = Array.isArray(result.actions) ? result.actions :
-            Array.isArray(result.recommendations) ? result.recommendations :
-              result.action ? [result.action] : [];
-
-          console.log('🔄 Processed Prediction:', JSON.stringify({
-            user_id: uploadRecord.user_id,
-            churn_probability: churnProbability,
-            contributing_factors: contributing_factors,
-            recommended_actions: recommended_actions,
-          }));
-        } else if (!response.ok) {
-          throw new Error(`AI Model error: ${response.status} ${response.statusText}`);
-        }
-      } catch (error: any) {
-        console.log('❌ AI Model failed:', error.message);
-        console.log('🔄 Falling back to rules-based logic');
-        usingFallback = true;
-      }
-    } else {
-      console.log('⚠️ Using default AI model endpoint with rules-based fallback');
-      try {
-        const payload = {
-          user_id: uploadRecord.user_id,
-          plan: uploadRecord.plan,
-          last_login_days_ago: uploadRecord.last_login_days_ago,
-          avg_session_duration_minutes: uploadRecord.avg_session_duration,
-          billing_status: uploadRecord.billing_status,
-          monthly_revenue: uploadRecord.monthly_revenue,
-          feature_usage_count: uploadRecord.feature_usage_count,
-          support_tickets_count: uploadRecord.support_tickets,
-        };
-
-        console.log('🔍 Default AI Model Request:', JSON.stringify(payload));
-
-        const response = await fetch('https://ai-model-rumc.onrender.com/predict', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Accept': 'application/json',
-          },
-          body: JSON.stringify(payload),
-          signal: AbortSignal.timeout(15000),
-        });
-
-        console.log(`🌐 Default AI Model Response Status: ${response.status} ${response.statusText}`);
-
-        if (response.ok) {
-          const result = await response.json();
-          console.log('✅ Default AI Model success:', result);
-          console.log('📊 Default AI Model Prediction Details:', JSON.stringify({
-            user_id: uploadRecord.user_id,
-            prediction_result: result,
-          }));
-
-          churnProbability = result.churn_probability || result.prediction || result.score || 0;
-          contributing_factors = Array.isArray(result.reasons) ? result.reasons :
-            Array.isArray(result.factors) ? result.factors :
-              result.reason ? [result.reason] : [];
-          recommended_actions = Array.isArray(result.actions) ? result.actions :
-            Array.isArray(result.recommendations) ? result.recommendations :
-              result.action ? [result.action] : [];
-
-          console.log('🔄 Processed Default Prediction:', JSON.stringify({
-            user_id: uploadRecord.user_id,
-            churn_probability: churnProbability,
-            contributing_factors: contributing_factors,
-            recommended_actions: recommended_actions,
-          }));
-        } else {
-          throw new Error(`Default AI Model error: ${response.status}`);
-        }
-      } catch (error: any) {
-        console.log('❌ Default AI Model also failed:', (error as Error).message);
-        usingFallback = true;
-      }
-    }
-
-    if (usingFallback) {
-      // Rules-based fallback logic
-      console.log('⚙️ Applying rules-based fallback logic...');
-      const { data: rules, error: rulesError } = await supabaseClient
-        .from('churn_rules')
-        .select('*')
-        .order('priority', { ascending: true });
-
-      if (rulesError) {
-        console.error('Error fetching churn rules:', rulesError);
-        throw new Error('Failed to fetch churn rules');
-      }
-
-      let matchedRule = null;
-      for (const rule of rules) {
-        let conditionMet = true;
-        if (rule.condition_type === 'plan' && uploadRecord.plan !== rule.condition_value) {
-          conditionMet = false;
-        }
-        if (rule.condition_type === 'monthly_revenue' && uploadRecord.monthly_revenue < parseFloat(rule.condition_value)) {
-          conditionMet = false;
-        }
-        // Add more conditions as needed
-
-        if (conditionMet) {
-          matchedRule = rule;
-          break;
-        }
-      }
-
-      if (matchedRule) {
-        churnProbability = matchedRule.predicted_churn_probability;
-        contributing_factors = matchedRule.contributing_factors || [];
-        recommended_actions = matchedRule.recommended_actions || [];
-        console.log('✅ Rules-based prediction applied:', { churnProbability, contributing_factors, recommended_actions });
-      } else {
-        console.log('⚠️ No rules matched, setting default churn probability to 0.5');
-        churnProbability = 0.5; // Default if no rules match
-      }
-    }
-
-    const { error: updateAnalysisError } = await supabaseClient
-      .from('analysis_records')
-      .update({
-        status: 'completed',
-        churn_probability: churnProbability,
-        contributing_factors: contributing_factors,
-        recommended_actions: recommended_actions,
-      })
-      .eq('id', analysisRecord.id);
-
-    if (updateAnalysisError) {
-      console.error('Error updating analysis record:', updateAnalysisError);
-      throw new Error('Failed to update analysis record');
-    }
-
-    return new Response(JSON.stringify({ churnProbability, contributing_factors, recommended_actions }), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      status: 200,
-    });
-  } catch (error) {
-    console.error('Function error:', error.message);
-    return new Response(JSON.stringify({ error: error.message || 'Internal server error' }), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      status: 500,
-    });
-  }
-});
-
-
-            prediction_result: result
-          }));
-          
-          // Parse response from your AI model
-          churnProbability = result.churn_probability || result.prediction || result.score || 0;
-          contributing_factors = Array.isArray(result.reasons) ? result.reasons : 
-                               Array.isArray(result.factors) ? result.factors : 
-                               result.reason ? [result.reason] : [];
-          recommended_actions = Array.isArray(result.actions) ? result.actions : 
-                              Array.isArray(result.recommendations) ? result.recommendations : 
-                              result.action ? [result.action] : [];
-          
-          // Log the processed prediction data
-          console.log('🔄 Processed Prediction:', JSON.stringify({
-            user_id: mapped.user_id,
-            churn_probability: churnProbability,
-            contributing_factors: contributing_factors,
-            recommended_actions: recommended_actions
-          }));
-          
-
-        } else if (!response.ok) {
-          throw new Error(`AI Model error: ${response.status} ${response.statusText}`);
-        }
-        
-      } catch (error: any) {
-        console.log('❌ AI Model failed:', error.message);
-        console.log('🔄 Falling back to rules-based logic');
-        usingFallback = true;
-      }
-    } else {
-      console.log('⚠️ Using default AI model endpoint with rules-based fallback');
-      // Try the default endpoint without API key
-      try {
-        const payload = {
-          user_id: mapped.user_id,
-          plan: mapped.plan,
-          last_login_days_ago: 0,
-          avg_session_duration_minutes: mapped.avg_session_duration,
-          billing_status: mapped.billing_status,
+          days_since_signup: 30, // Default
           monthly_revenue: mapped.monthly_revenue,
-          feature_usage_count: mapped.feature_usage_count,
-          support_tickets_count: mapped.support_tickets
+          subscription_plan_Pro: mapped.plan === 'Pro' ? 1 : 0,
+          subscription_plan_FreeTrial: mapped.plan === 'Free' ? 1 : 0,
+          number_of_logins_last30days: mapped.logins_last30,
+          active_features_used: mapped.logins_last30, // Use logins as proxy
+          support_tickets_opened: mapped.support_tickets,
+          last_payment_status_Success: mapped.billing_status.toLowerCase().includes('success') ? 1 : 0,
+          email_opens_last30days: mapped.email_opens,
+          last_login_days_ago: 3, // Default
+          billing_issue_count: 0
         };
         
-        // Log the request payload being sent to the default AI model
-        console.log('🔍 Default AI Model Request:', JSON.stringify(payload));
+        console.log('📤 Sending to AI model:', { email: mapped.customer_email, payload });
         
-        const response = await fetch('https://ai-model-rumc.onrender.com/predict', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Accept': 'application/json'
-          },
-          body: JSON.stringify(payload),
-          signal: AbortSignal.timeout(15000)
-        });
+        // Try different endpoints that might work
+        const endpoints = [
+          `${churnApiUrl}/api/v1/predict`,
+          `${churnApiUrl}/predict`,
+          `${churnApiUrl}/api/predict`,
+          churnApiUrl
+        ];
         
-        console.log(`🌐 Default AI Model Response Status: ${response.status} ${response.statusText}`);
+        let apiResponse = null;
+        let lastError = null;
         
-        if (response.ok) {
-          const result = await response.json();
-          console.log('✅ Default AI Model success:', result);
-          console.log('📊 Default AI Model Prediction Details:', JSON.stringify({
-            user_id: mapped.user_id,
-            prediction_result: result
-          }));
-          
-          churnProbability = result.churn_probability || result.prediction || result.score || 0;
-          contributing_factors = Array.isArray(result.reasons) ? result.reasons : 
-                               Array.isArray(result.factors) ? result.factors : 
-                               result.reason ? [result.reason] : [];
-          recommended_actions = Array.isArray(result.actions) ? result.actions : 
-                              Array.isArray(result.recommendations) ? result.recommendations : 
-                              result.action ? [result.action] : [];
-          
-          // Log the processed prediction data
-          console.log('🔄 Processed Default Prediction:', JSON.stringify({
-            user_id: mapped.user_id,
-            churn_probability: churnProbability,
-            contributing_factors: contributing_factors,
-            recommended_actions: recommended_actions
-          }));
-        } else {
-          throw new Error(`Default AI Model error: ${response.status}`);
+        for (const endpoint of endpoints) {
+          try {
+            console.log(`🔄 Trying endpoint: ${endpoint}`);
+            apiResponse = await fetch(endpoint, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'X-API-Key': churnApiKey,
+                'Authorization': `Bearer ${churnApiKey}`
+              },
+              body: JSON.stringify(payload)
+            });
+            
+            console.log(`📥 Response from ${endpoint}:`, {
+              status: apiResponse.status,
+              ok: apiResponse.ok,
+              statusText: apiResponse.statusText
+            });
+            
+            if (apiResponse.ok) {
+              break; // Success, exit loop
+            }
+            
+            lastError = `${apiResponse.status} ${apiResponse.statusText}`;
+          } catch (fetchError) {
+            console.log(`❌ Endpoint ${endpoint} failed:`, fetchError.message);
+            lastError = fetchError.message;
+            continue;
+          }
         }
-      } catch (error: any) {
-        console.log('❌ Default AI Model also failed:', (error as Error).message);
-        usingFallback = true;
+
+        if (apiResponse && apiResponse.ok) {
+          const apiData = await apiResponse.json();
+          console.log('🧠 AI Model Data:', apiData);
+          
+          // Update prediction with AI model response
+          if (apiData.churn_score !== undefined) {
+            prediction.churn_probability = apiData.churn_score;
+          }
+          if (apiData.churn_reason) {
+            prediction.reason = apiData.churn_reason;
+          }
+          if (apiData.understanding_score !== undefined) {
+            prediction.understanding_score = apiData.understanding_score;
+          }
+          if (apiData.insight) {
+            prediction.message = apiData.insight;
+          }
+          
+          console.log('✅ Final prediction with AI data:', prediction);
+        } else {
+          throw new Error(`All endpoints failed. Last error: ${lastError}`);
+        }
+      } catch (error) {
+        console.error('❌ AI Model Request Failed:', error.message);
+        console.log('🔄 Using calculated score and dynamic reason as fallback');
+        // prediction already has the calculated base score and dynamic reason
       }
+    } else {
+      console.log('⚠️ Using calculated score and dynamic reason (no AI API configured)');
     }
-    
 
-    
-    // Determine risk level
+    // Calculate risk level
     let risk_level: 'low' | 'medium' | 'high' = 'low';
-    if (churnProbability >= 0.7) risk_level = 'high';
-    else if (churnProbability >= 0.4) risk_level = 'medium';
+    if (prediction.churn_probability >= 0.7) risk_level = 'high';
+    else if (prediction.churn_probability >= 0.4) risk_level = 'medium';
 
+    // Save to Supabase
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    const supabase = createClient(supabaseUrl, supabaseKey);
 
+    // Get user ID from request context (will be set by calling function)
+    const userId = (globalThis as any).__user_id__;
 
-  } catch (error: any) {
+    const { error: saveError } = await supabase
+      .from('user_data')
+      .upsert({
+        user_id: mapped.customer_email,
+        owner_id: userId,
+        plan: mapped.plan,
+        usage: mapped.logins_last30,
+        last_login: new Date(mapped.last_active_date).toISOString(),
+        churn_score: prediction.churn_probability,
+        churn_reason: prediction.reason,
+        risk_level: risk_level,
+        user_stage: 'analyzed',
+        understanding_score: prediction.understanding_score,
+        days_until_mature: 0,
+        action_recommended: prediction.message,
+        is_deleted: false,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      }, {
+        onConflict: 'owner_id,user_id'
+      });
+
+    if (saveError) {
+      console.error('Database save error:', saveError);
+      return { success: false, error: `Database error: ${saveError.message}` };
+    }
+
+    return { success: true, user_id: mapped.customer_email };
+
+  } catch (error) {
+    console.error('Row processing error:', error);
+    return { success: false, error: error.message };
+  }
+}
+
+serve(async (req) => {
+  if (req.method === 'OPTIONS') {
+    return new Response(null, { headers: corsHeaders });
+  }
+
+  if (req.method !== 'POST') {
+    return new Response(
+      JSON.stringify({ error: 'Method not allowed' }),
+      { status: 405, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
+  }
+
+  try {
+    // Get auth user
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    const supabase = createClient(supabaseUrl, supabaseKey);
+
+    const authHeader = req.headers.get('authorization');
+    if (!authHeader) {
+      return new Response(
+        JSON.stringify({ error: 'Authorization required' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    const token = authHeader.replace('Bearer ', '');
+    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+    
+    if (authError || !user) {
+      return new Response(
+        JSON.stringify({ error: 'Invalid authorization' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Set user ID in global context for processCsvRow function
+    (globalThis as any).__user_id__ = user.id;
+
+    const body = await req.json();
+    const rows = body?.data || [];
+
+    if (!Array.isArray(rows) || rows.length === 0) {
+      return new Response(
+        JSON.stringify({ error: 'Invalid data format' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    console.log(`Processing ${rows.length} rows for user ${user.id}`);
+
+    // Process all rows
+    const results = await Promise.all(rows.map(processCsvRow));
+
+    const successCount = results.filter(r => r.success).length;
+    const failedCount = results.filter(r => !r.success).length;
+    const errorDetails = results.filter(r => !r.success).map((r, index) => ({
+      row: index + 1,
+      user_id: r.user_id || 'unknown',
+      error: r.error
+    }));
+
+    // Record CSV upload
+    await supabase
+      .from('csv_uploads')
+      .insert({
+        user_id: user.id,
+        filename: body.filename || 'csv-upload.csv',
+        rows_processed: successCount,
+        rows_failed: failedCount,
+        status: 'completed'
+      });
+
+    const response = {
+      rows_processed: rows.length,
+      rows_success: successCount,
+      rows_failed: failedCount,
+      error_details: errorDetails,
+      message: `✅ ${successCount} rows processed successfully${failedCount > 0 ? `, ❌ ${failedCount} failed` : ''}`
+    };
+
+    return new Response(JSON.stringify(response), {
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+    });
+
+  } catch (error) {
     console.error('Handler error:', error);
     return new Response(
-      JSON.stringify({ error: error.message || 'Internal server error' }),
+      JSON.stringify({ error: 'Internal server error' }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }
 });
-
-
-
-    topRiskyUsers.forEach((user, index) => {
-      const probability = (Number(user.churn_probability || 0) * 100).toFixed(1);
-      const reasons = Array.isArray(user.contributing_factors) 
-        ? user.contributing_factors.slice(0, 2).join(', ')
-        : user.contributing_factors || 'Low engagement detected';
-      const actions = Array.isArray(user.recommended_actions)
-        ? user.recommended_actions.slice(0, 2).join(', ')
-        : user.recommended_actions || 'Send reactivation email';
-
-      emailBody += `
-        <div style="margin: 15px 0; padding: 12px; background-color: white; border-radius: 6px; border-left: 4px solid ${user.risk_level === 'high' ? '#dc2626' : user.risk_level === 'medium' ? '#f59e0b' : '#10b981'};">
-          <h4 style="margin: 0 0 8px 0; color: #374151;">
-            ${index + 1}. Customer ID: ${user.customer_id}
-          </h4>
-          <p style="margin: 4px 0; color: #6b7280;"><strong>Cancel Probability:</strong> ${probability}%</p>
-          <p style="margin: 4px 0; color: #6b7280;"><strong>Reason:</strong> ${reasons}</p>
-          <p style="margin: 4px 0; color: #6b7280;"><strong>Suggested Action:</strong> ${actions}</p>
-          <p style="margin: 4px 0; color: #6b7280;"><strong>Monthly Revenue:</strong> $${Number(user.monthly_revenue || 0).toFixed(2)}</p>
-        </div>
-      `;
-    });
-
-    emailBody += `
-      </div>
-      
-      <div style="background-color: #eff6ff; border: 1px solid #bfdbfe; border-radius: 8px; padding: 16px; margin: 20px 0;">
-        <h3 style="color: #1e40af; margin-top: 0;">💡 Quick Action Tips:</h3>
-        <ul style="color: #374151; line-height: 1.6;">
-          <li><strong>High Risk (70%+ probability):</strong> Reach out within 24 hours with personalized offers</li>
-          <li><strong>Medium Risk (40-70%):</strong> Send targeted retention campaigns this week</li>
-          <li><strong>Low Risk (&lt;40%):</strong> Monitor and include in general engagement flows</li>
-        </ul>
-      </div>
-      
-      <p style="margin: 20px 0;">
-        <a href="${Deno.env.get('SUPABASE_URL')?.replace('https://', 'https://').replace('.supabase.co', '')}.vercel.app/dashboard" 
-           style="background-color: #2563eb; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;">
-          View Full Dashboard →
-        </a>
-      </p>
-      
-      <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 30px 0;">
-      
-      <p style="color: #6b7280; font-size: 14px;">
-        This alert was generated automatically by Churnaizer AI. 
-        <br>Questions? Reply to this email or check your <a href="#">dashboard</a>.
-      </p>
-    </div>
-    `;
-
-    // Send email using Resend
-    const resendApiKey = Deno.env.get('RESEND_API_KEY');
-    if (!resendApiKey) {
-      throw new Error('RESEND_API_KEY not configured');
-    }
-
-    const emailResponse = await fetch('https://api.resend.com/emails', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${resendApiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        from: 'Churnaizer Alerts <alerts@churnaizer.com>',
-        to: [founderEmail],
-        subject: subject,
-        html: emailBody,
-      }),
-    });
-
-    if (!emailResponse.ok) {
-      const errorText = await emailResponse.text();
-      throw new Error(`Resend API error: ${errorText}`);
-    }
-
-    const emailResult = await emailResponse.json();
-    console.log('📧 Email sent successfully:', emailResult);
-
-  } catch (error: any) {
-    console.error('Email sending error:', error);
-    throw error;
-  }
-}
-
-async function processRetentionAnalytics(supabase: ReturnType<typeof createClient>, userId: string, uploadId: string, rows: CSVRow[]) {
-  try {
-    // Check if we have the required optional columns
-    const hasFeatureData = rows.some((row: CSVRow) => row.feature_adopted);
-    const hasChurnReasons = rows.some((row: CSVRow) => row.cancellation_reason);
-    
-    console.log('Analytics data availability:', { hasFeatureData, hasChurnReasons });
-
-    // Process Feature-Retention Fit
-    if (hasFeatureData) {
-      console.log('📊 Processing feature-retention analytics...');
-      const featureAnalytics = await analyzeFeatureRetention(rows);
-      
-      // Save feature analytics
-      for (const feature of featureAnalytics) {
-        await supabase
-          .from('retention_analytics')
-          .insert({
-            user_id: userId,
-            upload_id: uploadId,
-            feature_name: feature.name,
-            retention_percentage: feature.retention_percentage,
-            revenue_contribution: feature.revenue_contribution,
-            user_count: feature.user_count
-          });
-      }
-      console.log(`✅ Saved ${featureAnalytics.length} feature retention records`);
-    }
-
-    // Process Churn Reason Clusters
-    if (hasChurnReasons) {
-      console.log('📊 Processing churn reason clusters...');
-      const churnClusters = await analyzeChurnReasons(rows);
-      
-      // Save churn clusters
-      for (const cluster of churnClusters) {
-        await supabase
-          .from('churn_reason_clusters')
-          .insert({
-            user_id: userId,
-            upload_id: uploadId,
-            cluster_name: cluster.name,
-            reason_examples: cluster.examples,
-            percentage: cluster.percentage,
-            user_count: cluster.user_count
-          });
-      }
-      console.log(`✅ Saved ${churnClusters.length} churn cluster records`);
-    }
-
-  } catch (error: any) {
-    console.error('Retention analytics processing error:', error);
-    // Don't fail the whole upload if analytics fail
-  }
-}
-
-async function analyzeFeatureRetention(rows: CSVRow[]) {
-  const featureAnalysis = new Map();
-  
-  // Group users by feature adoption
-  for (const row of rows) {
-    if (!row.feature_adopted) continue;
-    
-    const features = row.feature_adopted.split(',').map(f => f.trim());
-    const isActive = calculateDaysSince(row.last_login) <= 30; // Active if logged in within 30 days
-    
-    for (const feature of features) {
-      if (!featureAnalysis.has(feature)) {
-        featureAnalysis.set(feature, {
-          total_users: 0,
-          active_users: 0,
-          total_revenue: 0
-        });
-      }
-      
-      const analysis = featureAnalysis.get(feature);
-      analysis.total_users++;
-      if (isActive) analysis.active_users++;
-      analysis.total_revenue += row.monthly_revenue || 0;
-    }
-  }
-  
-  // Calculate retention percentages and sort by retention
-  const results = Array.from(featureAnalysis.entries()).map(([feature, data]: [string, { total_users: number; active_users: number; total_revenue: number }]) => ({
-    name: feature,
-    retention_percentage: data.total_users > 0 ? (data.active_users / data.total_users) * 100 : 0,
-    revenue_contribution: data.total_revenue,
-    user_count: data.total_users
-  })).sort((a, b) => b.retention_percentage - a.retention_percentage);
-  
-  return results;
-}
-
-async function analyzeChurnReasons(rows: CSVRow[]) {
-  const reasons = rows
-    .filter(row => row.cancellation_reason)
-    .map(row => row.cancellation_reason!.toLowerCase());
-    
-  if (reasons.length === 0) return [];
-  
-  // Simple keyword-based clustering
-  const clusters = new Map();
-  
-  for (const reason of reasons) {
-    let clustered = false;
-    
-    // Pricing cluster
-    if (reason.includes('price') || reason.includes('cost') || reason.includes('expensive') || reason.includes('budget')) {
-      addToCluster(clusters, 'Pricing Issues', reason);
-      clustered = true;
-    }
-    // Feature cluster
-    else if (reason.includes('feature') || reason.includes('missing') || reason.includes('need') || reason.includes('functionality')) {
-      addToCluster(clusters, 'Missing Features', reason);
-      clustered = true;
-    }
-    // Support/UX cluster
-    else if (reason.includes('support') || reason.includes('help') || reason.includes('difficult') || reason.includes('complex') || reason.includes('confusing')) {
-      addToCluster(clusters, 'UX/Support Issues', reason);
-      clustered = true;
-    }
-    // Competition cluster
-    else if (reason.includes('competitor') || reason.includes('alternative') || reason.includes('switch') || reason.includes('found')) {
-      addToCluster(clusters, 'Competition', reason);
-      clustered = true;
-    }
-    // Usage cluster
-    else if (reason.includes("don't use") || reason.includes('not using') || reason.includes('no longer') || reason.includes('not needed')) {
-      addToCluster(clusters, 'Low Usage', reason);
-      clustered = true;
-    }
-    
-    // Default cluster for uncategorized
-    if (!clustered) {
-      addToCluster(clusters, 'Other Reasons', reason);
-    }
-  }
-  
-  const totalReasons = reasons.length;
-  const results = Array.from(clusters.entries()).map(([name, data]: [string, { count: number; examples: string[] }]) => ({
-    name,
-    examples: data.examples.slice(0, 3), // Top 3 examples
-    percentage: (data.count / totalReasons) * 100,
-    user_count: data.count
-  })).sort((a: { percentage: number }, b: { percentage: number }) => b.percentage - a.percentage);
-  
-  return results;
-}
-
-function addToCluster(clusters: Map<string, { count: number; examples: string[] }>, clusterName: string, reason: string) {
-  if (!clusters.has(clusterName)) {
-    clusters.set(clusterName, { count: 0, examples: [] });
-  }
-  const cluster = clusters.get(clusterName)!;
-  cluster.count++;
-  if (cluster.examples.length < 5) {
-    cluster.examples.push(reason);
-  }
-}

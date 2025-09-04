@@ -2,7 +2,6 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { LogOut, Bell, Menu } from 'lucide-react';
-import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useAuth } from '@/contexts/AuthContext';
 import { SidebarTrigger } from '@/components/ui/sidebar';
@@ -11,10 +10,9 @@ import { useIsMobile } from '@/hooks/use-mobile';
 interface DashboardHeaderProps {
   userEmail: string;
   onLogout: () => void;
-  isDemoData: boolean;
 }
 
-export const DashboardHeader: React.FC<DashboardHeaderProps> = ({ userEmail, onLogout, isDemoData }) => {
+const DashboardHeader: React.FC<DashboardHeaderProps> = ({ userEmail, onLogout }) => {
   const { user } = useAuth();
   const isMobile = useIsMobile();
 
@@ -27,11 +25,6 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({ userEmail, onL
           
           <div className="flex items-center space-x-2">
             <h2 className="text-lg font-semibold text-foreground">Dashboard</h2>
-            {isDemoData ? (
-              <Badge variant="destructive" className="ml-2">Demo Data</Badge>
-            ) : (
-              <Badge variant="success" className="ml-2">Live Data</Badge>
-            )}
           </div>
         </div>
 
@@ -54,7 +47,7 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({ userEmail, onL
               <p className="text-sm font-medium text-foreground">
                 {user?.user_metadata?.full_name || userEmail.split('@')[0]}
               </p>
-              <p className="text-xs text-muted-foreground truncate max-w-[180px] md:max-w-[200px]">
+              <p className="text-xs text-muted-foreground truncate max-w-[150px]">
                 {userEmail}
               </p>
             </div>
@@ -74,3 +67,5 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({ userEmail, onL
     </header>
   );
 };
+
+export default DashboardHeader;

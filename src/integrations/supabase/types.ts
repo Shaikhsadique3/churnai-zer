@@ -619,39 +619,6 @@ export type Database = {
         }
         Relationships: []
       }
-      churn_reason_clusters: {
-        Row: {
-          cluster_name: string
-          created_at: string
-          id: string
-          percentage: number
-          reason_examples: string[] | null
-          upload_id: string | null
-          user_count: number
-          user_id: string
-        }
-        Insert: {
-          cluster_name: string
-          created_at?: string
-          id?: string
-          percentage?: number
-          reason_examples?: string[] | null
-          upload_id?: string | null
-          user_count?: number
-          user_id: string
-        }
-        Update: {
-          cluster_name?: string
-          created_at?: string
-          id?: string
-          percentage?: number
-          reason_examples?: string[] | null
-          upload_id?: string | null
-          user_count?: number
-          user_id?: string
-        }
-        Relationships: []
-      }
       churn_trigger_logs: {
         Row: {
           action_taken: string
@@ -1200,39 +1167,6 @@ export type Database = {
           updated_at?: string | null
           user_id?: string | null
           variables?: Json | null
-        }
-        Relationships: []
-      }
-      feature_events: {
-        Row: {
-          created_at: string
-          event_date: string
-          feature_name: string
-          id: string
-          metadata: Json | null
-          owner_id: string
-          plan: string | null
-          user_id: string
-        }
-        Insert: {
-          created_at?: string
-          event_date: string
-          feature_name: string
-          id?: string
-          metadata?: Json | null
-          owner_id: string
-          plan?: string | null
-          user_id: string
-        }
-        Update: {
-          created_at?: string
-          event_date?: string
-          feature_name?: string
-          id?: string
-          metadata?: Json | null
-          owner_id?: string
-          plan?: string | null
-          user_id?: string
         }
         Relationships: []
       }
@@ -1802,21 +1736,18 @@ export type Database = {
       profiles: {
         Row: {
           avatar_url: string | null
-          company_name: string | null
           full_name: string | null
           id: string
           updated_at: string | null
         }
         Insert: {
           avatar_url?: string | null
-          company_name?: string | null
           full_name?: string | null
           id: string
           updated_at?: string | null
         }
         Update: {
           avatar_url?: string | null
-          company_name?: string | null
           full_name?: string | null
           id?: string
           updated_at?: string | null
@@ -1899,39 +1830,6 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
-      }
-      retention_analytics: {
-        Row: {
-          created_at: string
-          feature_name: string
-          id: string
-          retention_percentage: number
-          revenue_contribution: number
-          upload_id: string | null
-          user_count: number
-          user_id: string
-        }
-        Insert: {
-          created_at?: string
-          feature_name: string
-          id?: string
-          retention_percentage?: number
-          revenue_contribution?: number
-          upload_id?: string | null
-          user_count?: number
-          user_id: string
-        }
-        Update: {
-          created_at?: string
-          feature_name?: string
-          id?: string
-          retention_percentage?: number
-          revenue_contribution?: number
-          upload_id?: string | null
-          user_count?: number
-          user_id?: string
-        }
-        Relationships: []
       }
       retention_emails: {
         Row: {

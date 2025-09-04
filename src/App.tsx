@@ -3,12 +3,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AuthProvider } from '@/contexts/AuthContext';
 import { Toaster } from '@/components/ui/sonner';
 import Index from '@/pages/Index';
-import FeatureAdoptionDashboard from '@/pages/FeatureAdoptionDashboard';
-import UploadCSV from '@/pages/UploadCSV';
 import Auth from '@/pages/Auth';
-import CSVUploadPage from '@/pages/CSVUploadPage';
-import DashboardOverview from '@/pages/dashboard/DashboardOverview';
-import SettingsPage from '@/pages/SettingsPage';
 import ForgotPassword from '@/pages/ForgotPassword';
 import ResetPassword from '@/pages/ResetPassword';
 import Documentation from '@/pages/Documentation';
@@ -22,10 +17,12 @@ import NotAuthorized from '@/pages/NotAuthorized';
 import AdminLogin from '@/pages/AdminLogin';
 import AdminPanel from '@/pages/AdminPanel';
 import ProfilePage from '@/pages/ProfilePage';
+import CancelGuardDashboard from '@/pages/CancelGuardDashboard';
+import CancelGuardOffers from '@/pages/CancelGuardOffers';
+import CancelGuardSettings from '@/pages/CancelGuardSettings';
 import PrivateRoute from '@/components/auth/PrivateRoute';
 import PublicRoute from '@/components/auth/PublicRoute';
 import AdminRoute from '@/components/auth/AdminRoute';
-import { DashboardLayout } from '@/components/layout/DashboardLayout';
 
 const queryClient = new QueryClient();
 
@@ -36,10 +33,7 @@ function App() {
         <Router>
           <Routes>
             {/* Public routes */}
-            <Route path="/" element={<FeatureAdoptionDashboard />} />
-            
-            {/* Redirect authenticated users to dashboard */}
-            <Route path="/home" element={<Navigate to="/dashboard" replace />} />
+            <Route path="/" element={<Index />} />
             <Route path="/contact" element={<Contact />} />
             <Route path="/pricing" element={<Pricing />} />
             <Route path="/docs" element={<Documentation />} />
@@ -64,33 +58,34 @@ function App() {
               </PublicRoute>
             } />
 
-            {/* Dashboard Routes - All protected with DashboardLayout */}
+            {/* Main Dashboard - Redirect to Cancel Guard */}
             <Route path="/dashboard" element={
               <PrivateRoute>
-                <DashboardLayout>
-                  <DashboardOverview />
-                </DashboardLayout>
-              </PrivateRoute>
-            } />
-            <Route path="/upload" element={
-              <PrivateRoute>
-                <UploadCSV />
+                <Navigate to="/cancel-guard" replace />
               </PrivateRoute>
             } />
 
-            {/* Profile & Settings */}
-            <Route path="/profile" element={
+            {/* Cancel Guard Application Routes */}
+            <Route path="/cancel-guard" element={
               <PrivateRoute>
-                <DashboardLayout>
-                  <ProfilePage />
-                </DashboardLayout>
+                <CancelGuardDashboard />
+              </PrivateRoute>
+            } />
+            <Route path="/offers" element={
+              <PrivateRoute>
+                <CancelGuardOffers />
               </PrivateRoute>
             } />
             <Route path="/settings" element={
               <PrivateRoute>
-                <DashboardLayout>
-                  <SettingsPage />
-                </DashboardLayout>
+                <CancelGuardSettings />
+              </PrivateRoute>
+            } />
+
+            {/* User Profile */}
+            <Route path="/profile" element={
+              <PrivateRoute>
+                <ProfilePage />
               </PrivateRoute>
             } />
 

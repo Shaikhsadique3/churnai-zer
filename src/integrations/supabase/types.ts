@@ -586,6 +586,47 @@ export type Database = {
           },
         ]
       }
+      churn_payments: {
+        Row: {
+          amount: number
+          checkout_id: string | null
+          created_at: string
+          currency: string
+          id: string
+          status: string
+          stripe_session_id: string | null
+          upload_id: string
+        }
+        Insert: {
+          amount: number
+          checkout_id?: string | null
+          created_at?: string
+          currency?: string
+          id?: string
+          status?: string
+          stripe_session_id?: string | null
+          upload_id: string
+        }
+        Update: {
+          amount?: number
+          checkout_id?: string | null
+          created_at?: string
+          currency?: string
+          id?: string
+          status?: string
+          stripe_session_id?: string | null
+          upload_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "churn_payments_upload_id_fkey"
+            columns: ["upload_id"]
+            isOneToOne: false
+            referencedRelation: "churn_uploads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       churn_predictions: {
         Row: {
           churn_probability: number | null
@@ -652,6 +693,38 @@ export type Database = {
         }
         Relationships: []
       }
+      churn_reports: {
+        Row: {
+          created_at: string
+          id: string
+          pdf_url: string | null
+          type: string
+          upload_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          pdf_url?: string | null
+          type: string
+          upload_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          pdf_url?: string | null
+          type?: string
+          upload_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "churn_reports_upload_id_fkey"
+            columns: ["upload_id"]
+            isOneToOne: false
+            referencedRelation: "churn_uploads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       churn_trigger_logs: {
         Row: {
           action_taken: string
@@ -691,6 +764,33 @@ export type Database = {
           trigger_reason?: string | null
           triggered_at?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      churn_uploads: {
+        Row: {
+          created_at: string
+          csv_url: string | null
+          email: string
+          filename: string
+          id: string
+          status: string
+        }
+        Insert: {
+          created_at?: string
+          csv_url?: string | null
+          email: string
+          filename: string
+          id?: string
+          status?: string
+        }
+        Update: {
+          created_at?: string
+          csv_url?: string | null
+          email?: string
+          filename?: string
+          id?: string
+          status?: string
         }
         Relationships: []
       }

@@ -703,6 +703,7 @@ export type Database = {
           pdf_url: string | null
           type: string
           upload_id: string
+          user_id: string | null
         }
         Insert: {
           created_at?: string
@@ -710,6 +711,7 @@ export type Database = {
           pdf_url?: string | null
           type: string
           upload_id: string
+          user_id?: string | null
         }
         Update: {
           created_at?: string
@@ -717,6 +719,7 @@ export type Database = {
           pdf_url?: string | null
           type?: string
           upload_id?: string
+          user_id?: string | null
         }
         Relationships: [
           {
@@ -778,6 +781,7 @@ export type Database = {
           filename: string
           id: string
           status: string
+          user_id: string | null
         }
         Insert: {
           created_at?: string
@@ -786,6 +790,7 @@ export type Database = {
           filename: string
           id?: string
           status?: string
+          user_id?: string | null
         }
         Update: {
           created_at?: string
@@ -794,6 +799,7 @@ export type Database = {
           filename?: string
           id?: string
           status?: string
+          user_id?: string | null
         }
         Relationships: []
       }

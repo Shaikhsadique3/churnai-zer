@@ -32,7 +32,7 @@ serve(async (req) => {
       .from("churn_uploads")
       .select("*")
       .eq("id", uploadId)
-      .single();
+      .maybeSingle();
 
     if (uploadError || !upload) {
       return new Response(
@@ -49,7 +49,7 @@ serve(async (req) => {
         .select("pdf_url")
         .eq("upload_id", uploadId)
         .eq("type", "free")
-        .single();
+        .maybeSingle();
       
       if (report) {
         freeReportUrl = report.pdf_url;
@@ -61,7 +61,7 @@ serve(async (req) => {
       .from("churn_payments")
       .select("status")
       .eq("upload_id", uploadId)
-      .single();
+      .maybeSingle();
 
     return new Response(
       JSON.stringify({

@@ -36,7 +36,7 @@ serve(async (req) => {
       .from("churn_uploads")
       .select("*")
       .eq("id", upload_id)
-      .single();
+      .maybeSingle();
 
     if (uploadError || !upload) {
       return new Response(

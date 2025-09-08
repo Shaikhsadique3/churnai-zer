@@ -36,7 +36,7 @@ serve(async (req) => {
       const uploadId = session.metadata?.upload_id;
 
       if (uploadId) {
-        // Update payment status
+        // Update payment status (using service role for secure update)
         const { error: paymentError } = await supabase
           .from("churn_payments")
           .update({ status: "paid" })

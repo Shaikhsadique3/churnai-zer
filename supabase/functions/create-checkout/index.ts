@@ -69,7 +69,7 @@ serve(async (req) => {
       }
     });
 
-    // Save payment record
+    // Save payment record (using service role for secure insert)
     const { error: paymentError } = await supabase
       .from("churn_payments")
       .insert({
@@ -77,7 +77,8 @@ serve(async (req) => {
         status: "created",
         amount: 9900,
         currency: "usd",
-        stripe_session_id: session.id
+        stripe_session_id: session.id,
+        user_id: null // Will be set by webhook when payment is processed
       });
 
     if (paymentError) {

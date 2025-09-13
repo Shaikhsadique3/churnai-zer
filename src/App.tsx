@@ -14,6 +14,10 @@ import Privacy from '@/pages/Privacy';
 import RefundPolicy from '@/pages/RefundPolicy';
 import NotFound from '@/pages/NotFound';
 import NotAuthorized from '@/pages/NotAuthorized';
+import { ChurnAuditLanding } from '@/pages/ChurnAuditLanding';
+import { ChurnUpload } from '@/pages/ChurnUpload';
+import { ChurnReport } from '@/pages/ChurnReport';
+import { EnhancedChurnUpload } from '@/components/churn/EnhancedChurnUpload';
 import AdminLogin from '@/pages/AdminLogin';
 import AdminPanel from '@/pages/AdminPanel';
 import ProfilePage from '@/pages/ProfilePage';
@@ -40,6 +44,12 @@ function App() {
             <Route path="/terms" element={<Terms />} />
             <Route path="/privacy" element={<Privacy />} />
             <Route path="/refund-policy" element={<RefundPolicy />} />
+            
+            {/* Churn Audit Service - Public Routes */}
+            <Route path="/churn-audit" element={<ChurnAuditLanding />} />
+            <Route path="/upload" element={<ChurnUpload />} />
+            <Route path="/enhanced-upload" element={<EnhancedChurnUpload />} />
+            <Route path="/report/:uploadId" element={<ChurnReport />} />
             
             {/* Auth routes - only accessible when not logged in */}
             <Route path="/auth" element={

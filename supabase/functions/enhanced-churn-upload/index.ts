@@ -72,9 +72,9 @@ serve(async (req) => {
       throw new Error(`Database error: ${dbError.message}`);
     }
 
-    // Start background processing
+    // Start background processing with new robust processor
     try {
-      await supabase.functions.invoke('enhanced-churn-processing', {
+      await supabase.functions.invoke('robust-churn-processor', {
         body: { upload_id: uploadId }
       });
     } catch (processingError) {

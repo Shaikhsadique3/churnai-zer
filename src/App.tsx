@@ -17,6 +17,7 @@ import NotAuthorized from '@/pages/NotAuthorized';
 import { ChurnAuditLanding } from '@/pages/ChurnAuditLanding';
 import { ChurnUpload } from '@/pages/ChurnUpload';
 import { ChurnReport } from '@/pages/ChurnReport';
+import { ChurnDashboard } from '@/components/churn/ChurnDashboard';
 import { EnhancedChurnUpload } from '@/components/churn/EnhancedChurnUpload';
 import AdminLogin from '@/pages/AdminLogin';
 import AdminPanel from '@/pages/AdminPanel';
@@ -50,6 +51,7 @@ function App() {
             <Route path="/upload" element={<ChurnUpload />} />
             <Route path="/enhanced-upload" element={<EnhancedChurnUpload />} />
             <Route path="/report/:uploadId" element={<ChurnReport />} />
+            <Route path="/dashboard/:uploadId" element={<ChurnDashboard />} />
             
             {/* Auth routes - only accessible when not logged in */}
             <Route path="/auth" element={

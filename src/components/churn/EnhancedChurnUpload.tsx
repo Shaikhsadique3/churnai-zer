@@ -54,10 +54,10 @@ export const EnhancedChurnUpload = () => {
         });
         return;
       }
-      if (selectedFile.size > 20 * 1024 * 1024) {
+      if (selectedFile.size > 10 * 1024 * 1024) {
         toast({
           title: "File too large",
-          description: "File size must be less than 20MB.",
+          description: "File size must be less than 10MB for reliable processing.",
           variant: "destructive"
         });
         return;
@@ -267,7 +267,7 @@ user_005,user5@example.com,Basic,29,7,28,1,6.8`;
                     <div className="space-y-2">
                       <Upload className="h-8 w-8 text-muted-foreground mx-auto" />
                       <p className="text-lg">Drag & drop your CSV file here</p>
-                      <p className="text-sm text-muted-foreground">or click to browse (max 20MB)</p>
+                      <p className="text-sm text-muted-foreground">or click to browse (max 10MB)</p>
                     </div>
                   )}
                 </div>
@@ -412,9 +412,9 @@ user_005,user5@example.com,Basic,29,7,28,1,6.8`;
                 {reportReady && uploadId && (
                   <Button 
                     className="w-full mt-4" 
-                    onClick={() => navigate(`/report/${uploadId}`)}
+                    onClick={() => navigate(`/dashboard/${uploadId}`)}
                   >
-                    View Detailed Report & Download PDF
+                    View Analysis Dashboard
                   </Button>
                 )}
               </CardContent>

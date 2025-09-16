@@ -63,12 +63,12 @@ export const ChurnReport = () => {
 
     checkStatus();
     
-    // Poll status every 10 seconds if still processing
+    // Poll status every 5 seconds if still processing
     const interval = setInterval(() => {
       if (reportStatus?.status === 'processing' || reportStatus?.status === 'received') {
         checkStatus();
       }
-    }, 10000);
+    }, 5000);
 
     return () => clearInterval(interval);
   }, [uploadId, reportStatus?.status, toast]);
@@ -230,6 +230,14 @@ export const ChurnReport = () => {
                       <Download className="mr-2 h-4 w-4" />
                       Download Free Report
                     </a>
+                  </Button>
+                ) : reportStatus.status === 'done' ? (
+                  <Button 
+                    onClick={() => window.open(`https://ntbkydpgjaswmwruegyl.supabase.co/functions/v1/download-report/${uploadId}`, '_blank')}
+                    className="w-full"
+                  >
+                    <Download className="mr-2 h-4 w-4" />
+                    Download Free Report
                   </Button>
                 ) : (
                   <Button disabled className="w-full">

@@ -26,10 +26,10 @@ export const ChurnUpload = () => {
         });
         return;
       }
-      if (selectedFile.size > 20 * 1024 * 1024) {
+      if (selectedFile.size > 10 * 1024 * 1024) {
         toast({
           title: "File too large",
-          description: "File size must be less than 20MB.",
+          description: "File size must be less than 10MB for reliable processing.",
           variant: "destructive"
         });
         return;
@@ -140,7 +140,7 @@ export const ChurnUpload = () => {
                   disabled={loading}
                 />
                 <p className="text-sm text-muted-foreground">
-                  Upload your customer data in CSV format (max 20MB)
+                  Upload your customer data in CSV format (max 10MB)
                 </p>
                 {file && (
                   <p className="text-sm text-green-600">
@@ -155,7 +155,7 @@ export const ChurnUpload = () => {
                   <li>• Include customer ID, email, plan type, last login date</li>
                   <li>• Add usage metrics, billing data, support tickets</li>
                   <li>• Include engagement scores if available</li>
-                  <li>• Maximum file size: 20MB</li>
+                  <li>• Maximum file size: 10MB</li>
                 </ul>
               </div>
 

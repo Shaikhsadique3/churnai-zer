@@ -13,12 +13,20 @@ serve(async (req) => {
 
   try {
     const url = new URL(req.url);
-    const uploadId = url.pathname.split('/').pop();
-
+    // Try to get upload_id from path, query, or JSON body
+    let uploadId = url.pathname.split('/').pop() || url.searchParams.get('upload_id') || null;
+    if (!uploadId && req.method !== 'GET') {
+      try {
+        const body = await req.json();
+        uploadId = body?.upload_id ?? null;
+      } catch {
+        // ignore JSON parse errors
+      }
+    }
     if (!uploadId) {
       return new Response(
-        JSON.stringify({ error: "Upload ID is required" }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        JSON.stringify({ status: 'not_found', error: 'Upload ID is required' }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
@@ -36,8 +44,8 @@ serve(async (req) => {
 
     if (uploadError || !upload) {
       return new Response(
-        JSON.stringify({ error: "Upload not found" }),
-        { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        JSON.stringify({ status: 'not_found', error: "Upload not found" }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 

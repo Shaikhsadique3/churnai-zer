@@ -21,6 +21,14 @@ serve(async (req) => {
       throw new Error('Email and file are required');
     }
 
+    // Enforce max file size of 10MB to prevent timeouts and memory issues
+    if (file.size > 10 * 1024 * 1024) {
+      return new Response(
+        JSON.stringify({ error: 'File too large. Maximum size is 10MB.' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
     // Initialize Supabase client
     const supabaseUrl = Deno.env.get('SUPABASE_URL');
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');

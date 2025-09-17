@@ -72,11 +72,12 @@ serve(async (req) => {
       throw new Error(`Database error: ${dbError.message}`);
     }
 
-    // Start background processing with new robust processor
+    // Start background processing with new robust processor (fire-and-forget)
     try {
-      await supabase.functions.invoke('robust-churn-processor', {
-        body: { upload_id: uploadId }
-      });
+      supabase.functions
+        .invoke('robust-churn-processor', { body: { upload_id: uploadId } })
+        .catch((processingError) => console.error('Failed to start processing:', processingError));
+      // Do not await to avoid request timeouts on large files
     } catch (processingError) {
       console.error('Failed to start processing:', processingError);
       // Don't fail the upload if processing fails to start

@@ -49,33 +49,12 @@ serve(async (req) => {
       );
     }
 
-    // Get free report if available
-    let freeReportUrl = null;
-    if (upload.status === "done") {
-      const { data: report } = await supabase
-        .from("churn_reports")
-        .select("pdf_url")
-        .eq("upload_id", uploadId)
-        .eq("type", "free")
-        .maybeSingle();
-      
-      if (report) {
-        freeReportUrl = report.pdf_url;
-      }
-    }
-
-    // Check if payment exists
-    const { data: payment } = await supabase
-      .from("churn_payments")
-      .select("status")
-      .eq("upload_id", uploadId)
-      .maybeSingle();
-
+    // Return simple status payload; keep keys stable for frontend
     return new Response(
       JSON.stringify({
         status: upload.status,
-        free_report_url: freeReportUrl,
-        payment_status: payment?.status || null
+        free_report_url: null,
+        payment_status: null
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );

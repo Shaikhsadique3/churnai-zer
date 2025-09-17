@@ -8,9 +8,6 @@ schemas = ["public", "graphql_public"]
 extra_search_path = ["public", "extensions"]
 max_rows = 1000
 
-[functions."email/inbound"]
-verify_jwt = false
-
 [db]
 port = 54322
 
@@ -38,30 +35,7 @@ jwt_expiry = 3600
 refresh_token_rotation_enabled = true
 security_update_password_require_reauthentication = true
 
-[functions.sdk-track]
-verify_jwt = false
-
-[functions.retention-event]
-verify_jwt = false
-enabled = true
-port = 54321
-
-[functions.churn-csv-handler]
-verify_jwt = true
-
-[functions.process-csv]
-verify_jwt = false
-
-[functions.track]
-verify_jwt = false
-
-[functions.api-sync]
-verify_jwt = false
-
-[functions.auto-email-trigger]
-verify_jwt = false
-
-[functions.sdk-event]
+[functions.enhanced-churn-upload]
 verify_jwt = false
 
 [functions.health]
@@ -70,5 +44,17 @@ verify_jwt = false
 [functions.robust-churn-processor]
 verify_jwt = false
 
+[functions.check-status]
+verify_jwt = false
+
 [functions.download-report]
+verify_jwt = false
+
+[functions.create-checkout]
+verify_jwt = false
+
+[functions.send-password-reset]
+verify_jwt = false
+
+[functions.send-churn-report-email]
 verify_jwt = false

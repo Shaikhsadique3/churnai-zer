@@ -2,7 +2,6 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
-import { cleanupAuthState } from '@/utils/authCleanup';
 
 interface AuthContextType {
   user: User | null;
@@ -44,7 +43,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         
         if (error) {
           console.error('Error getting session:', error);
-          cleanupAuthState();
         }
 
         if (mounted) {
@@ -55,7 +53,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       } catch (error) {
         console.error('Auth initialization error:', error);
         if (mounted) {
-          cleanupAuthState();
           setSession(null);
           setUser(null);
           setLoading(false);
@@ -78,15 +75,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         const currentPath = window.location.pathname;
         
         if (event === 'SIGNED_OUT' || !session) {
-          cleanupAuthState();
           // Only redirect if not already on public routes
-          if (currentPath.startsWith('/dashboard') || currentPath === '/profile' || currentPath === '/users') {
+          if (currentPath === '/profile') {
             window.location.href = '/auth';
           }
         } else if (event === 'SIGNED_IN' && session) {
           // Only redirect if currently on auth pages
-          if (currentPath === '/auth' || currentPath === '/') {
-            window.location.href = '/dashboard';
+          if (currentPath === '/auth') {
+            window.location.href = '/profile';
           }
         }
       }
@@ -111,7 +107,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (!error) {
         // Redirect will be handled by onAuthStateChange
         setTimeout(() => {
-          window.location.href = '/dashboard';
+          window.location.href = '/profile';
         }, 100);
       }
       
@@ -125,7 +121,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: `${window.location.origin}/dashboard`,
+        redirectTo: `${window.location.origin}/profile`,
         queryParams: {
           access_type: 'offline',
           prompt: 'consent',
@@ -144,7 +140,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         email,
         password,
         options: {
-          emailRedirectTo: `${window.location.origin}/dashboard`
+          emailRedirectTo: `${window.location.origin}/profile`
         }
       });
       
@@ -158,35 +154,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             Authorization: `Bearer ${session.access_token}`
           } : {};
 
-          // Send welcome email
-          await supabase.functions.invoke('send-auth-email', {
-            headers: authHeaders,
-            body: { 
-              email: data.user.email,
-              name: data.user.email?.split('@')[0],
-              type: 'welcome'
-            }
-          });
-
-          // Send admin notification
-          await supabase.functions.invoke('send-admin-notification', {
-            headers: authHeaders,
-            body: {
-              userEmail: data.user.email,
-              userName: data.user.email?.split('@')[0],
-              signupTime: data.user.created_at,
-              referrer: document.referrer || 'Direct'
-            }
-          });
-
-          console.log('Welcome and admin notification emails triggered');
+          console.log('User registered successfully');
         } catch (emailError) {
           console.error('Failed to send signup emails:', emailError);
         }
 
         // Redirect will be handled by onAuthStateChange
         setTimeout(() => {
-          window.location.href = '/dashboard';
+          window.location.href = '/profile';
         }, 100);
       }
       
@@ -204,7 +179,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       console.log('Starting signOut...');
       setLoading(true);
       
-      cleanupAuthState();
       await supabase.auth.signOut({ scope: 'global' });
       
       setSession(null);
@@ -215,7 +189,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
     } catch (error) {
       console.error('Sign out error:', error);
-      cleanupAuthState();
       setSession(null);
       setUser(null);
       window.location.href = '/';
@@ -231,20 +204,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         Authorization: `Bearer ${session.access_token}`
       } : {};
 
-      const { data, error } = await supabase.functions.invoke('send-auth-email', {
-        headers: authHeaders,
-        body: { 
-          email,
-          type: 'reset'
-        }
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/reset-password`
       });
       
-      if (error) {
-        console.error('Password reset function error:', error);
-        return { error: { message: error.message } };
-      }
-      
-      return { error: null };
+      return { error };
     } catch (err) {
       console.error('Password reset error:', err);
       return { error: { message: 'Network error: Please check your internet connection and try again.' } };

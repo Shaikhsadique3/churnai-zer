@@ -23,7 +23,7 @@ export const ChurnAuditLanding = () => {
           <Button 
             size="lg" 
             className="text-lg px-8 py-4 h-auto"
-            onClick={() => navigate('/enhanced-upload')}
+            onClick={() => navigate('/upload')}
           >
             <Upload className="mr-2 h-5 w-5" />
             Start Your Free Audit
@@ -111,7 +111,7 @@ export const ChurnAuditLanding = () => {
                 <li className="flex items-center"><Shield className="h-4 w-4 text-green-500 mr-2" />Top churn reasons</li>
                 <li className="flex items-center"><Shield className="h-4 w-4 text-green-500 mr-2" />Top 10 high-risk customers</li>
               </ul>
-              <Button variant="outline" className="w-full" onClick={() => navigate('/enhanced-upload')}>
+              <Button variant="outline" className="w-full" onClick={() => navigate('/upload')}>
                 Get Free Report
               </Button>
             </div>
@@ -129,7 +129,7 @@ export const ChurnAuditLanding = () => {
                 <li className="flex items-center"><Zap className="h-4 w-4 text-green-500 mr-2" />90-day action plan</li>
                 <li className="flex items-center"><Zap className="h-4 w-4 text-green-500 mr-2" />Retention playbook</li>
               </ul>
-              <Button className="w-full" onClick={() => navigate('/enhanced-upload')}>
+              <Button className="w-full" onClick={() => navigate('/upload')}>
                 Start Free, Upgrade Later
               </Button>
             </div>
@@ -147,7 +147,7 @@ export const ChurnAuditLanding = () => {
           <Button 
             size="lg" 
             className="text-lg px-8 py-4 h-auto"
-            onClick={() => navigate('/enhanced-upload')}
+            onClick={() => navigate('/upload')}
           >
             <Upload className="mr-2 h-5 w-5" />
             Get Your Free Audit Now

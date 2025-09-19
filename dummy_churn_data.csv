@@ -1,0 +1,6 @@
+user_id,email,plan_type,monthly_revenue,last_login_days_ago,total_logins,support_tickets,feature_usage_score
+user_001,user1@example.com,Premium,99,2,45,1,8.5
+user_002,user2@example.com,Basic,29,15,12,3,4.2
+user_003,user3@example.com,Premium,99,1,67,0,9.1
+user_004,user4@example.com,Free,0,45,2,2,1.3
+user_005,user5@example.com,Basic,29,7,28,1,6.8

@@ -1,0 +1,20 @@
+{
+  "name": "robust-churn-processor",
+  "version": "1.0.0",
+  "description": "Robust Churn Processor for generating professional reports",
+  "main": "index.ts",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "puppeteer": "^22.0.0",
+    "chart.js": "^4.0.0",
+    "jsdom": "^24.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0"
+  }
+}

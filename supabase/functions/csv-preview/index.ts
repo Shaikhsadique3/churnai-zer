@@ -15,6 +15,8 @@ serve(async (req) => {
     const formData = await req.formData();
     const file = formData.get('file') as File;
 
+    console.log(`[csv-preview] Received CSV preview request. Filename: ${file.name}, Size: ${file.size} bytes`);
+
     if (!file) {
       throw new Error('No file provided');
     }
@@ -104,7 +106,7 @@ serve(async (req) => {
     });
 
   } catch (error) {
-    console.error('CSV Preview error:', error);
+    console.error('[csv-preview] CSV Preview error:', error.message, error.stack);
     return new Response(
       JSON.stringify({ 
         error: error.message,

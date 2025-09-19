@@ -17,6 +17,8 @@ serve(async (req) => {
     const email = formData.get('email') as string;
     const file = formData.get('file') as File;
 
+    console.log(`[enhanced-churn-upload] Received CSV upload request. Filename: ${file.name}, Size: ${file.size} bytes`);
+
     if (!email || !file) {
       throw new Error('Email and file are required');
     }
@@ -107,7 +109,7 @@ serve(async (req) => {
     });
 
   } catch (error) {
-    console.error('Enhanced upload error:', error);
+    console.error('[enhanced-churn-upload] Enhanced upload error:', error.message, error.stack);
     return new Response(
       JSON.stringify({ error: error.message }),
       {

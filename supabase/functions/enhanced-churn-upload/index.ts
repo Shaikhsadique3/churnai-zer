@@ -34,6 +34,20 @@ serve(async (req) => {
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
     const supabase = createClient(supabaseUrl!, supabaseKey!);
 
+    // Get user from auth token if available
+    const authHeader = req.headers.get('authorization');
+    let userId = null;
+    
+    if (authHeader) {
+      try {
+        const token = authHeader.replace('Bearer ', '');
+        const { data: { user } } = await supabase.auth.getUser(token);
+        userId = user?.id || null;
+      } catch (error) {
+        console.log('No valid auth token, proceeding as anonymous upload');
+      }
+    }
+
     // Generate unique upload ID
     const uploadId = crypto.randomUUID();
     const filename = `${uploadId}_${file.name}`;
@@ -63,7 +77,8 @@ serve(async (req) => {
         email: email,
         filename: file.name,
         csv_url: urlData.publicUrl,
-        status: 'received'
+        status: 'received',
+        user_id: userId // Set user_id if authenticated
       })
       .select()
       .single();

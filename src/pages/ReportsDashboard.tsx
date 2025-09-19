@@ -19,6 +19,7 @@ import {
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
+import { DashboardHeader } from '@/components/common/DashboardHeader';
 
 interface ReportData {
   id: string;
@@ -232,11 +233,14 @@ export const ReportsDashboard = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5 py-12">
-        <div className="container mx-auto px-4 max-w-6xl">
-          <div className="text-center">
-            <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4" />
-            <p>Loading your reports...</p>
+      <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5">
+        <DashboardHeader />
+        <div className="py-12">
+          <div className="container mx-auto px-4 max-w-6xl">
+            <div className="text-center">
+              <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4" />
+              <p>Loading your reports...</p>
+            </div>
           </div>
         </div>
       </div>
@@ -244,195 +248,198 @@ export const ReportsDashboard = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5 py-12">
-      <div className="container mx-auto px-4 max-w-6xl">
-        {/* Header */}
-        <div className="flex items-center justify-between mb-8">
-          <div>
-            <h1 className="text-4xl font-bold text-foreground mb-2">
-              Reports Dashboard
-            </h1>
-            <p className="text-lg text-muted-foreground">
-              Upload CSV files and manage your churn analysis reports
-            </p>
+    <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5">
+      <DashboardHeader />
+      <div className="py-12">
+        <div className="container mx-auto px-4 max-w-6xl">
+          {/* Header */}
+          <div className="flex items-center justify-between mb-8">
+            <div>
+              <h1 className="text-4xl font-bold text-foreground mb-2">
+                Reports Dashboard
+              </h1>
+              <p className="text-lg text-muted-foreground">
+                Upload CSV files and manage your churn analysis reports
+              </p>
+            </div>
+            <Button onClick={fetchReports} variant="outline">
+              <RefreshCw className="mr-2 h-4 w-4" />
+              Refresh
+            </Button>
           </div>
-          <Button onClick={fetchReports} variant="outline">
-            <RefreshCw className="mr-2 h-4 w-4" />
-            Refresh
-          </Button>
-        </div>
 
-        {/* Upload Section */}
-        <Card className="mb-8">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Plus className="h-5 w-5" />
-              Upload New CSV
-            </CardTitle>
-            <CardDescription>
-              Upload a customer data CSV file to generate a new churn analysis report
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            {uploadProgress ? (
-              <div className="space-y-4">
-                <Progress value={uploadProgress.progress} className="w-full" />
-                <div className="flex items-center gap-2">
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  <span className="text-sm">{uploadProgress.stage}</span>
-                </div>
-              </div>
-            ) : (
-              <div
-                {...getRootProps()}
-                className={`border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors ${
-                  isDragActive ? 'border-primary bg-primary/5' : 'border-muted-foreground/25 hover:border-primary'
-                } ${uploading ? 'cursor-not-allowed opacity-50' : ''}`}
-              >
-                <input {...getInputProps()} />
-                {isDragActive ? (
-                  <div className="space-y-2">
-                    <Upload className="h-8 w-8 text-primary mx-auto" />
-                    <p className="text-lg">Drop your CSV file here</p>
-                  </div>
-                ) : (
-                  <div className="space-y-2">
-                    <Upload className="h-8 w-8 text-muted-foreground mx-auto" />
-                    <p className="text-lg">Drag & drop your CSV file here</p>
-                    <p className="text-sm text-muted-foreground">or click to browse (max 10MB)</p>
-                  </div>
-                )}
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Reports in Progress */}
-        {inProgressReports.length > 0 && (
+          {/* Upload Section */}
           <Card className="mb-8">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <Loader2 className="h-5 w-5 animate-spin" />
-                Reports in Progress ({inProgressReports.length})
+                <Plus className="h-5 w-5" />
+                Upload New CSV
               </CardTitle>
               <CardDescription>
-                Your uploads are being processed. This typically takes 2-5 minutes.
+                Upload a customer data CSV file to generate a new churn analysis report
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="space-y-4">
-                {inProgressReports.map((report) => (
-                  <div key={report.id} className="flex items-center justify-between p-4 border rounded-lg">
-                    <div className="flex items-center gap-3">
-                      {getStatusIcon(report.status)}
-                      <div>
-                        <p className="font-medium">{report.filename}</p>
-                        <p className="text-sm text-muted-foreground">
-                          Started {formatDate(report.created_at)}
-                        </p>
-                      </div>
-                    </div>
-                    <Badge variant="secondary">
-                      {getStatusText(report.status)}
-                    </Badge>
+              {uploadProgress ? (
+                <div className="space-y-4">
+                  <Progress value={uploadProgress.progress} className="w-full" />
+                  <div className="flex items-center gap-2">
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    <span className="text-sm">{uploadProgress.stage}</span>
                   </div>
-                ))}
-              </div>
+                </div>
+              ) : (
+                <div
+                  {...getRootProps()}
+                  className={`border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors ${
+                    isDragActive ? 'border-primary bg-primary/5' : 'border-muted-foreground/25 hover:border-primary'
+                  } ${uploading ? 'cursor-not-allowed opacity-50' : ''}`}
+                >
+                  <input {...getInputProps()} />
+                  {isDragActive ? (
+                    <div className="space-y-2">
+                      <Upload className="h-8 w-8 text-primary mx-auto" />
+                      <p className="text-lg">Drop your CSV file here</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      <Upload className="h-8 w-8 text-muted-foreground mx-auto" />
+                      <p className="text-lg">Drag & drop your CSV file here</p>
+                      <p className="text-sm text-muted-foreground">or click to browse (max 10MB)</p>
+                    </div>
+                  )}
+                </div>
+              )}
             </CardContent>
           </Card>
-        )}
 
-        {/* Completed Reports */}
-        <Card className="mb-8">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <CheckCircle className="h-5 w-5 text-green-500" />
-              Completed Reports ({completedReports.length})
-            </CardTitle>
-            <CardDescription>
-              Your finished churn analysis reports ready for download
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            {completedReports.length === 0 ? (
-              <div className="text-center py-8">
-                <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                <p className="text-lg font-medium mb-2">No completed reports yet</p>
-                <p className="text-muted-foreground">
-                  Upload a CSV file above to generate your first churn analysis report
-                </p>
-              </div>
-            ) : (
-              <div className="space-y-4">
-                {completedReports.map((report) => (
-                  <div key={report.id} className="flex items-center justify-between p-4 border rounded-lg">
-                    <div className="flex items-center gap-3">
-                      <CheckCircle className="h-5 w-5 text-green-500" />
-                      <div>
-                        <p className="font-medium">{report.filename}</p>
-                        <p className="text-sm text-muted-foreground">
-                          Completed {formatDate(report.created_at)}
-                        </p>
+          {/* Reports in Progress */}
+          {inProgressReports.length > 0 && (
+            <Card className="mb-8">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Loader2 className="h-5 w-5 animate-spin" />
+                  Reports in Progress ({inProgressReports.length})
+                </CardTitle>
+                <CardDescription>
+                  Your uploads are being processed. This typically takes 2-5 minutes.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {inProgressReports.map((report) => (
+                    <div key={report.id} className="flex items-center justify-between p-4 border rounded-lg">
+                      <div className="flex items-center gap-3">
+                        {getStatusIcon(report.status)}
+                        <div>
+                          <p className="font-medium">{report.filename}</p>
+                          <p className="text-sm text-muted-foreground">
+                            Started {formatDate(report.created_at)}
+                          </p>
+                        </div>
                       </div>
+                      <Badge variant="secondary">
+                        {getStatusText(report.status)}
+                      </Badge>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <Button 
-                        variant="outline" 
-                        size="sm"
-                        onClick={() => window.open(`/report/${report.id}`, '_blank')}
-                      >
-                        <Eye className="mr-2 h-4 w-4" />
-                        View Details
-                      </Button>
-                      <Button 
-                        size="sm"
-                        onClick={() => handleDownload(report.id)}
-                      >
-                        <Download className="mr-2 h-4 w-4" />
-                        Download
-                      </Button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
 
-        {/* Failed Reports */}
-        {failedReports.length > 0 && (
-          <Card>
+          {/* Completed Reports */}
+          <Card className="mb-8">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <XCircle className="h-5 w-5 text-red-500" />
-                Failed Reports ({failedReports.length})
+                <CheckCircle className="h-5 w-5 text-green-500" />
+                Completed Reports ({completedReports.length})
               </CardTitle>
               <CardDescription>
-                These reports encountered errors during processing
+                Your finished churn analysis reports ready for download
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="space-y-4">
-                {failedReports.map((report) => (
-                  <div key={report.id} className="flex items-center justify-between p-4 border rounded-lg">
-                    <div className="flex items-center gap-3">
-                      <XCircle className="h-5 w-5 text-red-500" />
-                      <div>
-                        <p className="font-medium">{report.filename}</p>
-                        <p className="text-sm text-muted-foreground">
-                          Failed {formatDate(report.created_at)}
-                        </p>
+              {completedReports.length === 0 ? (
+                <div className="text-center py-8">
+                  <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                  <p className="text-lg font-medium mb-2">No completed reports yet</p>
+                  <p className="text-muted-foreground">
+                    Upload a CSV file above to generate your first churn analysis report
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {completedReports.map((report) => (
+                    <div key={report.id} className="flex items-center justify-between p-4 border rounded-lg">
+                      <div className="flex items-center gap-3">
+                        <CheckCircle className="h-5 w-5 text-green-500" />
+                        <div>
+                          <p className="font-medium">{report.filename}</p>
+                          <p className="text-sm text-muted-foreground">
+                            Completed {formatDate(report.created_at)}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => window.open(`/report/${report.id}`, '_blank')}
+                        >
+                          <Eye className="mr-2 h-4 w-4" />
+                          View Details
+                        </Button>
+                        <Button 
+                          size="sm"
+                          onClick={() => handleDownload(report.id)}
+                        >
+                          <Download className="mr-2 h-4 w-4" />
+                          Download
+                        </Button>
                       </div>
                     </div>
-                    <Badge variant="destructive">
-                      Failed
-                    </Badge>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              )}
             </CardContent>
           </Card>
-        )}
+
+          {/* Failed Reports */}
+          {failedReports.length > 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <XCircle className="h-5 w-5 text-red-500" />
+                  Failed Reports ({failedReports.length})
+                </CardTitle>
+                <CardDescription>
+                  These reports encountered errors during processing
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {failedReports.map((report) => (
+                    <div key={report.id} className="flex items-center justify-between p-4 border rounded-lg">
+                      <div className="flex items-center gap-3">
+                        <XCircle className="h-5 w-5 text-red-500" />
+                        <div>
+                          <p className="font-medium">{report.filename}</p>
+                          <p className="text-sm text-muted-foreground">
+                            Failed {formatDate(report.created_at)}
+                          </p>
+                        </div>
+                      </div>
+                      <Badge variant="destructive">
+                        Failed
+                      </Badge>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
+        </div>
       </div>
     </div>
   );

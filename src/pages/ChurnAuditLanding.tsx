@@ -2,9 +2,11 @@ import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Upload, BarChart3, TrendingUp, Users, Shield, Zap } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '@/contexts/AuthContext';
 
 export const ChurnAuditLanding = () => {
   const navigate = useNavigate();
+  const { isAuthenticated } = useAuth();
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5">
@@ -23,7 +25,7 @@ export const ChurnAuditLanding = () => {
           <Button 
             size="lg" 
             className="text-lg px-8 py-4 h-auto"
-            onClick={() => navigate('/upload')}
+            onClick={() => navigate(isAuthenticated ? '/dashboard' : '/upload')}
           >
             <Upload className="mr-2 h-5 w-5" />
             Start Your Free Audit
@@ -111,7 +113,7 @@ export const ChurnAuditLanding = () => {
                 <li className="flex items-center"><Shield className="h-4 w-4 text-green-500 mr-2" />Top churn reasons</li>
                 <li className="flex items-center"><Shield className="h-4 w-4 text-green-500 mr-2" />Top 10 high-risk customers</li>
               </ul>
-              <Button variant="outline" className="w-full" onClick={() => navigate('/upload')}>
+              <Button variant="outline" className="w-full" onClick={() => navigate(isAuthenticated ? '/dashboard' : '/upload')}>
                 Get Free Report
               </Button>
             </div>
@@ -129,7 +131,7 @@ export const ChurnAuditLanding = () => {
                 <li className="flex items-center"><Zap className="h-4 w-4 text-green-500 mr-2" />90-day action plan</li>
                 <li className="flex items-center"><Zap className="h-4 w-4 text-green-500 mr-2" />Retention playbook</li>
               </ul>
-              <Button className="w-full" onClick={() => navigate('/upload')}>
+              <Button className="w-full" onClick={() => navigate(isAuthenticated ? '/dashboard' : '/upload')}>
                 Start Free, Upgrade Later
               </Button>
             </div>
@@ -147,7 +149,7 @@ export const ChurnAuditLanding = () => {
           <Button 
             size="lg" 
             className="text-lg px-8 py-4 h-auto"
-            onClick={() => navigate('/upload')}
+            onClick={() => navigate(isAuthenticated ? '/dashboard' : '/upload')}
           >
             <Upload className="mr-2 h-5 w-5" />
             Get Your Free Audit Now

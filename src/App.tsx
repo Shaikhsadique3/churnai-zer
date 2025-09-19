@@ -13,6 +13,7 @@ import { ChurnAuditLanding } from '@/pages/ChurnAuditLanding';
 import { ChurnReport } from '@/pages/ChurnReport';
 import { ChurnDashboard } from '@/components/churn/ChurnDashboard';
 import { EnhancedChurnUpload } from '@/components/churn/EnhancedChurnUpload';
+import { ReportsDashboard } from '@/pages/ReportsDashboard';
 import ProfilePage from '@/pages/ProfilePage';
 import PrivateRoute from '@/components/auth/PrivateRoute';
 import PublicRoute from '@/components/auth/PublicRoute';
@@ -34,6 +35,13 @@ function App() {
             <Route path="/upload" element={<EnhancedChurnUpload />} />
             <Route path="/report/:uploadId" element={<ChurnReport />} />
             <Route path="/dashboard/:uploadId" element={<ChurnDashboard />} />
+            
+            {/* Reports Dashboard - Protected */}
+            <Route path="/dashboard" element={
+              <PrivateRoute>
+                <ReportsDashboard />
+              </PrivateRoute>
+            } />
             
             {/* Auth routes - only accessible when not logged in */}
             <Route path="/auth" element={

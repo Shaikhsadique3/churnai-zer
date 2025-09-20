@@ -1,0 +1,6 @@
+customer_name,customer_email,signup_date,last_active_date,plan,billing_status,monthly_revenue,support_tickets_opened,email_opens_last30days,number_of_logins_last30days
+John Doe,john.doe@example.com,2023-01-01,2024-01-15,Pro,Active,100.00,2,10,25
+Jane Smith,jane.smith@example.com,2023-02-10,2024-01-20,Free,Active,0.00,5,2,3
+Peter Jones,peter.jones@example.com,2023-03-01,2024-01-22,Enterprise,Active,500.00,1,15,30
+Alice Brown,alice.brown@example.com,2023-04-05,2024-01-10,Pro,Inactive,75.00,3,8,15
+Bob White,bob.white@example.com,2023-05-12,2024-01-18,Free,Active,0.00,0,5,10

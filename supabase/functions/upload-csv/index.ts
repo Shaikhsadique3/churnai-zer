@@ -7,6 +7,7 @@ const corsHeaders = {
 };
 
 serve(async (req) => {
+  console.log("Function upload-csv/index.ts - START"); // Debug log
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
@@ -22,8 +23,11 @@ serve(async (req) => {
     const email = formData.get("email") as string;
     const file = formData.get("file") as File;
 
+    console.log(`Input Summary: Email: ${email ? 'Provided' : 'Missing'}, File: ${file ? file.name : 'Missing'}`); // Debug log
+
     if (!email || !file) {
       console.error("Error: Email or file missing."); // Log missing email/file
+      console.log("Function upload-csv/index.ts - END (Error: Missing email or file)"); // Debug log
       return new Response(
         JSON.stringify({ error: "Email and file are required" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -33,6 +37,7 @@ serve(async (req) => {
     // Validate file type
     if (!file.name.endsWith('.csv')) {
       console.error(`Error: Invalid file type. Received: ${file.name}`); // Log invalid file type
+      console.log("Function upload-csv/index.ts - END (Error: Invalid file type)"); // Debug log
       return new Response(
         JSON.stringify({ error: "Only CSV files are allowed" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -42,6 +47,7 @@ serve(async (req) => {
     // Validate file size (20MB max)
     if (file.size > 20 * 1024 * 1024) {
       console.error(`Error: File size too large. Received: ${file.size} bytes`); // Log large file size
+      console.log("Function upload-csv/index.ts - END (Error: File size too large)"); // Debug log
       return new Response(
         JSON.stringify({ error: "File size must be less than 20MB" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -58,6 +64,7 @@ serve(async (req) => {
 
     if (uploadError) {
       console.error("Upload error:", uploadError); // Log upload error with stack trace
+      console.log("Function upload-csv/index.ts - END (Error: Failed to upload file)"); // Debug log
       return new Response(
         JSON.stringify({ error: "Failed to upload file" }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -87,6 +94,7 @@ serve(async (req) => {
 
     if (dbError) {
       console.error("Database error:", dbError); // Log database error with stack trace
+      console.log("Function upload-csv/index.ts - END (Error: Failed to save upload record)"); // Debug log
       return new Response(
         JSON.stringify({ error: "Failed to save upload record" }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -102,6 +110,8 @@ serve(async (req) => {
 
     console.log(`Processing triggered for upload ID: ${upload.id}.`); // Log processing trigger
 
+    console.log(`Output Summary: Upload ID: ${upload.id}, Status: received`); // Debug log
+    console.log("Function upload-csv/index.ts - END (Success)"); // Debug log
     return new Response(
       JSON.stringify({ upload_id: upload.id, status: "received" }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -109,6 +119,7 @@ serve(async (req) => {
 
   } catch (error) {
     console.error("Internal server error:", error); // Log internal server error with stack trace
+    console.log("Function upload-csv/index.ts - END (Internal Server Error)"); // Debug log
     return new Response(
       JSON.stringify({ error: "Internal server error" }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }

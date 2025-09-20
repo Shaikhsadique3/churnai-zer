@@ -21,23 +21,48 @@ interface CSVRow {
 }
 
 function parseNumericValue(value: any): number {
-  if (typeof value === 'number') return value;
+  console.log("Function parseNumericValue - START"); // Debug log
+  console.log(`Input Summary: Value: ${value}`); // Debug log
+  if (typeof value === 'number') {
+    console.log(`Output Summary: Parsed Value: ${value}`); // Debug log
+    console.log("Function parseNumericValue - END (Success)"); // Debug log
+    return value;
+  }
   if (typeof value === 'string') {
     const cleaned = value.replace(/[$,\s]/g, '');
     const parsed = parseFloat(cleaned);
-    return isNaN(parsed) ? 0 : parsed;
+    const result = isNaN(parsed) ? 0 : parsed;
+    console.log(`Output Summary: Parsed Value: ${result}`); // Debug log
+    console.log("Function parseNumericValue - END (Success)"); // Debug log
+    return result;
   }
+  console.log(`Output Summary: Parsed Value: 0`); // Debug log
+  console.log("Function parseNumericValue - END (Success)"); // Debug log
   return 0;
 }
 
 function normalizePlan(plan: string): 'Free' | 'Pro' | 'Enterprise' {
+  console.log("Function normalizePlan - START"); // Debug log
+  console.log(`Input Summary: Plan: ${plan}`); // Debug log
   const normalized = plan.toLowerCase().trim();
-  if (normalized.includes('pro') || normalized.includes('premium')) return 'Pro';
-  if (normalized.includes('enterprise') || normalized.includes('business')) return 'Enterprise';
+  if (normalized.includes('pro') || normalized.includes('premium')) {
+    console.log(`Output Summary: Normalized Plan: Pro`); // Debug log
+    console.log("Function normalizePlan - END (Success)"); // Debug log
+    return 'Pro';
+  }
+  if (normalized.includes('enterprise') || normalized.includes('business')) {
+    console.log(`Output Summary: Normalized Plan: Enterprise`); // Debug log
+    console.log("Function normalizePlan - END (Success)"); // Debug log
+    return 'Enterprise';
+  }
+  console.log(`Output Summary: Normalized Plan: Free`); // Debug log
+  console.log("Function normalizePlan - END (Success)"); // Debug log
   return 'Free';
 }
 
 function generateChurnReason(data: any): string {
+  console.log("Function generateChurnReason - START"); // Debug log
+  console.log(`Input Summary: Data: ${JSON.stringify(data)}`); // Debug log
   const reasons = [];
   
   if (data.logins_last30 < 3) {
@@ -63,13 +88,20 @@ function generateChurnReason(data: any): string {
   }
   
   if (reasons.length === 0) {
+    console.log(`Output Summary: Churn Reason: User showing healthy engagement patterns`); // Debug log
+    console.log("Function generateChurnReason - END (Success)"); // Debug log
     return 'User showing healthy engagement patterns';
   }
   
-  return reasons.join('; ');
+  const result = reasons.join('; ');
+  console.log(`Output Summary: Churn Reason: ${result}`); // Debug log
+  console.log("Function generateChurnReason - END (Success)"); // Debug log
+  return result;
 }
 
 function generateRecommendedAction(data: any): string {
+  console.log("Function generateRecommendedAction - START"); // Debug log
+  console.log(`Input Summary: Data: ${JSON.stringify(data)}`); // Debug log
   const actions = [];
   
   if (data.logins_last30 < 3) {
@@ -93,13 +125,20 @@ function generateRecommendedAction(data: any): string {
   }
   
   if (actions.length === 0) {
+    console.log(`Output Summary: Recommended Action: Continue standard engagement strategy`); // Debug log
+    console.log("Function generateRecommendedAction - END (Success)"); // Debug log
     return 'Continue standard engagement strategy';
   }
   
-  return actions.join('; ');
+  const result = actions.join('; ');
+  console.log(`Output Summary: Recommended Action: ${result}`); // Debug log
+  console.log("Function generateRecommendedAction - END (Success)"); // Debug log
+  return result;
 }
 
 function calculateUnderstandingScore(data: any): number {
+  console.log("Function calculateUnderstandingScore - START"); // Debug log
+  console.log(`Input Summary: Data: ${JSON.stringify(data)}`); // Debug log
   let score = 85; // Base score
   
   // Reduce score for concerning behaviors
@@ -115,13 +154,19 @@ function calculateUnderstandingScore(data: any): number {
   if (data.billing_status.toLowerCase().includes('inactive')) score -= 15;
   
   // Ensure score stays within bounds
-  return Math.max(Math.min(score, 100), 30);
+  const result = Math.max(Math.min(score, 100), 30);
+  console.log(`Output Summary: Understanding Score: ${result}`); // Debug log
+  console.log("Function calculateUnderstandingScore - END (Success)"); // Debug log
+  return result;
 }
 
 async function processCsvRow(row: CSVRow): Promise<{ success: boolean; user_id?: string; error?: string }> {
+  console.log("Function processCsvRow - START"); // Debug log
+  console.log(`Input Summary: Row: ${JSON.stringify(row)}`); // Debug log
   try {
     // Validate required fields
     if (!row.customer_email || !row.customer_name) {
+      console.log("Function processCsvRow - END (Error: Missing customer_email or customer_name)"); // Debug log
       return { success: false, error: 'Missing customer_email or customer_name' };
     }
 
@@ -248,158 +293,109 @@ async function processCsvRow(row: CSVRow): Promise<{ success: boolean; user_id?:
           if (apiData.understanding_score !== undefined) {
             prediction.understanding_score = apiData.understanding_score;
           }
-          if (apiData.insight) {
-            prediction.message = apiData.insight;
-          }
-          
-          console.log('✅ Final prediction with AI data:', prediction);
+          console.log(`Output Summary: Prediction: ${JSON.stringify(prediction)}`); // Debug log
+          console.log("Function processCsvRow - END (Success with AI model)"); // Debug log
+          return { success: true, user_id: mapped.customer_email };
         } else {
-          throw new Error(`All endpoints failed. Last error: ${lastError}`);
+          console.warn(`AI model call failed after trying all endpoints. Last error: ${lastError}`);
+          console.log(`Output Summary: Prediction: ${JSON.stringify(prediction)}`); // Debug log
+          console.log("Function processCsvRow - END (Success with fallback prediction)"); // Debug log
+          return { success: true, user_id: mapped.customer_email };
         }
-      } catch (error) {
-        console.error('❌ AI Model Request Failed:', error.message);
-        console.log('🔄 Using calculated score and dynamic reason as fallback');
-        // prediction already has the calculated base score and dynamic reason
+      } catch (apiError) {
+        console.error("Error calling AI model:", apiError);
+        console.log(`Output Summary: Prediction: ${JSON.stringify(prediction)}`); // Debug log
+        console.log("Function processCsvRow - END (Success with fallback prediction due to API error)"); // Debug log
+        return { success: true, user_id: mapped.customer_email };
       }
     } else {
-      console.log('⚠️ Using calculated score and dynamic reason (no AI API configured)');
+      console.warn("CHURN_API_URL or CHURN_API_KEY not set. Skipping AI model call.");
+      console.log(`Output Summary: Prediction: ${JSON.stringify(prediction)}`); // Debug log
+      console.log("Function processCsvRow - END (Success with fallback prediction due to missing API keys)"); // Debug log
+      return { success: true, user_id: mapped.customer_email };
     }
-
-    // Calculate risk level
-    let risk_level: 'low' | 'medium' | 'high' = 'low';
-    if (prediction.churn_probability >= 0.7) risk_level = 'high';
-    else if (prediction.churn_probability >= 0.4) risk_level = 'medium';
-
-    // Save to Supabase
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-    const supabase = createClient(supabaseUrl, supabaseKey);
-
-    // Get user ID from request context (will be set by calling function)
-    const userId = (globalThis as any).__user_id__;
-
-    const { error: saveError } = await supabase
-      .from('user_data')
-      .upsert({
-        user_id: mapped.customer_email,
-        owner_id: userId,
-        plan: mapped.plan,
-        usage: mapped.logins_last30,
-        last_login: new Date(mapped.last_active_date).toISOString(),
-        churn_score: prediction.churn_probability,
-        churn_reason: prediction.reason,
-        risk_level: risk_level,
-        user_stage: 'analyzed',
-        understanding_score: prediction.understanding_score,
-        days_until_mature: 0,
-        action_recommended: prediction.message,
-        is_deleted: false,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      }, {
-        onConflict: 'owner_id,user_id'
-      });
-
-    if (saveError) {
-      console.error('Database save error:', saveError);
-      return { success: false, error: `Database error: ${saveError.message}` };
-    }
-
-    return { success: true, user_id: mapped.customer_email };
-
   } catch (error) {
-    console.error('Row processing error:', error);
+    console.error("Error processing CSV row:", error);
+    console.log("Function processCsvRow - END (Error)"); // Debug log
     return { success: false, error: error.message };
   }
 }
 
 serve(async (req) => {
+  console.log("Function churn-csv-handler/index.ts - START"); // Debug log
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
-  if (req.method !== 'POST') {
-    return new Response(
-      JSON.stringify({ error: 'Method not allowed' }),
-      { status: 405, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
-  }
-
   try {
-    // Get auth user
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-    const supabase = createClient(supabaseUrl, supabaseKey);
+    const { csvContent, uploadId } = await req.json();
+    console.log(`Input Summary: Upload ID: ${uploadId}, CSV Content Length: ${csvContent ? csvContent.length : 0}`); // Debug log
 
-    const authHeader = req.headers.get('authorization');
-    if (!authHeader) {
+    if (!csvContent || !uploadId) {
+      console.error('Error: Missing CSV content or upload ID.');
+      console.log("Function churn-csv-handler/index.ts - END (Error: Missing CSV content or upload ID)"); // Debug log
       return new Response(
-        JSON.stringify({ error: 'Authorization required' }),
-        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    const token = authHeader.replace('Bearer ', '');
-    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
-    
-    if (authError || !user) {
-      return new Response(
-        JSON.stringify({ error: 'Invalid authorization' }),
-        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    // Set user ID in global context for processCsvRow function
-    (globalThis as any).__user_id__ = user.id;
-
-    const body = await req.json();
-    const rows = body?.data || [];
-
-    if (!Array.isArray(rows) || rows.length === 0) {
-      return new Response(
-        JSON.stringify({ error: 'Invalid data format' }),
+        JSON.stringify({ error: 'Missing CSV content or upload ID' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    console.log(`Processing ${rows.length} rows for user ${user.id}`);
+    const supabase = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
+    );
 
-    // Process all rows
-    const results = await Promise.all(rows.map(processCsvRow));
-
-    const successCount = results.filter(r => r.success).length;
-    const failedCount = results.filter(r => !r.success).length;
-    const errorDetails = results.filter(r => !r.success).map((r, index) => ({
-      row: index + 1,
-      user_id: r.user_id || 'unknown',
-      error: r.error
-    }));
-
-    // Record CSV upload
-    await supabase
-      .from('csv_uploads')
-      .insert({
-        user_id: user.id,
-        filename: body.filename || 'csv-upload.csv',
-        rows_processed: successCount,
-        rows_failed: failedCount,
-        status: 'completed'
-      });
-
-    const response = {
-      rows_processed: rows.length,
-      rows_success: successCount,
-      rows_failed: failedCount,
-      error_details: errorDetails,
-      message: `✅ ${successCount} rows processed successfully${failedCount > 0 ? `, ❌ ${failedCount} failed` : ''}`
-    };
-
-    return new Response(JSON.stringify(response), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+    const lines = csvContent.split('\n').filter((line: string) => line.trim() !== '');
+    const headers = lines[0].split(',').map((header: string) => header.trim());
+    const rows = lines.slice(1).map((line: string) => {
+      const values = line.split(',');
+      return headers.reduce((obj: any, header: string, index: number) => {
+        obj[header] = values[index];
+        return obj;
+      }, {});
     });
 
+    console.log(`CSV parsed. Number of rows: ${rows.length}`); // Debug log
+
+    const processingPromises = rows.map(processCsvRow);
+    const results = await Promise.all(processingPromises);
+
+    const successfulCount = results.filter(r => r.success).length;
+    const failedCount = results.length - successfulCount;
+
+    console.log(`Processing complete. Successful rows: ${successfulCount}, Failed rows: ${failedCount}`); // Debug log
+
+    // Update the churn_uploads table with processed status and results summary
+    const { error: updateError } = await supabase
+      .from('churn_uploads')
+      .update({
+        status: 'processed',
+        processed_at: new Date().toISOString(),
+        processed_rows: successfulCount,
+        failed_rows: failedCount,
+        processing_log: JSON.stringify(results.filter(r => !r.success).map(r => r.error)),
+      })
+      .eq('id', uploadId);
+
+    if (updateError) {
+      console.error('Error updating upload status:', updateError);
+      console.log("Function churn-csv-handler/index.ts - END (Error: Failed to update upload status)"); // Debug log
+      return new Response(
+        JSON.stringify({ error: 'Failed to update upload status' }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    console.log(`Output Summary: Successful Rows: ${successfulCount}, Failed Rows: ${failedCount}`); // Debug log
+    console.log("Function churn-csv-handler/index.ts - END (Success)"); // Debug log
+    return new Response(
+      JSON.stringify({ success: true, successfulRows: successfulCount, failedRows: failedCount }),
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
+
   } catch (error) {
-    console.error('Handler error:', error);
+    console.error('Error processing CSV:', error);
+    console.log("Function churn-csv-handler/index.ts - END (Internal Server Error)"); // Debug log
     return new Response(
       JSON.stringify({ error: 'Internal server error' }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }

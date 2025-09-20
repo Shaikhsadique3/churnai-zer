@@ -25,8 +25,8 @@ serve(async (req) => {
 
     // Initialize Supabase client
     const supabaseUrl = Deno.env.get('SUPABASE_URL');
-    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
-    const supabase = createClient(supabaseUrl!, supabaseServiceKey!);
+    const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+    const supabase = createClient(supabaseUrl!, serviceRoleKey!);
 
     // Get the authorization header to verify user
     const authHeader = req.headers.get('Authorization');
@@ -51,8 +51,8 @@ serve(async (req) => {
 
     if (isBatch) {
       console.log(`Starting batch prediction for ${customerData.length} customers.`); // Log batch prediction start
-      const results = [];
-      const errors = [];
+      const results: any[] = [];
+      const errors: any[] = [];
 
       for (let i = 0; i < customerData.length; i++) {
         const customer = customerData[i];

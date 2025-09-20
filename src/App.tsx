@@ -9,7 +9,6 @@ import ResetPassword from '@/pages/ResetPassword';
 import Terms from '@/pages/Terms';
 import Privacy from '@/pages/Privacy';
 import NotFound from '@/pages/NotFound';
-import { ChurnAuditLanding } from '@/pages/ChurnAuditLanding';
 import { ChurnReport } from '@/pages/ChurnReport';
 import { ChurnDashboard } from '@/components/churn/ChurnDashboard';
 import { EnhancedChurnUpload } from '@/components/churn/EnhancedChurnUpload';

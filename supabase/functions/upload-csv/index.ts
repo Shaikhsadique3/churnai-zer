@@ -12,6 +12,7 @@ serve(async (req) => {
   }
 
   try {
+    console.log("CSV received. Starting upload process."); // Log CSV reception
     const supabase = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
@@ -22,6 +23,7 @@ serve(async (req) => {
     const file = formData.get("file") as File;
 
     if (!email || !file) {
+      console.error("Error: Email or file missing."); // Log missing email/file
       return new Response(
         JSON.stringify({ error: "Email and file are required" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -30,6 +32,7 @@ serve(async (req) => {
 
     // Validate file type
     if (!file.name.endsWith('.csv')) {
+      console.error(`Error: Invalid file type. Received: ${file.name}`); // Log invalid file type
       return new Response(
         JSON.stringify({ error: "Only CSV files are allowed" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -38,11 +41,14 @@ serve(async (req) => {
 
     // Validate file size (20MB max)
     if (file.size > 20 * 1024 * 1024) {
+      console.error(`Error: File size too large. Received: ${file.size} bytes`); // Log large file size
       return new Response(
         JSON.stringify({ error: "File size must be less than 20MB" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
+
+    console.log(`File validation successful for ${file.name}. Proceeding to upload.`); // Log file validation success
 
     // Upload file to storage
     const fileName = `${Date.now()}-${file.name}`;
@@ -51,17 +57,21 @@ serve(async (req) => {
       .upload(fileName, file);
 
     if (uploadError) {
-      console.error("Upload error:", uploadError);
+      console.error("Upload error:", uploadError); // Log upload error with stack trace
       return new Response(
         JSON.stringify({ error: "Failed to upload file" }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
+    console.log(`File ${fileName} uploaded to storage. Public URL generation.`); // Log upload success
+
     // Get public URL
     const { data: { publicUrl } } = supabase.storage
       .from("csv-uploads")
       .getPublicUrl(fileName);
+
+    console.log(`Public URL generated: ${publicUrl}. Inserting record into database.`); // Log public URL generation
 
     // Insert upload record
     const { data: upload, error: dbError } = await supabase
@@ -76,17 +86,21 @@ serve(async (req) => {
       .single();
 
     if (dbError) {
-      console.error("Database error:", dbError);
+      console.error("Database error:", dbError); // Log database error with stack trace
       return new Response(
         JSON.stringify({ error: "Failed to save upload record" }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
+    console.log(`Upload record for ${upload.id} inserted into database. Triggering processing.`); // Log database insertion success
+
     // Trigger processing
     await supabase.functions.invoke("process-churn-data", {
       body: { upload_id: upload.id }
     });
+
+    console.log(`Processing triggered for upload ID: ${upload.id}.`); // Log processing trigger
 
     return new Response(
       JSON.stringify({ upload_id: upload.id, status: "received" }),
@@ -94,7 +108,7 @@ serve(async (req) => {
     );
 
   } catch (error) {
-    console.error("Error:", error);
+    console.error("Internal server error:", error); // Log internal server error with stack trace
     return new Response(
       JSON.stringify({ error: "Internal server error" }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }

@@ -1,0 +1,6 @@
+customer_id,age,gender,tenure,monthly_charges,total_charges,churn
+1,30,Male,12,50.00,600.00,No
+2,45,Female,24,75.00,1800.00,Yes
+3,22,Male,5,30.00,150.00,No
+4,50,Female,60,100.00,6000.00,No
+5,35,Male,18,60.00,1080.00,Yes

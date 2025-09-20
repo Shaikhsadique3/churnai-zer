@@ -15,11 +15,15 @@ serve(async (req) => {
   }
 
   try {
+    console.log("Send Churn Report Email function started."); // Log function start
     const { email, upload_id, report_url, summary } = await req.json();
 
     if (!email || !upload_id || !report_url) {
+      console.error("Error: Missing required fields for sending email.", { email, upload_id, report_url }); // Log missing fields
       throw new Error('Missing required fields');
     }
+
+    console.log(`Preparing email for ${email} with report URL: ${report_url}`); // Log email preparation
 
     const emailContent = `
       <h1>Your Churn Audit Report is Ready!</h1>
@@ -61,6 +65,7 @@ serve(async (req) => {
       </p>
     `;
 
+    console.log("Attempting to send email via Resend."); // Log before sending email
     const { data, error } = await resend.emails.send({
       from: 'Churnaizer <reports@churnaizer.com>',
       to: [email],
@@ -69,8 +74,11 @@ serve(async (req) => {
     });
 
     if (error) {
+      console.error("Email sending failed:", error); // Log email sending failure with stack trace
       throw new Error(`Email sending failed: ${error.message}`);
     }
+
+    console.log(`Email sent successfully to ${email}. Email ID: ${data.id}`); // Log email sending success
 
     return new Response(JSON.stringify({ 
       success: true, 
@@ -81,7 +89,7 @@ serve(async (req) => {
     });
 
   } catch (error) {
-    console.error('Email sending error:', error);
+    console.error('Send Churn Report Email function failed with error:', error); // Log internal server error with stack trace
     return new Response(
       JSON.stringify({ error: error.message }),
       {

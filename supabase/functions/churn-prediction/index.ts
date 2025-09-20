@@ -14,9 +14,12 @@ serve(async (req) => {
   }
 
   try {
+    console.log("Churn Prediction function started."); // Log function start
+
     // Get the API key from Supabase secrets
     const churnApiKey = Deno.env.get('CHURN_API_KEY');
     if (!churnApiKey) {
+      console.error("Error: CHURN_API_KEY not configured in Supabase secrets."); // Log missing API key
       throw new Error('CHURN_API_KEY not configured in Supabase secrets');
     }
 
@@ -28,6 +31,7 @@ serve(async (req) => {
     // Get the authorization header to verify user
     const authHeader = req.headers.get('Authorization');
     if (!authHeader) {
+      console.error("Error: No authorization header provided."); // Log missing auth header
       throw new Error('No authorization header');
     }
 
@@ -37,6 +41,7 @@ serve(async (req) => {
     );
 
     if (authError || !user) {
+      console.error("Error: Invalid or expired token.", authError); // Log auth error
       throw new Error('Invalid or expired token');
     }
 
@@ -45,7 +50,7 @@ serve(async (req) => {
     console.log(`🔁 Processing ${isBatch ? 'batch' : 'single'} churn prediction for user: ${user.id}`);
 
     if (isBatch) {
-      // Handle batch predictions
+      console.log(`Starting batch prediction for ${customerData.length} customers.`); // Log batch prediction start
       const results = [];
       const errors = [];
 
@@ -69,6 +74,7 @@ serve(async (req) => {
             number_of_logins_last30days: customer.number_of_logins_last30days || 10
           };
 
+          console.log(`Sending prediction request for customer: ${transformedData.user_id}`); // Log API request
           const response = await fetch('https://ai-model-rumc.onrender.com/api/v1/predict', {
             method: 'POST',
             headers: {
@@ -80,6 +86,7 @@ serve(async (req) => {
 
           if (!response.ok) {
             const errorText = await response.text();
+            console.error(`API Error for customer ${transformedData.user_id}: ${response.status} - ${errorText}`); // Log API error
             throw new Error(`API Error ${response.status}: ${errorText}`);
           }
 
@@ -102,14 +109,15 @@ serve(async (req) => {
           console.log(`✅ Prediction completed for ${customer.customer_name || customer.customer_email}: ${Math.round(normalizedResult.churn_score * 100)}% risk`);
           
         } catch (error) {
-          console.error(`❌ Error processing customer ${i + 1}:`, error.message);
+          console.error(`❌ Error processing customer ${i + 1}:`, error.message, error); // Log error with stack trace
           errors.push({
             customer: customer.customer_name || customer.customer_email,
             error: error.message,
             index: i
-          });
+          } as {customer: string, error: string, index: number});
         }
       }
+      console.log(`Batch prediction finished. Successful: ${results.length}, Failed: ${errors.length}`); // Log batch prediction end
 
       return new Response(JSON.stringify({
         success: true,
@@ -125,7 +133,7 @@ serve(async (req) => {
 
     } else {
       // Handle single prediction
-      console.log(`📊 Processing single prediction for: ${customerData.customer_name || customerData.customer_email}`);
+      console.log(`📊 Processing single prediction for: ${customerData.customer_name || customerData.customer_email}`); // Log single prediction start
 
       // Transform data to match API requirements
       const transformedData = {
@@ -142,6 +150,7 @@ serve(async (req) => {
         number_of_logins_last30days: customerData.number_of_logins_last30days || 10
       };
 
+      console.log(`Sending prediction request for customer: ${transformedData.user_id}`); // Log API request
       const response = await fetch('https://ai-model-rumc.onrender.com/api/v1/predict', {
         method: 'POST',
         headers: {
@@ -153,6 +162,7 @@ serve(async (req) => {
 
       if (!response.ok) {
         const errorText = await response.text();
+        console.error(`API Error for customer ${transformedData.user_id}: ${response.status} - ${errorText}`); // Log API error
         throw new Error(`API Error ${response.status}: ${errorText}`);
       }
 
@@ -170,7 +180,7 @@ serve(async (req) => {
         understanding_score: result.understanding_score || 0
       };
 
-      console.log(`✅ Prediction completed: ${Math.round(normalizedResult.churn_score * 100)}% churn risk`);
+      console.log(`✅ Prediction completed: ${Math.round(normalizedResult.churn_score * 100)}% churn risk`); // Log single prediction end
 
       return new Response(JSON.stringify({
         success: true,
@@ -182,9 +192,9 @@ serve(async (req) => {
     }
 
   } catch (error) {
-    console.error('❌ Churn prediction error:', error);
+    console.error('❌ Churn prediction function failed with error:', error); // Log internal server error with stack trace
     
-    return new Response(JSON.stringify({ 
+    return new Response(JSON.stringify({
       success: false,
       error: error.message 
     }), {

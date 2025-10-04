@@ -10,10 +10,11 @@ import Terms from '@/pages/Terms';
 import Privacy from '@/pages/Privacy';
 import NotFound from '@/pages/NotFound';
 import { ChurnReport } from '@/pages/ChurnReport';
-import { ChurnDashboard } from '@/components/churn/ChurnDashboard';
+import { ChurnDashboard as ChurnAnalysisDashboard } from '@/components/churn/ChurnDashboard';
 import { EnhancedChurnUpload } from '@/components/churn/EnhancedChurnUpload';
 import { ReportsDashboard } from '@/pages/ReportsDashboard';
 import ProfilePage from '@/pages/ProfilePage';
+import ChurnDashboard from '@/pages/ChurnDashboard';
 import PrivateRoute from '@/components/auth/PrivateRoute';
 import PublicRoute from '@/components/auth/PublicRoute';
 
@@ -33,10 +34,17 @@ function App() {
             {/* Churn Audit Service - Core Routes */}
             <Route path="/upload" element={<EnhancedChurnUpload />} />
             <Route path="/report/:uploadId" element={<ChurnReport />} />
-            <Route path="/dashboard/:uploadId" element={<ChurnDashboard />} />
+            <Route path="/analysis/:uploadId" element={<ChurnAnalysisDashboard />} />
+            
+            {/* New SaaS Dashboard - Protected */}
+            <Route path="/dashboard" element={
+              <PrivateRoute>
+                <ChurnDashboard />
+              </PrivateRoute>
+            } />
             
             {/* Reports Dashboard - Protected */}
-            <Route path="/dashboard" element={
+            <Route path="/reports" element={
               <PrivateRoute>
                 <ReportsDashboard />
               </PrivateRoute>

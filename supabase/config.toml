@@ -54,3 +54,9 @@ verify_jwt = false
 
 [functions.send-churn-report-email]
 verify_jwt = false
+
+[functions.rules-based-churn-prediction]
+verify_jwt = true
+
+[functions.generate-retention-emails]
+verify_jwt = true

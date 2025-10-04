@@ -17,19 +17,56 @@ serve(async (req) => {
     const email = formData.get('email') as string;
     const file = formData.get('file') as File;
 
-    console.log(`[enhanced-churn-upload] Received CSV upload request. Filename: ${file.name}, Size: ${file.size} bytes`);
+    // Security: Sanitized logging - don't log actual email addresses
+    const sanitizedEmail = email ? `${String(email).substring(0, 3)}***` : 'Missing';
+    console.log(`[enhanced-churn-upload] CSV upload request - Email provided: ${!!email}, File: ${!!file}`);
 
-    if (!email || !file) {
-      throw new Error('Email and file are required');
+    // Security: Validate email format
+    if (!email || typeof email !== 'string') {
+      return new Response(
+        JSON.stringify({ error: 'Valid email is required' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+    
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(String(email))) {
+      return new Response(
+        JSON.stringify({ error: 'Invalid email format' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
 
-    // Enforce max file size of 10MB to prevent timeouts and memory issues
+    // Security: Validate file
+    if (!file) {
+      return new Response(
+        JSON.stringify({ error: 'File is required' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Security: Validate file extension
+    const fileName = file.name.toLowerCase();
+    if (!fileName.endsWith('.csv')) {
+      return new Response(
+        JSON.stringify({ error: 'Only CSV files are allowed' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Security: Sanitize filename to prevent path traversal
+    const sanitizedFileName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+
+    // Security: Enforce max file size of 10MB to prevent timeouts and memory issues
     if (file.size > 10 * 1024 * 1024) {
+      console.error('[enhanced-churn-upload] File too large:', file.size);
       return new Response(
         JSON.stringify({ error: 'File too large. Maximum size is 10MB.' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
+
+    console.log(`[enhanced-churn-upload] File size: ${file.size} bytes (${Math.round(file.size / 1024)}KB)`);
 
     // Initialize Supabase client
     const supabaseUrl = Deno.env.get('SUPABASE_URL');
@@ -46,13 +83,15 @@ serve(async (req) => {
         const { data: { user } } = await supabase.auth.getUser(token);
         userId = user?.id || null;
       } catch (error) {
-        console.log('No valid auth token, proceeding as anonymous upload');
+        console.log('[enhanced-churn-upload] No valid auth token, proceeding as anonymous upload');
       }
     }
 
-    // Generate unique upload ID
+    // Generate unique upload ID with sanitized filename
     const uploadId = crypto.randomUUID();
-    const filename = `${uploadId}_${file.name}`;
+    const filename = `${uploadId}_${sanitizedFileName}`;
+
+    console.log(`[enhanced-churn-upload] Uploading file: ${uploadId}`);
 
     // Upload file to Supabase Storage
     const { data: uploadData, error: uploadError } = await supabase.storage
@@ -77,7 +116,7 @@ serve(async (req) => {
       .insert({
         id: uploadId,
         email: email,
-        filename: file.name,
+        filename: sanitizedFileName,
         csv_url: urlData.publicUrl,
         status: 'received',
         user_id: userId // Set user_id if authenticated
@@ -93,12 +132,14 @@ serve(async (req) => {
     try {
       supabase.functions
         .invoke('robust-churn-processor', { body: { upload_id: uploadId } })
-        .catch((processingError) => console.error('Failed to start processing:', processingError));
+        .catch((processingError) => console.error('[enhanced-churn-upload] Failed to start processing:', processingError));
       // Do not await to avoid request timeouts on large files
     } catch (processingError) {
-      console.error('Failed to start processing:', processingError);
+      console.error('[enhanced-churn-upload] Failed to start processing:', processingError);
       // Don't fail the upload if processing fails to start
     }
+
+    console.log(`[enhanced-churn-upload] Upload successful: ${uploadId}`);
 
     return new Response(JSON.stringify({
       upload_id: uploadId,
@@ -109,11 +150,12 @@ serve(async (req) => {
     });
 
   } catch (error) {
-    console.error('[enhanced-churn-upload] Enhanced upload error:', error.message, error.stack);
+    console.error('[enhanced-churn-upload] Upload error:', error);
+    // Security: Return generic error to client, log details server-side
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: 'Internal server error during upload' }),
       {
-        status: 400,
+        status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       }
     );

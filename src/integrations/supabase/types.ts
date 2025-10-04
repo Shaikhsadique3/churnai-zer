@@ -781,7 +781,7 @@ export type Database = {
           filename: string
           id: string
           status: string
-          user_id: string | null
+          user_id: string
         }
         Insert: {
           created_at?: string
@@ -790,7 +790,7 @@ export type Database = {
           filename: string
           id?: string
           status?: string
-          user_id?: string | null
+          user_id: string
         }
         Update: {
           created_at?: string
@@ -799,7 +799,7 @@ export type Database = {
           filename?: string
           id?: string
           status?: string
-          user_id?: string | null
+          user_id?: string
         }
         Relationships: []
       }
@@ -2416,6 +2416,27 @@ export type Database = {
         }
         Relationships: []
       }
+      user_roles: {
+        Row: {
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_subscriptions: {
         Row: {
           billing_cycle: string
@@ -2599,6 +2620,13 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: Json
       }
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
       hash_api_key: {
         Args: { api_key: string }
         Returns: string
@@ -2625,6 +2653,7 @@ export type Database = {
       }
     }
     Enums: {
+      app_role: "admin" | "user"
       content_platform:
         | "twitter"
         | "linkedin"
@@ -2771,6 +2800,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      app_role: ["admin", "user"],
       content_platform: [
         "twitter",
         "linkedin",

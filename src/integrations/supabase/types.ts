@@ -77,107 +77,6 @@ export type Database = {
         }
         Relationships: []
       }
-      blogs: {
-        Row: {
-          content: string
-          cover_image_url: string | null
-          created_at: string
-          excerpt: string | null
-          id: string
-          meta_description: string | null
-          published_at: string | null
-          reading_time: number | null
-          slug: string
-          status: string
-          tags: string[] | null
-          title: string
-          updated_at: string
-          user_id: string
-        }
-        Insert: {
-          content: string
-          cover_image_url?: string | null
-          created_at?: string
-          excerpt?: string | null
-          id?: string
-          meta_description?: string | null
-          published_at?: string | null
-          reading_time?: number | null
-          slug: string
-          status?: string
-          tags?: string[] | null
-          title: string
-          updated_at?: string
-          user_id: string
-        }
-        Update: {
-          content?: string
-          cover_image_url?: string | null
-          created_at?: string
-          excerpt?: string | null
-          id?: string
-          meta_description?: string | null
-          published_at?: string | null
-          reading_time?: number | null
-          slug?: string
-          status?: string
-          tags?: string[] | null
-          title?: string
-          updated_at?: string
-          user_id?: string
-        }
-        Relationships: []
-      }
-      brand_assets: {
-        Row: {
-          asset_type: string
-          brand_profile_id: string | null
-          created_at: string
-          description: string | null
-          file_name: string
-          file_path: string
-          file_size: number | null
-          id: string
-          is_primary: boolean | null
-          mime_type: string | null
-          user_id: string
-        }
-        Insert: {
-          asset_type: string
-          brand_profile_id?: string | null
-          created_at?: string
-          description?: string | null
-          file_name: string
-          file_path: string
-          file_size?: number | null
-          id?: string
-          is_primary?: boolean | null
-          mime_type?: string | null
-          user_id: string
-        }
-        Update: {
-          asset_type?: string
-          brand_profile_id?: string | null
-          created_at?: string
-          description?: string | null
-          file_name?: string
-          file_path?: string
-          file_size?: number | null
-          id?: string
-          is_primary?: boolean | null
-          mime_type?: string | null
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "brand_assets_brand_profile_id_fkey"
-            columns: ["brand_profile_id"]
-            isOneToOne: false
-            referencedRelation: "brand_profiles"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       brand_profiles: {
         Row: {
           brand_guidelines: string | null
@@ -527,65 +426,6 @@ export type Database = {
           },
         ]
       }
-      churn_analysis_results: {
-        Row: {
-          avg_cltv: number | null
-          churn_rate: number | null
-          cohort_retention_data: Json | null
-          created_at: string
-          feature_importance: Json | null
-          high_risk_customers: number | null
-          id: string
-          low_risk_customers: number | null
-          medium_risk_customers: number | null
-          net_mrr_churn: number | null
-          top_churn_drivers: Json | null
-          total_customers: number
-          upload_id: string
-          user_id: string
-        }
-        Insert: {
-          avg_cltv?: number | null
-          churn_rate?: number | null
-          cohort_retention_data?: Json | null
-          created_at?: string
-          feature_importance?: Json | null
-          high_risk_customers?: number | null
-          id?: string
-          low_risk_customers?: number | null
-          medium_risk_customers?: number | null
-          net_mrr_churn?: number | null
-          top_churn_drivers?: Json | null
-          total_customers: number
-          upload_id: string
-          user_id: string
-        }
-        Update: {
-          avg_cltv?: number | null
-          churn_rate?: number | null
-          cohort_retention_data?: Json | null
-          created_at?: string
-          feature_importance?: Json | null
-          high_risk_customers?: number | null
-          id?: string
-          low_risk_customers?: number | null
-          medium_risk_customers?: number | null
-          net_mrr_churn?: number | null
-          top_churn_drivers?: Json | null
-          total_customers?: number
-          upload_id?: string
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "churn_analysis_results_upload_id_fkey"
-            columns: ["upload_id"]
-            isOneToOne: false
-            referencedRelation: "csv_uploads"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       churn_payments: {
         Row: {
           amount: number
@@ -620,80 +460,6 @@ export type Database = {
           upload_id?: string
           user_id?: string | null
         }
-        Relationships: [
-          {
-            foreignKeyName: "churn_payments_upload_id_fkey"
-            columns: ["upload_id"]
-            isOneToOne: false
-            referencedRelation: "churn_uploads"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      churn_predictions: {
-        Row: {
-          churn_probability: number | null
-          explanation: string | null
-          feature_importance: Json | null
-          id: string
-          is_active: boolean | null
-          model_version: string | null
-          prediction_date: string | null
-          user_id: string | null
-        }
-        Insert: {
-          churn_probability?: number | null
-          explanation?: string | null
-          feature_importance?: Json | null
-          id?: string
-          is_active?: boolean | null
-          model_version?: string | null
-          prediction_date?: string | null
-          user_id?: string | null
-        }
-        Update: {
-          churn_probability?: number | null
-          explanation?: string | null
-          feature_importance?: Json | null
-          id?: string
-          is_active?: boolean | null
-          model_version?: string | null
-          prediction_date?: string | null
-          user_id?: string | null
-        }
-        Relationships: []
-      }
-      churn_reason_clusters: {
-        Row: {
-          cluster_name: string
-          created_at: string
-          id: string
-          percentage: number
-          reason_examples: string[] | null
-          upload_id: string | null
-          user_count: number
-          user_id: string
-        }
-        Insert: {
-          cluster_name: string
-          created_at?: string
-          id?: string
-          percentage?: number
-          reason_examples?: string[] | null
-          upload_id?: string | null
-          user_count?: number
-          user_id: string
-        }
-        Update: {
-          cluster_name?: string
-          created_at?: string
-          id?: string
-          percentage?: number
-          reason_examples?: string[] | null
-          upload_id?: string | null
-          user_count?: number
-          user_id?: string
-        }
         Relationships: []
       }
       churn_reports: {
@@ -721,134 +487,7 @@ export type Database = {
           upload_id?: string
           user_id?: string | null
         }
-        Relationships: [
-          {
-            foreignKeyName: "churn_reports_upload_id_fkey"
-            columns: ["upload_id"]
-            isOneToOne: false
-            referencedRelation: "churn_uploads"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      churn_trigger_logs: {
-        Row: {
-          action_taken: string
-          churn_score: number
-          created_at: string
-          error_message: string | null
-          id: string
-          playbook_name: string
-          success: boolean
-          target_user_id: string
-          trigger_reason: string | null
-          triggered_at: string
-          user_id: string
-        }
-        Insert: {
-          action_taken: string
-          churn_score: number
-          created_at?: string
-          error_message?: string | null
-          id?: string
-          playbook_name?: string
-          success?: boolean
-          target_user_id: string
-          trigger_reason?: string | null
-          triggered_at?: string
-          user_id: string
-        }
-        Update: {
-          action_taken?: string
-          churn_score?: number
-          created_at?: string
-          error_message?: string | null
-          id?: string
-          playbook_name?: string
-          success?: boolean
-          target_user_id?: string
-          trigger_reason?: string | null
-          triggered_at?: string
-          user_id?: string
-        }
         Relationships: []
-      }
-      churn_uploads: {
-        Row: {
-          created_at: string
-          csv_url: string | null
-          email: string
-          filename: string
-          id: string
-          status: string
-          user_id: string
-        }
-        Insert: {
-          created_at?: string
-          csv_url?: string | null
-          email: string
-          filename: string
-          id?: string
-          status?: string
-          user_id: string
-        }
-        Update: {
-          created_at?: string
-          csv_url?: string | null
-          email?: string
-          filename?: string
-          id?: string
-          status?: string
-          user_id?: string
-        }
-        Relationships: []
-      }
-      content_exports: {
-        Row: {
-          content_generation_id: string | null
-          created_at: string
-          error_message: string | null
-          export_data: Json | null
-          export_type: string
-          export_url: string | null
-          exported_at: string | null
-          id: string
-          status: Database["public"]["Enums"]["export_status"] | null
-          user_id: string
-        }
-        Insert: {
-          content_generation_id?: string | null
-          created_at?: string
-          error_message?: string | null
-          export_data?: Json | null
-          export_type: string
-          export_url?: string | null
-          exported_at?: string | null
-          id?: string
-          status?: Database["public"]["Enums"]["export_status"] | null
-          user_id: string
-        }
-        Update: {
-          content_generation_id?: string | null
-          created_at?: string
-          error_message?: string | null
-          export_data?: Json | null
-          export_type?: string
-          export_url?: string | null
-          exported_at?: string | null
-          id?: string
-          status?: Database["public"]["Enums"]["export_status"] | null
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "content_exports_content_generation_id_fkey"
-            columns: ["content_generation_id"]
-            isOneToOne: false
-            referencedRelation: "content_generations"
-            referencedColumns: ["id"]
-          },
-        ]
       }
       content_generations: {
         Row: {
@@ -996,39 +635,6 @@ export type Database = {
         }
         Relationships: []
       }
-      csv_uploads: {
-        Row: {
-          created_at: string | null
-          export_data: Json | null
-          filename: string
-          id: string
-          rows_failed: number | null
-          rows_processed: number | null
-          status: string | null
-          user_id: string
-        }
-        Insert: {
-          created_at?: string | null
-          export_data?: Json | null
-          filename: string
-          id?: string
-          rows_failed?: number | null
-          rows_processed?: number | null
-          status?: string | null
-          user_id: string
-        }
-        Update: {
-          created_at?: string | null
-          export_data?: Json | null
-          filename?: string
-          id?: string
-          rows_failed?: number | null
-          rows_processed?: number | null
-          status?: string | null
-          user_id?: string
-        }
-        Relationships: []
-      }
       customer_churn_predictions: {
         Row: {
           analysis_id: string
@@ -1069,15 +675,7 @@ export type Database = {
           risk_level?: string
           subscription_plan?: string | null
         }
-        Relationships: [
-          {
-            foreignKeyName: "customer_churn_predictions_analysis_id_fkey"
-            columns: ["analysis_id"]
-            isOneToOne: false
-            referencedRelation: "churn_analysis_results"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       customer_metrics: {
         Row: {
@@ -1213,138 +811,6 @@ export type Database = {
           },
         ]
       }
-      email_logs: {
-        Row: {
-          clicked_at: string | null
-          created_at: string
-          email_data: Json | null
-          error_message: string | null
-          id: string
-          opened_at: string | null
-          playbook_id: string | null
-          sent_at: string | null
-          status: string
-          target_email: string
-          target_user_id: string | null
-          template_id: string | null
-          user_id: string
-        }
-        Insert: {
-          clicked_at?: string | null
-          created_at?: string
-          email_data?: Json | null
-          error_message?: string | null
-          id?: string
-          opened_at?: string | null
-          playbook_id?: string | null
-          sent_at?: string | null
-          status?: string
-          target_email: string
-          target_user_id?: string | null
-          template_id?: string | null
-          user_id: string
-        }
-        Update: {
-          clicked_at?: string | null
-          created_at?: string
-          email_data?: Json | null
-          error_message?: string | null
-          id?: string
-          opened_at?: string | null
-          playbook_id?: string | null
-          sent_at?: string | null
-          status?: string
-          target_email?: string
-          target_user_id?: string | null
-          template_id?: string | null
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "email_logs_playbook_id_fkey"
-            columns: ["playbook_id"]
-            isOneToOne: false
-            referencedRelation: "playbooks"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "email_logs_template_id_fkey"
-            columns: ["template_id"]
-            isOneToOne: false
-            referencedRelation: "email_templates"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      email_templates: {
-        Row: {
-          content: string
-          created_at: string | null
-          id: string
-          is_active: boolean | null
-          name: string
-          subject: string
-          updated_at: string | null
-          user_id: string | null
-          variables: Json | null
-        }
-        Insert: {
-          content: string
-          created_at?: string | null
-          id: string
-          is_active?: boolean | null
-          name: string
-          subject: string
-          updated_at?: string | null
-          user_id?: string | null
-          variables?: Json | null
-        }
-        Update: {
-          content?: string
-          created_at?: string | null
-          id?: string
-          is_active?: boolean | null
-          name?: string
-          subject?: string
-          updated_at?: string | null
-          user_id?: string | null
-          variables?: Json | null
-        }
-        Relationships: []
-      }
-      feature_events: {
-        Row: {
-          created_at: string
-          event_date: string
-          feature_name: string
-          id: string
-          metadata: Json | null
-          owner_id: string
-          plan: string | null
-          user_id: string
-        }
-        Insert: {
-          created_at?: string
-          event_date: string
-          feature_name: string
-          id?: string
-          metadata?: Json | null
-          owner_id: string
-          plan?: string | null
-          user_id: string
-        }
-        Update: {
-          created_at?: string
-          event_date?: string
-          feature_name?: string
-          id?: string
-          metadata?: Json | null
-          owner_id?: string
-          plan?: string | null
-          user_id?: string
-        }
-        Relationships: []
-      }
       founder_profile: {
         Row: {
           biggest_retention_challenge: string | null
@@ -1420,47 +886,49 @@ export type Database = {
         }
         Relationships: []
       }
-      inbound_emails: {
+      generated_emails: {
         Row: {
-          attachments: Json | null
-          body_html: string | null
-          body_text: string | null
+          body: string
           created_at: string | null
-          from_email: string
+          cta_link: string
+          cta_text: string
+          customer_id: string
           id: string
-          is_read: boolean | null
-          priority: string | null
-          received_at: string | null
-          subject: string | null
-          to_email: string
+          prediction_id: string
+          subject: string
+          user_id: string
         }
         Insert: {
-          attachments?: Json | null
-          body_html?: string | null
-          body_text?: string | null
+          body: string
           created_at?: string | null
-          from_email: string
+          cta_link: string
+          cta_text: string
+          customer_id: string
           id?: string
-          is_read?: boolean | null
-          priority?: string | null
-          received_at?: string | null
-          subject?: string | null
-          to_email: string
+          prediction_id: string
+          subject: string
+          user_id: string
         }
         Update: {
-          attachments?: Json | null
-          body_html?: string | null
-          body_text?: string | null
+          body?: string
           created_at?: string | null
-          from_email?: string
+          cta_link?: string
+          cta_text?: string
+          customer_id?: string
           id?: string
-          is_read?: boolean | null
-          priority?: string | null
-          received_at?: string | null
-          subject?: string | null
-          to_email?: string
+          prediction_id?: string
+          subject?: string
+          user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "generated_emails_prediction_id_fkey"
+            columns: ["prediction_id"]
+            isOneToOne: false
+            referencedRelation: "predictions"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       integration_settings: {
         Row: {
@@ -1552,39 +1020,6 @@ export type Database = {
         }
         Relationships: []
       }
-      integration_test_results: {
-        Row: {
-          api_key: string | null
-          churn_score: number | null
-          created_at: string
-          domain: string
-          founder_id: string
-          id: string
-          risk_level: string | null
-          updated_at: string
-        }
-        Insert: {
-          api_key?: string | null
-          churn_score?: number | null
-          created_at?: string
-          domain: string
-          founder_id: string
-          id?: string
-          risk_level?: string | null
-          updated_at?: string
-        }
-        Update: {
-          api_key?: string | null
-          churn_score?: number | null
-          created_at?: string
-          domain?: string
-          founder_id?: string
-          id?: string
-          risk_level?: string | null
-          updated_at?: string
-        }
-        Relationships: []
-      }
       integrations: {
         Row: {
           api_key: string
@@ -1654,109 +1089,6 @@ export type Database = {
         }
         Relationships: []
       }
-      payment_transactions: {
-        Row: {
-          amount: number
-          created_at: string | null
-          currency: string | null
-          id: string
-          is_test_mode: boolean | null
-          lemon_squeezy_order_id: string | null
-          plan_id: string | null
-          status: string
-          transaction_data: Json | null
-          updated_at: string | null
-          user_id: string
-        }
-        Insert: {
-          amount: number
-          created_at?: string | null
-          currency?: string | null
-          id?: string
-          is_test_mode?: boolean | null
-          lemon_squeezy_order_id?: string | null
-          plan_id?: string | null
-          status: string
-          transaction_data?: Json | null
-          updated_at?: string | null
-          user_id: string
-        }
-        Update: {
-          amount?: number
-          created_at?: string | null
-          currency?: string | null
-          id?: string
-          is_test_mode?: boolean | null
-          lemon_squeezy_order_id?: string | null
-          plan_id?: string | null
-          status?: string
-          transaction_data?: Json | null
-          updated_at?: string | null
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "payment_transactions_plan_id_fkey"
-            columns: ["plan_id"]
-            isOneToOne: false
-            referencedRelation: "subscription_plans"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      playbook_actions_queue: {
-        Row: {
-          action_data: Json
-          action_type: string
-          created_at: string
-          error_message: string | null
-          execute_at: string
-          executed_at: string | null
-          id: string
-          playbook_id: string | null
-          status: string
-          step_index: number
-          target_user_id: string
-          user_id: string
-        }
-        Insert: {
-          action_data?: Json
-          action_type: string
-          created_at?: string
-          error_message?: string | null
-          execute_at?: string
-          executed_at?: string | null
-          id?: string
-          playbook_id?: string | null
-          status?: string
-          step_index?: number
-          target_user_id: string
-          user_id: string
-        }
-        Update: {
-          action_data?: Json
-          action_type?: string
-          created_at?: string
-          error_message?: string | null
-          execute_at?: string
-          executed_at?: string | null
-          id?: string
-          playbook_id?: string | null
-          status?: string
-          step_index?: number
-          target_user_id?: string
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "playbook_actions_queue_playbook_id_fkey"
-            columns: ["playbook_id"]
-            isOneToOne: false
-            referencedRelation: "playbooks"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       playbook_audit_log: {
         Row: {
           action_data: Json
@@ -1794,38 +1126,6 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "playbook_audit_log_playbook_id_fkey"
-            columns: ["playbook_id"]
-            isOneToOne: false
-            referencedRelation: "playbooks"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      playbook_logs: {
-        Row: {
-          action_taken: string
-          log_id: string
-          playbook_id: string | null
-          triggered_at: string
-          user_id: string
-        }
-        Insert: {
-          action_taken: string
-          log_id?: string
-          playbook_id?: string | null
-          triggered_at?: string
-          user_id: string
-        }
-        Update: {
-          action_taken?: string
-          log_id?: string
-          playbook_id?: string | null
-          triggered_at?: string
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "playbook_logs_playbook_id_fkey"
             columns: ["playbook_id"]
             isOneToOne: false
             referencedRelation: "playbooks"
@@ -1877,6 +1177,56 @@ export type Database = {
           webhook_url?: string | null
         }
         Relationships: []
+      }
+      predictions: {
+        Row: {
+          churn_probability: number
+          churn_reason: string
+          churn_score: number
+          created_at: string | null
+          customer_id: string
+          id: string
+          monthly_revenue: number | null
+          risk_level: string
+          shap_explanation: Json | null
+          upload_id: string
+          user_id: string
+        }
+        Insert: {
+          churn_probability: number
+          churn_reason: string
+          churn_score: number
+          created_at?: string | null
+          customer_id: string
+          id?: string
+          monthly_revenue?: number | null
+          risk_level: string
+          shap_explanation?: Json | null
+          upload_id: string
+          user_id: string
+        }
+        Update: {
+          churn_probability?: number
+          churn_reason?: string
+          churn_score?: number
+          created_at?: string | null
+          customer_id?: string
+          id?: string
+          monthly_revenue?: number | null
+          risk_level?: string
+          shap_explanation?: Json | null
+          upload_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "predictions_upload_id_fkey"
+            columns: ["upload_id"]
+            isOneToOne: false
+            referencedRelation: "uploads"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       preferences: {
         Row: {
@@ -1932,33 +1282,6 @@ export type Database = {
         }
         Relationships: []
       }
-      recovery_logs: {
-        Row: {
-          id: string
-          owner_id: string
-          recovered_at: string
-          recovery_reason: string
-          revenue_saved: number | null
-          user_id: string
-        }
-        Insert: {
-          id?: string
-          owner_id: string
-          recovered_at?: string
-          recovery_reason: string
-          revenue_saved?: number | null
-          user_id: string
-        }
-        Update: {
-          id?: string
-          owner_id?: string
-          recovered_at?: string
-          recovery_reason?: string
-          revenue_saved?: number | null
-          user_id?: string
-        }
-        Relationships: []
-      }
       reports: {
         Row: {
           ai_insights: string | null
@@ -1999,47 +1322,6 @@ export type Database = {
           status?: string
           user_id?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "reports_analysis_id_fkey"
-            columns: ["analysis_id"]
-            isOneToOne: false
-            referencedRelation: "churn_analysis_results"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      retention_analytics: {
-        Row: {
-          created_at: string
-          feature_name: string
-          id: string
-          retention_percentage: number
-          revenue_contribution: number
-          upload_id: string | null
-          user_count: number
-          user_id: string
-        }
-        Insert: {
-          created_at?: string
-          feature_name: string
-          id?: string
-          retention_percentage?: number
-          revenue_contribution?: number
-          upload_id?: string | null
-          user_count?: number
-          user_id: string
-        }
-        Update: {
-          created_at?: string
-          feature_name?: string
-          id?: string
-          retention_percentage?: number
-          revenue_contribution?: number
-          upload_id?: string | null
-          user_count?: number
-          user_id?: string
-        }
         Relationships: []
       }
       retention_emails: {
@@ -2073,15 +1355,7 @@ export type Database = {
           template_id?: string | null
           user_id?: string | null
         }
-        Relationships: [
-          {
-            foreignKeyName: "retention_emails_template_id_fkey"
-            columns: ["template_id"]
-            isOneToOne: false
-            referencedRelation: "email_templates"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       sdk_health_logs: {
         Row: {
@@ -2284,33 +1558,42 @@ export type Database = {
         }
         Relationships: []
       }
-      user_activity: {
+      uploads: {
         Row: {
-          created_at: string
-          email: string
-          event: string
+          created_at: string | null
+          csv_filename: string
+          csv_url: string
           id: string
-          monthly_revenue: number | null
-          owner_id: string
+          processed_at: string | null
+          status: string
           user_id: string
+          usp_filename: string | null
+          usp_text: string | null
+          website_link: string | null
         }
         Insert: {
-          created_at?: string
-          email: string
-          event: string
+          created_at?: string | null
+          csv_filename: string
+          csv_url: string
           id?: string
-          monthly_revenue?: number | null
-          owner_id: string
+          processed_at?: string | null
+          status?: string
           user_id: string
+          usp_filename?: string | null
+          usp_text?: string | null
+          website_link?: string | null
         }
         Update: {
-          created_at?: string
-          email?: string
-          event?: string
+          created_at?: string | null
+          csv_filename?: string
+          csv_url?: string
           id?: string
-          monthly_revenue?: number | null
-          owner_id?: string
+          processed_at?: string | null
+          status?: string
           user_id?: string
+          usp_filename?: string | null
+          usp_text?: string | null
+          website_link?: string | null
         }
         Relationships: []
       }
@@ -2344,75 +1627,6 @@ export type Database = {
           reset_date?: string | null
           updated_at?: string | null
           user_id?: string
-        }
-        Relationships: []
-      }
-      user_data: {
-        Row: {
-          action_recommended: string | null
-          churn_reason: string | null
-          churn_score: number | null
-          created_at: string | null
-          days_until_mature: number | null
-          id: string
-          is_deleted: boolean | null
-          last_login: string | null
-          monthly_revenue: number | null
-          owner_id: string
-          plan: Database["public"]["Enums"]["plan_type"] | null
-          recovered_at: string | null
-          risk_level: Database["public"]["Enums"]["risk_level"] | null
-          source: string | null
-          status: Database["public"]["Enums"]["user_prediction_status"] | null
-          understanding_score: number | null
-          updated_at: string | null
-          usage: number | null
-          user_id: string
-          user_stage: string | null
-        }
-        Insert: {
-          action_recommended?: string | null
-          churn_reason?: string | null
-          churn_score?: number | null
-          created_at?: string | null
-          days_until_mature?: number | null
-          id?: string
-          is_deleted?: boolean | null
-          last_login?: string | null
-          monthly_revenue?: number | null
-          owner_id: string
-          plan?: Database["public"]["Enums"]["plan_type"] | null
-          recovered_at?: string | null
-          risk_level?: Database["public"]["Enums"]["risk_level"] | null
-          source?: string | null
-          status?: Database["public"]["Enums"]["user_prediction_status"] | null
-          understanding_score?: number | null
-          updated_at?: string | null
-          usage?: number | null
-          user_id: string
-          user_stage?: string | null
-        }
-        Update: {
-          action_recommended?: string | null
-          churn_reason?: string | null
-          churn_score?: number | null
-          created_at?: string | null
-          days_until_mature?: number | null
-          id?: string
-          is_deleted?: boolean | null
-          last_login?: string | null
-          monthly_revenue?: number | null
-          owner_id?: string
-          plan?: Database["public"]["Enums"]["plan_type"] | null
-          recovered_at?: string | null
-          risk_level?: Database["public"]["Enums"]["risk_level"] | null
-          source?: string | null
-          status?: Database["public"]["Enums"]["user_prediction_status"] | null
-          understanding_score?: number | null
-          updated_at?: string | null
-          usage?: number | null
-          user_id?: string
-          user_stage?: string | null
         }
         Relationships: []
       }

@@ -93,10 +93,12 @@ serve(async (req) => {
 
     console.log(`[enhanced-churn-upload] Uploading file: ${uploadId}`);
 
-    // Upload file to Supabase Storage
+    // Security: Upload file with user-scoped path for proper RLS
+    const userScopedPath = userId ? `${userId}/${sanitizedFileName}` : `anonymous/${uploadId}_${sanitizedFileName}`;
+    
     const { data: uploadData, error: uploadError } = await supabase.storage
       .from('csv-uploads')
-      .upload(filename, file, {
+      .upload(userScopedPath, file, {
         contentType: 'text/csv',
         upsert: false
       });
@@ -105,10 +107,10 @@ serve(async (req) => {
       throw new Error(`Upload failed: ${uploadError.message}`);
     }
 
-    // Get public URL
+    // Get URL for the user-scoped path
     const { data: urlData } = supabase.storage
       .from('csv-uploads')
-      .getPublicUrl(filename);
+      .getPublicUrl(userScopedPath);
 
     // Store upload record
     const { data: uploadRecord, error: dbError } = await supabase

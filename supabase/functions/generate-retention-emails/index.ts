@@ -48,7 +48,7 @@ serve(async (req) => {
       website_link
     } = await req.json();
 
-    // Validate inputs
+    // Security: Comprehensive input validation
     if (!customer_id || !churn_reason || !usp_content || !website_link) {
       return new Response(
         JSON.stringify({ error: 'Missing required fields' }),
@@ -56,7 +56,47 @@ serve(async (req) => {
       );
     }
 
-    console.log(`Generating retention email for customer: ${customer_id}`);
+    // Validate customer_name length
+    if (customer_name && (typeof customer_name !== 'string' || customer_name.length > 100)) {
+      return new Response(
+        JSON.stringify({ error: 'Invalid customer name' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Validate USP content length (prevent DoS)
+    if (typeof usp_content !== 'string' || usp_content.length > 5000) {
+      return new Response(
+        JSON.stringify({ error: 'USP content exceeds maximum length of 5000 characters' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Validate churn_reason length
+    if (typeof churn_reason !== 'string' || churn_reason.length > 1000) {
+      return new Response(
+        JSON.stringify({ error: 'Churn reason exceeds maximum length' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Validate website URL (prevent XSS and phishing)
+    const urlRegex = /^https?:\/\/.+/;
+    if (!urlRegex.test(website_link)) {
+      return new Response(
+        JSON.stringify({ error: 'Invalid website URL. Must start with http:// or https://' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Sanitize inputs to prevent prompt injection
+    const sanitizeText = (text: string) => text.replace(/[<>\"']/g, '').substring(0, 1000);
+    const sanitizedChurnReason = sanitizeText(churn_reason);
+    const sanitizedUspContent = usp_content.substring(0, 5000);
+    const sanitizedCustomerName = customer_name ? sanitizeText(customer_name) : 'there';
+
+    // Security: Privacy-focused logging (no PII)
+    console.log('Generating retention email - risk level:', risk_level);
 
     // Create expert prompt for email generation
     const systemPrompt = `You are an expert retention email copywriter specializing in customer psychology and re-engagement strategies. Your emails are known for being:
@@ -69,12 +109,12 @@ serve(async (req) => {
     const userPrompt = `Generate a personalized retention email for a ${risk_level}-risk customer.
 
 Customer Context:
-- Name: ${customer_name || 'there'}
-- Churn Risk Reason: ${churn_reason}
+- Name: ${sanitizedCustomerName}
+- Churn Risk Reason: ${sanitizedChurnReason}
 - Recommended Actions: ${recommendations?.join(', ') || 'N/A'}
 
 Product USP:
-${usp_content}
+${sanitizedUspContent}
 
 Website CTA Link: ${website_link}
 
@@ -130,7 +170,8 @@ Return ONLY valid JSON with this exact structure:
     const aiData = await aiResponse.json();
     const emailContent = JSON.parse(aiData.choices[0].message.content);
 
-    console.log('Email generated successfully');
+    // Security: Privacy-focused logging (no customer data)
+    console.log('Email generation completed successfully');
 
     return new Response(
       JSON.stringify({

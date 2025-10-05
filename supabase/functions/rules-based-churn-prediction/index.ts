@@ -156,7 +156,8 @@ serve(async (req) => {
       );
     }
 
-    console.log(`Processing ${customers.length} customers with rules-based prediction`);
+    // Security: Privacy-focused logging (no customer count or PII)
+    console.log('Processing churn predictions with rules-based model');
 
     const results = customers.map((customer, index) => {
       const prediction = calculateChurnScore(customer);

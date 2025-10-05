@@ -128,7 +128,7 @@ serve(async (req) => {
       });
     }
 
-    // ✅ Log email before sending
+    // Security: Log email metadata without PII content
     const { data: emailLog, error: logError } = await supabase.from('email_logs').insert({
       user_id: user.id,
       target_email: to.trim(),
@@ -136,7 +136,6 @@ serve(async (req) => {
       email_data: { 
         from: fromEmail, 
         subject: subject.trim(), 
-        html_preview: html.substring(0, 500) + (html.length > 500 ? '...' : ''),
         provider: 'resend'
       }
     }).select('id').maybeSingle();

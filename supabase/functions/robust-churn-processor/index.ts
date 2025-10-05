@@ -201,7 +201,7 @@ serve(async (req) => {
   }
 });
 
-ons(data: CustomerData[]): Promise<CustomerData[]> {
+async function generateAdvancedChurnPredictions(data: CustomerData[]): Promise<CustomerData[]> {
   return data.map(customer => {
     let churnScore = 0;
     let reasons: string[] = [];

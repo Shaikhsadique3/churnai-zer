@@ -2,14 +2,18 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AuthProvider } from '@/contexts/AuthContext';
 import { Toaster } from '@/components/ui/sonner';
-import Index from '@/pages/Index';
+import Landing from '@/pages/Landing';
 import Auth from '@/pages/Auth';
 import ForgotPassword from '@/pages/ForgotPassword';
 import ResetPassword from '@/pages/ResetPassword';
 import Terms from '@/pages/Terms';
 import Privacy from '@/pages/Privacy';
 import NotFound from '@/pages/NotFound';
-import Dashboard from '@/pages/Dashboard';
+import AuditStart from '@/pages/AuditStart';
+import AuditQuestion from '@/pages/AuditQuestion';
+import AuditResults from '@/pages/AuditResults';
+import ReportPDF from '@/pages/ReportPDF';
+import AdminPanel from '@/pages/AdminPanel';
 import ProfilePage from '@/pages/ProfilePage';
 import PrivateRoute from '@/components/auth/PrivateRoute';
 import PublicRoute from '@/components/auth/PublicRoute';
@@ -23,9 +27,13 @@ function App() {
         <Router>
           <Routes>
             {/* Public routes */}
-            <Route path="/" element={<Index />} />
+            <Route path="/" element={<Landing />} />
             <Route path="/terms" element={<Terms />} />
             <Route path="/privacy" element={<Privacy />} />
+            <Route path="/start" element={<AuditStart />} />
+            <Route path="/audit/:auditId" element={<AuditQuestion />} />
+            <Route path="/results/:auditId" element={<AuditResults />} />
+            <Route path="/report/:auditId" element={<ReportPDF />} />
             
             {/* Auth routes - only accessible when not logged in */}
             <Route path="/auth" element={
@@ -44,10 +52,10 @@ function App() {
               </PublicRoute>
             } />
 
-            {/* Dashboard - Protected */}
-            <Route path="/dashboard" element={
+            {/* Admin Panel - Protected */}
+            <Route path="/admin" element={
               <PrivateRoute>
-                <Dashboard />
+                <AdminPanel />
               </PrivateRoute>
             } />
 

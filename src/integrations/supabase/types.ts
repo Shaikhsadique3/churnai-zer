@@ -47,6 +47,45 @@ export type Database = {
         }
         Relationships: []
       }
+      answers: {
+        Row: {
+          audit_id: string
+          created_at: string
+          id: string
+          question_id: string
+          value: number
+        }
+        Insert: {
+          audit_id: string
+          created_at?: string
+          id?: string
+          question_id: string
+          value: number
+        }
+        Update: {
+          audit_id?: string
+          created_at?: string
+          id?: string
+          question_id?: string
+          value?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "answers_audit_id_fkey"
+            columns: ["audit_id"]
+            isOneToOne: false
+            referencedRelation: "audits"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "answers_question_id_fkey"
+            columns: ["question_id"]
+            isOneToOne: false
+            referencedRelation: "questions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       api_keys: {
         Row: {
           created_at: string | null
@@ -74,6 +113,36 @@ export type Database = {
           key?: string
           name?: string | null
           user_id?: string
+        }
+        Relationships: []
+      }
+      audits: {
+        Row: {
+          completed_at: string | null
+          created_at: string
+          email: string | null
+          id: string
+          overall_score: number | null
+          status: string | null
+          user_id: string | null
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          overall_score?: number | null
+          status?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          overall_score?: number | null
+          status?: string | null
+          user_id?: string | null
         }
         Relationships: []
       }
@@ -422,6 +491,72 @@ export type Database = {
             columns: ["project_id"]
             isOneToOne: true
             referencedRelation: "cancel_guard_projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      categories: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          title: string
+          weight: number
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          title: string
+          weight?: number
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          title?: string
+          weight?: number
+        }
+        Relationships: []
+      }
+      category_results: {
+        Row: {
+          audit_id: string
+          category_id: string
+          created_at: string
+          id: string
+          score: number
+          status: string
+        }
+        Insert: {
+          audit_id: string
+          category_id: string
+          created_at?: string
+          id?: string
+          score: number
+          status: string
+        }
+        Update: {
+          audit_id?: string
+          category_id?: string
+          created_at?: string
+          id?: string
+          score?: number
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "category_results_audit_id_fkey"
+            columns: ["audit_id"]
+            isOneToOne: false
+            referencedRelation: "audits"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "category_results_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
             referencedColumns: ["id"]
           },
         ]
@@ -886,50 +1021,6 @@ export type Database = {
         }
         Relationships: []
       }
-      generated_emails: {
-        Row: {
-          body: string
-          created_at: string | null
-          cta_link: string
-          cta_text: string
-          customer_id: string
-          id: string
-          prediction_id: string
-          subject: string
-          user_id: string
-        }
-        Insert: {
-          body: string
-          created_at?: string | null
-          cta_link: string
-          cta_text: string
-          customer_id: string
-          id?: string
-          prediction_id: string
-          subject: string
-          user_id: string
-        }
-        Update: {
-          body?: string
-          created_at?: string | null
-          cta_link?: string
-          cta_text?: string
-          customer_id?: string
-          id?: string
-          prediction_id?: string
-          subject?: string
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "generated_emails_prediction_id_fkey"
-            columns: ["prediction_id"]
-            isOneToOne: false
-            referencedRelation: "predictions"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       integration_settings: {
         Row: {
           created_at: string
@@ -1178,56 +1269,6 @@ export type Database = {
         }
         Relationships: []
       }
-      predictions: {
-        Row: {
-          churn_probability: number
-          churn_reason: string
-          churn_score: number
-          created_at: string | null
-          customer_id: string
-          id: string
-          monthly_revenue: number | null
-          risk_level: string
-          shap_explanation: Json | null
-          upload_id: string
-          user_id: string
-        }
-        Insert: {
-          churn_probability: number
-          churn_reason: string
-          churn_score: number
-          created_at?: string | null
-          customer_id: string
-          id?: string
-          monthly_revenue?: number | null
-          risk_level: string
-          shap_explanation?: Json | null
-          upload_id: string
-          user_id: string
-        }
-        Update: {
-          churn_probability?: number
-          churn_reason?: string
-          churn_score?: number
-          created_at?: string | null
-          customer_id?: string
-          id?: string
-          monthly_revenue?: number | null
-          risk_level?: string
-          shap_explanation?: Json | null
-          upload_id?: string
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "predictions_upload_id_fkey"
-            columns: ["upload_id"]
-            isOneToOne: false
-            referencedRelation: "uploads"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       preferences: {
         Row: {
           created_at: string
@@ -1281,6 +1322,41 @@ export type Database = {
           updated_at?: string | null
         }
         Relationships: []
+      }
+      questions: {
+        Row: {
+          category_id: string
+          created_at: string
+          id: string
+          max_score: number
+          order_index: number
+          prompt: string
+        }
+        Insert: {
+          category_id: string
+          created_at?: string
+          id?: string
+          max_score?: number
+          order_index: number
+          prompt: string
+        }
+        Update: {
+          category_id?: string
+          created_at?: string
+          id?: string
+          max_score?: number
+          order_index?: number
+          prompt?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "questions_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       reports: {
         Row: {
@@ -1555,45 +1631,6 @@ export type Database = {
           status?: string | null
           ticket_id?: string | null
           user_id?: string | null
-        }
-        Relationships: []
-      }
-      uploads: {
-        Row: {
-          created_at: string | null
-          csv_filename: string
-          csv_url: string
-          id: string
-          processed_at: string | null
-          status: string
-          user_id: string
-          usp_filename: string | null
-          usp_text: string | null
-          website_link: string | null
-        }
-        Insert: {
-          created_at?: string | null
-          csv_filename: string
-          csv_url: string
-          id?: string
-          processed_at?: string | null
-          status?: string
-          user_id: string
-          usp_filename?: string | null
-          usp_text?: string | null
-          website_link?: string | null
-        }
-        Update: {
-          created_at?: string | null
-          csv_filename?: string
-          csv_url?: string
-          id?: string
-          processed_at?: string | null
-          status?: string
-          user_id?: string
-          usp_filename?: string | null
-          usp_text?: string | null
-          website_link?: string | null
         }
         Relationships: []
       }

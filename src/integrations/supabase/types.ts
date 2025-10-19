@@ -118,8 +118,12 @@ export type Database = {
       }
       audits: {
         Row: {
+          accuracy: number | null
+          audit_mode: string | null
           completed_at: string | null
           created_at: string
+          csv_data: Json | null
+          data_metrics_count: number | null
           email: string | null
           id: string
           overall_score: number | null
@@ -127,8 +131,12 @@ export type Database = {
           user_id: string | null
         }
         Insert: {
+          accuracy?: number | null
+          audit_mode?: string | null
           completed_at?: string | null
           created_at?: string
+          csv_data?: Json | null
+          data_metrics_count?: number | null
           email?: string | null
           id?: string
           overall_score?: number | null
@@ -136,8 +144,12 @@ export type Database = {
           user_id?: string | null
         }
         Update: {
+          accuracy?: number | null
+          audit_mode?: string | null
           completed_at?: string | null
           created_at?: string
+          csv_data?: Json | null
+          data_metrics_count?: number | null
           email?: string | null
           id?: string
           overall_score?: number | null

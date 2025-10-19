@@ -15,6 +15,7 @@ import AuditResults from '@/pages/AuditResults';
 import ReportPDF from '@/pages/ReportPDF';
 import AdminPanel from '@/pages/AdminPanel';
 import ProfilePage from '@/pages/ProfilePage';
+import DataUpload from '@/pages/DataUpload';
 import PrivateRoute from '@/components/auth/PrivateRoute';
 import PublicRoute from '@/components/auth/PublicRoute';
 
@@ -31,6 +32,7 @@ function App() {
             <Route path="/terms" element={<Terms />} />
             <Route path="/privacy" element={<Privacy />} />
             <Route path="/start" element={<AuditStart />} />
+            <Route path="/upload" element={<DataUpload />} />
             <Route path="/audit/:auditId" element={<AuditQuestion />} />
             <Route path="/results/:auditId" element={<AuditResults />} />
             <Route path="/report/:auditId" element={<ReportPDF />} />

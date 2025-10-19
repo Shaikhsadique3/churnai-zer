@@ -60,3 +60,6 @@ verify_jwt = true
 
 [functions.generate-retention-emails]
 verify_jwt = true
+
+[functions.process-csv-audit]
+verify_jwt = false

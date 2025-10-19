@@ -123,6 +123,40 @@ export default function AuditResults() {
               {Math.round(audit.overall_score || 0)}
             </div>
             <p className="text-xl font-medium">{audit.status}</p>
+            
+            {/* Accuracy Bar */}
+            <div className="pt-4 space-y-2">
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-muted-foreground">Accuracy Score</span>
+                <span className="font-semibold">{Math.round(audit.accuracy || 60)}%</span>
+              </div>
+              <div className="w-full bg-secondary rounded-full h-2">
+                <div 
+                  className="bg-primary rounded-full h-2 transition-all"
+                  style={{ width: `${audit.accuracy || 60}%` }}
+                />
+              </div>
+              <p className="text-xs text-muted-foreground">
+                {audit.audit_mode === 'question' && "Based on question responses"}
+                {audit.audit_mode === 'data' && `Based on ${audit.data_metrics_count} data metrics`}
+                {audit.audit_mode === 'merged' && "Combined question + data analysis"}
+              </p>
+            </div>
+
+            {/* Upload Option */}
+            {audit.audit_mode === 'question' && (
+              <div className="pt-4 border-t">
+                <p className="text-sm text-muted-foreground mb-3">
+                  Want more accurate insights? Upload your customer data
+                </p>
+                <Button 
+                  variant="outline" 
+                  onClick={() => navigate(`/upload?mergeWith=${auditId}`)}
+                >
+                  Upload CSV to Boost Accuracy
+                </Button>
+              </div>
+            )}
           </Card>
 
           {/* Charts */}

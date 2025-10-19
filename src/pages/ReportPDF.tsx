@@ -62,6 +62,12 @@ export default function ReportPDF() {
             Score: {Math.round(audit.overall_score || 0)}/100
           </div>
           <p className="text-lg font-medium">{audit.status}</p>
+          <p className="text-sm font-medium text-gray-600">
+            Accuracy: {Math.round(audit.accuracy || 60)}% 
+            {audit.audit_mode === 'merged' && " (Merged Analysis)"}
+            {audit.audit_mode === 'data' && " (Data-Driven)"}
+            {audit.audit_mode === 'question' && " (Question-Based)"}
+          </p>
           <p className="text-sm text-gray-500">
             Generated: {new Date().toLocaleDateString()}
           </p>

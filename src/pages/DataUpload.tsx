@@ -62,6 +62,7 @@ export default function DataUpload() {
         const { data: newAudit, error: auditError } = await supabase
           .from("audits")
           .insert({
+            user_id: null,
             email: email || null,
             audit_mode: "data"
           })

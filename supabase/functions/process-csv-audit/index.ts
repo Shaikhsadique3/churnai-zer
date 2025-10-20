@@ -20,15 +20,44 @@ serve(async (req) => {
 
     const { auditId, csvContent, mergeMode = false } = await req.json();
 
-    // Parse CSV content
-    const lines = csvContent.trim().split("\n");
-    if (lines.length < 2) {
-      throw new Error("CSV file must contain headers and at least one data row");
+    // Validate input
+    if (!auditId || typeof auditId !== 'string') {
+      console.error('[csv-audit] Missing or invalid auditId');
+      throw new Error('Invalid request');
     }
 
-    const headers = lines[0].toLowerCase().split(",").map((h: string) => h.trim());
+    if (!csvContent || typeof csvContent !== 'string') {
+      console.error('[csv-audit] Missing or invalid csvContent');
+      throw new Error('Invalid request');
+    }
+
+    // Parse CSV content
+    const lines = csvContent.trim().split("\n");
+    
+    // Validate row count (min 2, max 10,000)
+    if (lines.length < 2) {
+      console.log('[csv-audit] CSV has less than 2 lines');
+      throw new Error('Invalid CSV format');
+    }
+
+    if (lines.length > 10001) {
+      console.log('[csv-audit] CSV exceeds maximum rows');
+      throw new Error('CSV too large');
+    }
+
+    // Sanitize and parse CSV to prevent injection
+    const sanitizeCSVValue = (value: string): string => {
+      const trimmed = value.trim();
+      // Prevent CSV injection by escaping formula characters
+      if (/^[=+\-@]/.test(trimmed)) {
+        return `'${trimmed}`;
+      }
+      return trimmed;
+    };
+
+    const headers = lines[0].toLowerCase().split(",").map((h: string) => sanitizeCSVValue(h));
     const rows = lines.slice(1).map((line: string) => {
-      const values = line.split(",").map((v: string) => v.trim());
+      const values = line.split(",").map((v: string) => sanitizeCSVValue(v));
       const row: Record<string, string> = {};
       headers.forEach((header, i) => {
         row[header] = values[i] || "";
@@ -184,9 +213,9 @@ serve(async (req) => {
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (error) {
-    console.error("CSV processing error:", error);
+    console.error("[csv-audit] Processing error:", error);
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: "Failed to process CSV file" }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }

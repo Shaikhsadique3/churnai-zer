@@ -17,26 +17,98 @@ export default function DataUpload() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [email, setEmail] = useState("");
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files?.[0];
-    if (selectedFile) {
-      if (!selectedFile.name.endsWith('.csv')) {
+    if (!selectedFile) return;
+
+    // File type validation
+    if (!selectedFile.name.endsWith('.csv')) {
+      toast({
+        title: "Invalid file type",
+        description: "Please upload a CSV file",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // File size validation (10MB limit)
+    if (selectedFile.size > 10 * 1024 * 1024) {
+      toast({
+        title: "File too large",
+        description: "Maximum file size is 10MB",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Parse and validate CSV content
+    try {
+      const csvContent = await selectedFile.text();
+      const lines = csvContent.trim().split('\n');
+      
+      // Validate minimum rows
+      if (lines.length < 2) {
         toast({
-          title: "Invalid file type",
-          description: "Please upload a CSV file",
+          title: "Invalid CSV",
+          description: "CSV must contain headers and at least one data row",
           variant: "destructive",
         });
         return;
       }
-      if (selectedFile.size > 5 * 1024 * 1024) {
+
+      // Validate row count (max 10,000)
+      if (lines.length > 10001) {
         toast({
-          title: "File too large",
-          description: "Maximum file size is 5MB",
+          title: "Too many rows",
+          description: "Maximum 10,000 rows allowed",
           variant: "destructive",
         });
         return;
       }
+
+      // Sanitize CSV to prevent injection attacks
+      const sanitizedLines = lines.map(line => {
+        return line.split(',').map(cell => {
+          const trimmed = cell.trim();
+          // Prefix cells starting with formula characters with single quote
+          if (/^[=+\-@]/.test(trimmed)) {
+            return `'${trimmed}`;
+          }
+          return trimmed;
+        }).join(',');
+      });
+
+      // Validate headers (case-insensitive)
+      const headers = sanitizedLines[0].toLowerCase().split(',').map(h => h.trim());
+      const validMetrics = [
+        'ttfv', 'time_to_first_value', 'onboarding_completion', 'activation_rate',
+        'login_frequency', 'feature_usage', 'session_duration', 'engagement_score',
+        'nps_score', 'csat_score', 'feedback_count', 'support_tickets',
+        'renewal_rate', 'churn_rate', 'winback_rate', 'upsell_rate',
+        'health_score', 'csm_touchpoints', 'escalation_count', 'retention_rate'
+      ];
+
+      const foundMetrics = headers.filter(h => validMetrics.includes(h));
+      if (foundMetrics.length === 0) {
+        toast({
+          title: "No valid metrics found",
+          description: "CSV must contain at least one retention metric column",
+          variant: "destructive",
+        });
+        return;
+      }
+
       setFile(selectedFile);
+      toast({
+        title: "File validated",
+        description: `Found ${foundMetrics.length} retention metric(s)`,
+      });
+    } catch (error) {
+      toast({
+        title: "Validation failed",
+        description: "Could not validate CSV file",
+        variant: "destructive",
+      });
     }
   };
 

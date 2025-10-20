@@ -3,7 +3,10 @@ import { useParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
-import { Download } from "lucide-react";
+import { Download, CheckCircle2, TrendingUp } from "lucide-react";
+import { ScoreBadge } from "@/components/report/ScoreBadge";
+import { AccuracyMeter } from "@/components/report/AccuracyMeter";
+import { calculateBenchmark, getAIInsight, getPlaybookRecommendations } from "@/lib/reportUtils";
 
 export default function ReportPDF() {
   const { auditId } = useParams();
@@ -43,62 +46,121 @@ export default function ReportPDF() {
     return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
   }
 
+  const benchmark = calculateBenchmark(audit.overall_score || 0);
+  const aiInsight = getAIInsight(categoryResults);
+
   return (
     <div className="min-h-screen bg-white text-black">
       <div className="container mx-auto px-8 py-12 max-w-4xl space-y-12">
         {/* Print Button */}
         <div className="no-print flex justify-end mb-4">
-          <Button onClick={handleDownload}>
+          <Button onClick={handleDownload} size="lg">
             <Download className="mr-2 h-4 w-4" />
             Download PDF
           </Button>
         </div>
 
         {/* Cover Page */}
-        <div className="text-center space-y-6 pb-12 border-b-2">
-          <h1 className="text-5xl font-bold">Retention Health Audit Report</h1>
-          <p className="text-xl text-gray-600">Personalized Assessment & Action Plan</p>
-          <div className="text-4xl font-bold text-primary mt-8">
-            Score: {Math.round(audit.overall_score || 0)}/100
+        <div className="text-center space-y-8 pb-12 border-b-2" style={{ borderColor: '#3366FF' }}>
+          <div className="space-y-2">
+            <h1 className="text-6xl font-bold" style={{ color: '#262A33' }}>
+              Retention Health Report
+            </h1>
+            <p className="text-2xl" style={{ color: '#697386' }}>
+              Personalized Data-Driven Insights
+            </p>
+            {audit.email && (
+              <p className="text-lg font-medium" style={{ color: '#3366FF' }}>
+                Prepared for: {audit.email}
+              </p>
+            )}
           </div>
-          <p className="text-lg font-medium">{audit.status}</p>
-          <p className="text-sm font-medium text-gray-600">
-            Accuracy: {Math.round(audit.accuracy || 60)}% 
-            {audit.audit_mode === 'merged' && " (Merged Analysis)"}
-            {audit.audit_mode === 'data' && " (Data-Driven)"}
-            {audit.audit_mode === 'question' && " (Question-Based)"}
-          </p>
-          <p className="text-sm text-gray-500">
-            Generated: {new Date().toLocaleDateString()}
-          </p>
+
+          <div className="flex items-center justify-center gap-12 py-8">
+            <div className="text-center">
+              <div className="text-7xl font-bold mb-4" style={{ color: '#3366FF' }}>
+                {Math.round(audit.overall_score || 0)}
+              </div>
+              <ScoreBadge score={audit.overall_score || 0} size="lg" />
+            </div>
+            <div className="no-print">
+              <AccuracyMeter accuracy={audit.accuracy || 60} size={160} />
+            </div>
+          </div>
+
+          <div className="space-y-3">
+            <div className="flex items-center justify-center gap-2" style={{ color: '#3366FF' }}>
+              <TrendingUp className="h-5 w-5" />
+              <span className="font-semibold">{benchmark.message}</span>
+            </div>
+            <p className="text-sm" style={{ color: '#697386' }}>
+              Generated: {new Date().toLocaleDateString('en-US', { 
+                year: 'numeric', 
+                month: 'long', 
+                day: 'numeric' 
+              })}
+            </p>
+            <p className="text-sm italic" style={{ color: '#697386' }}>
+              "Know your retention. Prove it with data."
+            </p>
+          </div>
         </div>
 
-        {/* Section 1: The Retention Blindspot */}
+        {/* AI Insight */}
+        <section className="p-6 rounded-lg border-2" style={{ backgroundColor: '#F0F9FF', borderColor: '#00C6AE' }}>
+          <div className="flex items-start gap-3">
+            <div className="h-10 w-10 rounded-full flex items-center justify-center flex-shrink-0" style={{ backgroundColor: '#00C6AE' }}>
+              <span className="text-white text-xl">✨</span>
+            </div>
+            <div>
+              <h3 className="text-xl font-bold mb-2" style={{ color: '#00C6AE' }}>
+                AI-Powered Insight
+              </h3>
+              <p className="text-gray-700 leading-relaxed">
+                {aiInsight}
+              </p>
+            </div>
+          </div>
+        </section>
+
+        {/* Section 1: Executive Summary */}
         <section className="space-y-4">
-          <h2 className="text-3xl font-bold">The Retention Blindspot</h2>
+          <h2 className="text-3xl font-bold" style={{ color: '#262A33' }}>Executive Summary</h2>
           <p className="text-gray-700 leading-relaxed">
-            Most founders chase new users instead of fixing churn. The data is clear: increasing retention by just 5% can boost profits by up to 95% (Bain & Co). Yet most SaaS businesses leak 5-7% of their customer base monthly without understanding why.
+            Most SaaS founders chase new users instead of fixing churn. The data is clear: increasing retention by just 5% can boost profits by up to 95% (Bain & Co). Yet most businesses leak 5-7% of their customer base monthly without understanding why.
           </p>
           <p className="text-gray-700 leading-relaxed">
-            This audit reveals where your customers are silently leaving — and more importantly, what you can do about it.
+            This report reveals where your customers are silently leaving — and provides a data-driven roadmap to prevent it.
           </p>
         </section>
 
-        {/* Section 2: Understanding Your Score */}
+        {/* Score Interpretation */}
         <section className="space-y-4">
-          <h2 className="text-3xl font-bold">How to Read Your Score</h2>
+          <h2 className="text-3xl font-bold" style={{ color: '#262A33' }}>Score Interpretation</h2>
           <div className="space-y-3">
-            <div className="p-4 border-l-4 border-green-500 bg-green-50">
-              <strong>81-100: Strong Retention System</strong> - You have solid processes in place
+            <div className="p-4 border-l-4 rounded-r" style={{ borderColor: '#22C55E', backgroundColor: '#F0FDF4' }}>
+              <strong style={{ color: '#22C55E' }}>81-100: Strong Retention System</strong>
+              <p className="text-sm mt-1 text-gray-700">
+                You have solid processes in place. Focus on optimization and scaling.
+              </p>
             </div>
-            <div className="p-4 border-l-4 border-blue-500 bg-blue-50">
-              <strong>61-80: Stable but Untapped</strong> - Good foundation, room for optimization
+            <div className="p-4 border-l-4 rounded-r" style={{ borderColor: '#3B82F6', backgroundColor: '#EFF6FF' }}>
+              <strong style={{ color: '#3B82F6' }}>61-80: Stable but Untapped</strong>
+              <p className="text-sm mt-1 text-gray-700">
+                Good foundation with significant room for improvement and revenue expansion.
+              </p>
             </div>
-            <div className="p-4 border-l-4 border-yellow-500 bg-yellow-50">
-              <strong>31-60: Needs Attention</strong> - Significant retention leaks to address
+            <div className="p-4 border-l-4 rounded-r" style={{ borderColor: '#F59E0B', backgroundColor: '#FFFBEB' }}>
+              <strong style={{ color: '#F59E0B' }}>31-60: Needs Attention</strong>
+              <p className="text-sm mt-1 text-gray-700">
+                Significant retention leaks. Prioritize quick wins and systematic improvements.
+              </p>
             </div>
-            <div className="p-4 border-l-4 border-red-500 bg-red-50">
-              <strong>0-30: Critical Risk</strong> - Urgent intervention required
+            <div className="p-4 border-l-4 rounded-r" style={{ borderColor: '#E12D39', backgroundColor: '#FEF2F2' }}>
+              <strong style={{ color: '#E12D39' }}>0-30: Critical Risk</strong>
+              <p className="text-sm mt-1 text-gray-700">
+                Urgent intervention required. Focus on stopping the bleeding immediately.
+              </p>
             </div>
           </div>
         </section>
@@ -141,18 +203,80 @@ export default function ReportPDF() {
           ))}
         </section>
 
+        {/* 30/60/90 Day Action Plan */}
+        <section className="space-y-6 page-break">
+          <h2 className="text-3xl font-bold" style={{ color: '#262A33' }}>Your 30/60/90 Day Action Plan</h2>
+          <p className="text-gray-700">Prioritized roadmap to systematically improve retention</p>
+          
+          {[
+            { 
+              days: 30, 
+              title: "Foundation",
+              subtitle: "Set up systems and gather data",
+              actions: [
+                "Audit current retention metrics and set up dashboards",
+                "Implement exit surveys for churned customers",
+                "Define customer health score framework",
+              ]
+            },
+            { 
+              days: 60, 
+              title: "Activation",
+              subtitle: "Launch campaigns and optimize flows",
+              actions: [
+                "Launch reactivation campaigns for inactive users",
+                "Optimize onboarding to reduce time-to-first-value",
+                "Create customer success playbooks for each risk level",
+              ]
+            },
+            { 
+              days: 90, 
+              title: "Scaling",
+              subtitle: "Automate and build predictive capabilities",
+              actions: [
+                "Build predictive churn model using historical data",
+                "Launch loyalty program or upgrade incentives",
+                "Schedule quarterly business reviews for top accounts",
+              ]
+            },
+          ].map((phase) => (
+            <Card key={phase.days} className="p-6 border-2" style={{ borderColor: '#E3E8EE' }}>
+              <div className="flex items-center gap-3 mb-4">
+                <div className="h-12 w-12 rounded-full flex items-center justify-center" style={{ backgroundColor: '#3366FF', color: 'white' }}>
+                  <span className="text-xl font-bold">{phase.days}</span>
+                </div>
+                <div>
+                  <h3 className="text-xl font-bold">{phase.title}</h3>
+                  <p className="text-sm text-gray-600">{phase.subtitle}</p>
+                </div>
+              </div>
+              <div className="space-y-2">
+                {phase.actions.map((action, i) => (
+                  <div key={i} className="flex gap-3">
+                    <CheckCircle2 className="h-5 w-5 flex-shrink-0 mt-0.5" style={{ color: '#00C6AE' }} />
+                    <p className="text-gray-700">{action}</p>
+                  </div>
+                ))}
+              </div>
+            </Card>
+          ))}
+        </section>
+
         {/* Metrics to Track */}
         <section className="space-y-4">
-          <h2 className="text-3xl font-bold">Retention Metrics You Should Track</h2>
+          <h2 className="text-3xl font-bold" style={{ color: '#262A33' }}>Key Retention Metrics to Track</h2>
           <div className="grid gap-4">
             {[
-              { metric: "Activation Rate", desc: "% of users reaching first value milestone" },
-              { metric: "Feature Adoption", desc: "Active usage of key product features" },
-              { metric: "Renewal Rate", desc: "% of customers renewing subscriptions" },
-              { metric: "Customer Health Score", desc: "Composite metric of engagement signals" }
+              { metric: "Activation Rate", desc: "% of users reaching first value milestone within 24 hours" },
+              { metric: "Feature Adoption", desc: "Active usage of your top 3 core features" },
+              { metric: "Customer Health Score", desc: "Composite metric of usage + engagement + support" },
+              { metric: "Renewal Rate", desc: "% of customers renewing subscriptions on time" },
+              { metric: "Time-to-First-Value", desc: "How quickly new users experience their first win" },
+              { metric: "Engagement Frequency", desc: "Daily/weekly active users by cohort" }
             ].map((item, i) => (
-              <div key={i} className="p-4 bg-gray-50 rounded-lg">
-                <strong>{item.metric}</strong> - {item.desc}
+              <div key={i} className="p-4 rounded-lg border" style={{ backgroundColor: '#F6F8FA', borderColor: '#E3E8EE' }}>
+                <strong style={{ color: '#3366FF' }}>{item.metric}</strong>
+                <p className="text-sm text-gray-700 mt-1">{item.desc}</p>
               </div>
             ))}
           </div>
@@ -180,9 +304,16 @@ export default function ReportPDF() {
         </section>
 
         {/* Footer */}
-        <div className="text-center pt-12 border-t text-sm text-gray-500">
-          <p>This report was generated by Retention Audit App</p>
-          <p className="mt-2">Want more retention strategies? Visit our playbook library.</p>
+        <div className="text-center pt-12 border-t-2 space-y-3" style={{ borderColor: '#E3E8EE' }}>
+          <p className="text-lg font-semibold" style={{ color: '#3366FF' }}>
+            Generated by Churnaizer — Predict & Prevent SaaS Churn with AI
+          </p>
+          <p className="text-sm" style={{ color: '#697386' }}>
+            "Know your retention. Prove it with data."
+          </p>
+          <p className="text-xs text-gray-500">
+            This report contains proprietary insights. For questions or support, contact your Churnaizer team.
+          </p>
         </div>
       </div>
 
@@ -190,40 +321,16 @@ export default function ReportPDF() {
         @media print {
           .no-print { display: none; }
           .page-break { page-break-before: always; }
+          body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+          }
+        }
+        @media screen {
+          body {
+            background: #f6f8fa;
+          }
         }
       `}</style>
     </div>
   );
-}
-
-function getPlaybookRecommendations(category: string, status: string): string[] {
-  const recommendations: Record<string, string[]> = {
-    "Onboarding & Activation": [
-      "Create a 'First Value' checklist that guides users to their first win within 24 hours",
-      "Set up milestone tracking with celebration emails for key activation points",
-      "Implement time-to-first-value (TTFV) tracking in your analytics"
-    ],
-    "Customer Engagement": [
-      "Build an automated reactivation campaign triggered after 14 days of inactivity",
-      "Create monthly feature highlight emails showing unused valuable features",
-      "Set up cohort-based engagement tracking to identify at-risk segments"
-    ],
-    "Product Feedback & Experience": [
-      "Add an exit survey for users who cancel or downgrade",
-      "Create a feedback categorization system and monthly review process",
-      "Implement proactive support ticket analysis to identify recurring issues"
-    ],
-    "Retention Marketing": [
-      "Design a renewal reminder sequence starting 30 days before expiration",
-      "Create a loyalty rewards program or annual plan incentive",
-      "Build a case study automation workflow featuring successful customers"
-    ],
-    "Customer Success Process": [
-      "Assign a retention owner and define clear KPIs beyond churn rate",
-      "Create a customer health score combining usage + engagement + support data",
-      "Schedule quarterly business reviews for high-value accounts"
-    ]
-  };
-
-  return recommendations[category] || [];
 }

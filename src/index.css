@@ -6,54 +6,56 @@
 
 @layer base {
   :root {
-    /* Modern SaaS Design System - Conduktor-inspired */
-    --background: 0 0% 98%; /* #FAFAFA - Very light background */
-    --foreground: 224 71% 4%; /* #020817 - Deep text */
+    /* Churnaizer Retention System - Stripe-inspired Design */
+    --background: 0 0% 100%; /* Pure white */
+    --foreground: 220 13% 18%; /* #262A33 - Dark charcoal */
 
     --card: 0 0% 100%; /* Pure white cards */
-    --card-foreground: 224 71% 4%;
+    --card-foreground: 220 13% 18%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 224 71% 4%;
+    --popover-foreground: 220 13% 18%;
 
-    --primary: 262 83% 58%; /* #8B5CF6 - Modern purple */
+    --primary: 220 100% 60%; /* #3366FF - Churnaizer Blue */
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 220 14% 96%; /* #F1F5F9 - Light gray */
-    --secondary-foreground: 224 71% 4%;
+    --secondary: 220 13% 96%; /* #F6F8FA - Subtle gray */
+    --secondary-foreground: 220 13% 18%;
 
-    --muted: 220 14% 96%; /* #F1F5F9 - Light muted */
-    --muted-foreground: 220 9% 46%; /* #64748B - Medium gray */
+    --muted: 220 13% 96%; /* #F6F8FA */
+    --muted-foreground: 220 9% 46%; /* #697386 - Medium gray */
 
-    --accent: 262 83% 58%; /* Same as primary purple */
+    --accent: 173 80% 40%; /* #00C6AE - Teal accent */
     --accent-foreground: 0 0% 100%;
 
-    --destructive: 0 84% 60%; /* #EF4444 - Red */
-    --destructive-foreground: 0 0% 98%;
+    --destructive: 0 72% 51%; /* #E12D39 - Red */
+    --destructive-foreground: 0 0% 100%;
 
-    --border: 220 13% 91%; /* #E2E8F0 - Subtle border */
-    --input: 0 0% 100%;
-    --ring: 262 83% 58%; /* Purple ring */
+    --border: 220 13% 91%; /* #E3E8EE - Subtle border */
+    --input: 220 13% 96%;
+    --ring: 220 100% 60%; /* Primary blue ring */
 
-    --radius: 0.5rem; /* Modern rounded corners */
+    --radius: 0.5rem;
 
-    /* Modern sidebar styling */
+    /* Sidebar styling */
     --sidebar-background: 0 0% 100%;
-    --sidebar-foreground: 224 71% 4%;
-    --sidebar-primary: 262 83% 58%;
+    --sidebar-foreground: 220 13% 18%;
+    --sidebar-primary: 220 100% 60%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 262 83% 96%; /* Very light purple */
-    --sidebar-accent-foreground: 262 83% 58%;
+    --sidebar-accent: 220 13% 96%;
+    --sidebar-accent-foreground: 220 13% 18%;
     --sidebar-border: 220 13% 91%;
-    --sidebar-ring: 262 83% 58%;
+    --sidebar-ring: 220 100% 60%;
 
-    /* Additional modern colors */
-    --success: 142 76% 36%; /* #16A34A - Green */
+    /* Status colors - Badge system */
+    --success: 142 71% 45%; /* #22C55E - Green */
     --success-foreground: 0 0% 100%;
-    --warning: 48 96% 53%; /* #F59E0B - Amber */
+    --warning: 38 92% 50%; /* #F59E0B - Amber */
     --warning-foreground: 0 0% 100%;
-    --info: 213 94% 68%; /* #3B82F6 - Blue */
+    --info: 217 91% 60%; /* #3B82F6 - Blue */
     --info-foreground: 0 0% 100%;
+    --critical: 0 72% 51%; /* #E12D39 - Red */
+    --critical-foreground: 0 0% 100%;
   }
 
   .dark {

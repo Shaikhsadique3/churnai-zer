@@ -11,30 +11,30 @@ export default function Landing() {
         {/* Hero Section */}
         <div className="max-w-4xl mx-auto text-center space-y-8 py-20">
           <h1 className="text-5xl md:text-6xl font-bold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
-            Find out your Retention Health Score in under 3 minutes
+            Most SaaS teams only realize churn after it happens
           </h1>
           
           <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-            Answer a few quick questions and get a personalized dashboard showing where you're losing customers — and how to fix it.
+            Churnaizer is an AI dashboard that predicts who's about to churn, how much revenue is at risk, and what actions can save them.
           </p>
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center pt-8">
             <Button 
               size="lg" 
-              onClick={() => navigate("/start")}
+              onClick={() => window.open("https://churnaizer.streamlit.app/predict", "_blank")}
               className="text-lg px-8 py-6"
             >
-              Start Free Audit
+              Fix Churn Now
               <ArrowRight className="ml-2 h-5 w-5" />
             </Button>
             
             <Button 
               size="lg" 
               variant="outline"
-              onClick={() => navigate("/sample-report")}
+              onClick={() => navigate("/start")}
               className="text-lg px-8 py-6"
             >
-              See Sample Report
+              Start Free Audit
             </Button>
           </div>
         </div>
@@ -43,16 +43,16 @@ export default function Landing() {
         <div className="max-w-5xl mx-auto grid md:grid-cols-3 gap-8 py-16">
           {[
             {
-              title: "3-Minute Audit",
-              description: "Quick, focused questions that get to the heart of your retention challenges"
+              title: "AI Churn Prediction",
+              description: "Machine learning models analyze behavior patterns to predict who's about to leave"
             },
             {
-              title: "Instant Insights",
-              description: "See your score breakdown across 5 critical retention categories"
+              title: "Revenue Risk Analysis",
+              description: "See exactly how much revenue is at risk and which customers need attention first"
             },
             {
-              title: "Actionable Report",
-              description: "Download a personalized PDF with next steps and proven playbooks"
+              title: "Smart Actions",
+              description: "Get AI-powered recommendations on specific actions to save each at-risk customer"
             }
           ].map((feature, i) => (
             <div key={i} className="bg-card border rounded-lg p-6 space-y-3 hover:shadow-lg transition-shadow">
@@ -66,10 +66,10 @@ export default function Landing() {
         {/* Social Proof */}
         <div className="max-w-2xl mx-auto text-center py-16 space-y-4">
           <p className="text-sm text-muted-foreground uppercase tracking-wide">
-            Trusted by forward-thinking founders
+            Stop churn before it happens
           </p>
           <p className="text-lg text-muted-foreground italic">
-            "Most founders chase new users while their existing customers quietly leave. This audit shows you exactly where to plug the leaks."
+            "Predict who's leaving, understand why, and take action before they're gone. Churnaizer gives you the insights you need to save your customers."
           </p>
         </div>
       </div>
